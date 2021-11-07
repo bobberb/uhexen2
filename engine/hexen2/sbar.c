@@ -616,38 +616,7 @@ static void DrawLowerBar(void)
 
 static int CalcAC(void)
 {
-	int	a;
-	int	playerClass;
-
-	//playerClass = cl.v.playerclass;
-	playerClass = cl_playerclass.integer -1;
-	if (playerClass < 0 || playerClass >= MAX_PLAYER_CLASS)
-		playerClass = 1;	// Default to paladin
-	if (!(gameflags & GAME_PORTALS) && playerClass > MAX_PLAYER_CLASS - PORTALS_EXTRA_CLASSES)
-		playerClass = 1;	// Default to paladin
-
-	a = 0;
-	if (cl.v.armor_amulet > 0)
-	{
-		a += AmuletAC[playerClass];
-		a += cl.v.armor_amulet/5;
-	}
-	if (cl.v.armor_bracer > 0)
-	{
-		a += BracerAC[playerClass];
-		a += cl.v.armor_bracer/5;
-	}
-	if (cl.v.armor_breastplate > 0)
-	{
-		a += BreastplateAC[playerClass];
-		a += cl.v.armor_breastplate/5;
-	}
-	if (cl.v.armor_helmet > 0)
-	{
-		a += HelmetAC[playerClass];
-		a += cl.v.armor_helmet/5;
-	}
-	return a;
+	return cl.v.armor_amulet + cl.v.armor_bracer + cl.v.armor_helmet + cl.v.armor_breastplate;
 }
 
 //==========================================================================
