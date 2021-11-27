@@ -3324,10 +3324,10 @@ static void PF_set_fx_color(void)
 			if (!strcmp(sv.model_precache[i], s))
 			{
 				#if !defined(SERVERONLY) && defined(GLQUAKE)
-				sv.models[i]->glow_color[0] = j;
-				sv.models[i]->glow_color[1] = k;
-				sv.models[i]->glow_color[2] = l;
-				sv.models[i]->glow_color[3] = m;
+				sv.models[i]->glow_settings[COLOR_R] = j;
+				sv.models[i]->glow_settings[COLOR_G] = k;
+				sv.models[i]->glow_settings[COLOR_B] = l;
+				sv.models[i]->glow_settings[COLOR_A] = m;
 				#endif	/* SERVERONLY */
 				return;
 			}
@@ -3360,6 +3360,10 @@ static void PF_strhash(void)
 	//PR_RunError("%s: overflow", __thisfunc__);
 }
 
+static void PF_pimpmodel(void)
+{
+	G_FLOAT(OFS_RETURN) = PimpModel(G_EDICT(OFS_PARM0), G_VECTOR(OFS_PARM1));
+}
 
 static builtin_t pr_builtin[] =
 {
@@ -3502,7 +3506,7 @@ static builtin_t pr_builtin[] =
 	PF_set_fx_color,	// void(string model, float r, float g, float b, float a) set_fx_color	= #108
 	PF_strhash,		// float(string s1) strhash = #109
 	PF_centerprintf,
-	PF_Fixme,
+	PF_pimpmodel,   // float(entity e) applies all the model properties defined by e on the target model occurrences throughout the map = #111
 	PF_Fixme,
 	PF_Fixme,
 #endif

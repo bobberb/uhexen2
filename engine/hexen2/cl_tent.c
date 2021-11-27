@@ -292,10 +292,10 @@ void CL_ParseTEnt(void)
 #	ifdef GLQUAKE
 		if ((gl_colored_dynamic_lights.integer) && (ent->model))
 		{
-			dl->color[0] = ent->model->glow_color[0];
-			dl->color[1] = ent->model->glow_color[1];
-			dl->color[2] = ent->model->glow_color[2];
-			dl->color[3] = ent->model->glow_color[3];
+			dl->color[0] = ent->model->glow_settings[COLOR_R];
+			dl->color[1] = ent->model->glow_settings[COLOR_G];
+			dl->color[2] = ent->model->glow_settings[COLOR_B];
+			dl->color[3] = ent->model->glow_settings[COLOR_A];
 		}
 #	endif
 		break;

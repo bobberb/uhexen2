@@ -541,10 +541,12 @@ static float CL_LerpPoint (void)
 CL_RelinkEntities
 ===============
 */
+#define ftoi(f) ((int)(f >= 0.0 ? (f + 0.5) : (f - 0.5)))
+
 static void CL_RelinkEntities (void)
 {
 	entity_t	*ent;
-	int		i, j;
+	int		i, j, k, l;
 	float		frac, f, d;
 	vec3_t		delta;
 	vec3_t		oldorg;
@@ -647,10 +649,10 @@ static void CL_RelinkEntities (void)
 #		ifdef GLQUAKE
 			if (gl_colored_dynamic_lights.integer)
 			{	// Make the dynamic light yellow
-				dl->color[0] = (ent->model->glow_color[0] != 0.0 ? ent->model->glow_color[0] : 1.0);
-				dl->color[1] = (ent->model->glow_color[1] != 0.0 ? ent->model->glow_color[1] : 1.0);
-				dl->color[2] = (ent->model->glow_color[2] != 0.0 ? ent->model->glow_color[2] : 0.5);
-				dl->color[3] = (ent->model->glow_color[3] != 0.0 ? ent->model->glow_color[3] : 0.7);
+				dl->color[0] = (ent->model->glow_settings[COLOR_R] != 0.0 ? ent->model->glow_settings[COLOR_R] : 1.0);
+				dl->color[1] = (ent->model->glow_settings[COLOR_G] != 0.0 ? ent->model->glow_settings[COLOR_G] : 1.0);
+				dl->color[2] = (ent->model->glow_settings[COLOR_B] != 0.0 ? ent->model->glow_settings[COLOR_B] : 0.5);
+				dl->color[3] = (ent->model->glow_settings[COLOR_A] != 0.0 ? ent->model->glow_settings[COLOR_A] : 0.7);
 			}
 #		endif
 		}
@@ -664,10 +666,10 @@ static void CL_RelinkEntities (void)
 #		ifdef GLQUAKE
 			if (gl_colored_dynamic_lights.integer)
 			{
-				dl->color[0] = (ent->model->glow_color[0] != 0.0 ? ent->model->glow_color[0] : 0.8);
-				dl->color[1] = (ent->model->glow_color[1] != 0.0 ? ent->model->glow_color[1] : 0.8);
-				dl->color[2] = (ent->model->glow_color[2] != 0.0 ? ent->model->glow_color[2] : 1.0);
-				dl->color[3] = (ent->model->glow_color[3] != 0.0 ? ent->model->glow_color[3] : 0.7);
+				dl->color[0] = (ent->model->glow_settings[COLOR_R] != 0.0 ? ent->model->glow_settings[COLOR_R] : 0.8);
+				dl->color[1] = (ent->model->glow_settings[COLOR_G] != 0.0 ? ent->model->glow_settings[COLOR_G] : 0.8);
+				dl->color[2] = (ent->model->glow_settings[COLOR_B] != 0.0 ? ent->model->glow_settings[COLOR_B] : 1.0);
+				dl->color[3] = (ent->model->glow_settings[COLOR_A] != 0.0 ? ent->model->glow_settings[COLOR_A] : 0.7);
 			}
 #		endif
 		}
@@ -680,10 +682,10 @@ static void CL_RelinkEntities (void)
 #		ifdef GLQUAKE
 			if (gl_colored_dynamic_lights.integer)
 			{
-				dl->color[0] = (ent->model->glow_color[0] != 0.0 ? ent->model->glow_color[0] : 0.8);
-				dl->color[1] = (ent->model->glow_color[1] != 0.0 ? ent->model->glow_color[1] : 0.6);
-				dl->color[2] = (ent->model->glow_color[2] != 0.0 ? ent->model->glow_color[2] : 0.2);
-				dl->color[3] = (ent->model->glow_color[3] != 0.0 ? ent->model->glow_color[3] : 0.7);
+				dl->color[0] = (ent->model->glow_settings[COLOR_R] != 0.0 ? ent->model->glow_settings[COLOR_R] : 0.8);
+				dl->color[1] = (ent->model->glow_settings[COLOR_G] != 0.0 ? ent->model->glow_settings[COLOR_G] : 0.6);
+				dl->color[2] = (ent->model->glow_settings[COLOR_B] != 0.0 ? ent->model->glow_settings[COLOR_B] : 0.2);
+				dl->color[3] = (ent->model->glow_settings[COLOR_A] != 0.0 ? ent->model->glow_settings[COLOR_A] : 0.7);
 			}
 #		endif
 		}
@@ -705,12 +707,48 @@ static void CL_RelinkEntities (void)
 #		ifdef GLQUAKE
 			if (gl_colored_dynamic_lights.integer)
 			{
-				dl->color[0] = (ent->model->glow_color[0] != 0.0 ? ent->model->glow_color[0] : 0.8);
-				dl->color[1] = (ent->model->glow_color[1] != 0.0 ? ent->model->glow_color[1] : 0.4);
-				dl->color[2] = (ent->model->glow_color[2] != 0.0 ? ent->model->glow_color[2] : 0.2);
-				dl->color[3] = (ent->model->glow_color[3] != 0.0 ? ent->model->glow_color[3] : 0.7);
+				dl->color[0] = (ent->model->glow_settings[COLOR_R] != 0.0 ? ent->model->glow_settings[COLOR_R] : 0.8);
+				dl->color[1] = (ent->model->glow_settings[COLOR_G] != 0.0 ? ent->model->glow_settings[COLOR_G] : 0.4);
+				dl->color[2] = (ent->model->glow_settings[COLOR_B] != 0.0 ? ent->model->glow_settings[COLOR_B] : 0.2);
+				dl->color[3] = (ent->model->glow_settings[COLOR_A] != 0.0 ? ent->model->glow_settings[COLOR_A] : 0.7);
 			}
 #		endif
+		}
+		if (ent->model->ex_flags & EF_ILLUMINATE)
+		{
+			dl = CL_AllocDlight(i);
+			VectorCopy(ent->origin, dl->origin);
+			dl->origin[0] += ent->model->glow_settings[ORB_OFFSET_X];
+			dl->origin[1] += ent->model->glow_settings[ORB_OFFSET_Y];
+			dl->origin[2] += ent->model->glow_settings[ORB_OFFSET_Z];
+			dl->radius = (ent->model->glow_settings[LIGHT_RADIUS] >= 1.0 ? ent->model->glow_settings[LIGHT_RADIUS] : 200);
+			dl->die = cl.time + 0.001;
+#		ifdef GLQUAKE
+			if (gl_colored_dynamic_lights.integer)
+			{
+				dl->color[0] = (ent->model->glow_settings[COLOR_R] != 0.0 ? ent->model->glow_settings[COLOR_R] : 1.0);
+				dl->color[1] = (ent->model->glow_settings[COLOR_G] != 0.0 ? ent->model->glow_settings[COLOR_G] : 1.0);
+				dl->color[2] = (ent->model->glow_settings[COLOR_B] != 0.0 ? ent->model->glow_settings[COLOR_B] : 1.0);
+				dl->color[3] = (ent->model->glow_settings[COLOR_A] != 0.0 ? ent->model->glow_settings[COLOR_A] : 1.0);
+			}
+#		endif
+			// Now apply the light style
+			k = (int)(cl.time * 10);
+			l = 0;
+			if (!cl_lightstyle[ftoi(ent->model->glow_settings[LIGHT_STYLE])].length)
+			{
+				l = 256;
+			}
+			else
+			{
+				l = k % cl_lightstyle[ftoi(ent->model->glow_settings[LIGHT_STYLE])].length;
+				l = cl_lightstyle[ftoi(ent->model->glow_settings[LIGHT_STYLE])].map[l] - 'a';
+				l = l * 22;
+			}
+			float intensity = ((float)l / 255.0f);
+			dl->color[0] *= intensity;
+			dl->color[1] *= intensity;
+			dl->color[2] *= intensity;
 		}
 
 		if (ent->model->flags & EF_GIB)

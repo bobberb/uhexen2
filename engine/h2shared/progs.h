@@ -89,7 +89,7 @@ extern	qboolean	is_progs_v6;
 
 void PR_Init (void);
 
-void PR_ExecuteProgram (func_t fnum);
+void PR_ExecuteProgram (func_t fnum, char* funcname);
 void PR_LoadProgs (void);
 
 const float* PR_GetFloat(int num);

@@ -700,17 +700,17 @@ ED_Print
 For debugging
 =============
 */
-void ED_Print (edict_t *ed)
+void ED_Print(edict_t* ed)
 {
-	ddef_t	*d;
-	int		*v;
+	ddef_t* d;
+	int* v;
 	int		i, j, l;
-	const char	*name;
+	const char* name;
 	int		type;
 
 	if (ed->free)
 	{
-		Con_Printf ("FREE\n");
+		Con_Printf("FREE\n");
 		return;
 	}
 
@@ -719,14 +719,14 @@ void ED_Print (edict_t *ed)
 	{
 		d = &pr_fielddefs[i];
 		name = PR_GetString(d->s_name);
-		l = strlen (name);
+		l = strlen(name);
 		j = l - 1;
-		if (j > 0 && name[j-1] == '_' && name[j] >= 'x' && name[j] <= 'z')
+		if (j > 0 && name[j - 1] == '_' && name[j] >= 'x' && name[j] <= 'z')
 			continue;	// skip _x, _y, _z vars
 
-		v = (int *)((char *)&ed->v + d->ofs*4);
+		v = (int*)((char*)&ed->v + d->ofs * 4);
 
-	// if the value is still all 0, skip the field
+		// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
 
 		for (j = 0; j < type_size[type]; j++)
@@ -737,12 +737,51 @@ void ED_Print (edict_t *ed)
 		if (j == type_size[type])
 			continue;
 
-		Con_Printf ("%s", name);
+		Con_Printf("%s", name);
 		while (l++ < 15)
-			Con_Printf (" ");
+			Con_Printf(" ");
 
-		Con_Printf ("%s\n", PR_ValueString(d->type, (eval_t *)v));
+		Con_Printf("%s\n", PR_ValueString(d->type, (eval_t*)v));
 	}
+}
+
+/*
+=============
+ED_GetProperty
+
+Get the value of an edict property by name
+=============
+*/
+const char* ED_GetProperty (edict_t *ed, char* propname)
+{
+	static char	ret[1];
+	ddef_t	*d;
+	int		*v;
+	int		i;
+	const char	*name;
+
+	ret[0] = '\0';
+
+	if (ed->free)
+		return ret;
+
+	for (i = 1; i < progs->numfielddefs; i++)
+	{
+		d = &pr_fielddefs[i];
+		name = PR_GetString(d->s_name);
+
+		if (!q_strncasecmp(name, propname, strlen(propname)))
+		{
+			v = (int*)((char*)&ed->v + d->ofs * 4);
+			return PR_ValueString(d->type, (eval_t*)v);
+		}
+		else
+		{
+			continue;
+		}
+	}
+
+	return ret;
 }
 
 /*
@@ -1373,7 +1412,7 @@ void ED_LoadFromFile (const char *data)
 		}
 
 		*sv_globals.self = EDICT_TO_PROG(ent);
-		PR_ExecuteProgram (func - pr_functions);
+		PR_ExecuteProgram (func - pr_functions, PR_GetString(ent->v.classname));
 	}
 
 	Con_DPrintf ("%i entities inhibited\n", inhibit);
