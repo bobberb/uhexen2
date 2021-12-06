@@ -247,7 +247,7 @@ static void R_RotateForEntity2 (entity_t *e)
 	}
 	else
 	{
-		if (e->model->flags & EF_ROTATE)
+		if (e->model->flags & EF_ROTATE || e->model->ex_flags & EF_SPIN)
 		{
 			glRotatef_fp (anglemod((e->origin[0] + e->origin[1])*0.8
 								+ (108*cl.time)),
@@ -944,7 +944,7 @@ static void R_DrawAliasModel (entity_t *e)
 		tmatrix[2][3] = paliashdr->scale_origin[2];
 	}
 
-	if (clmodel->flags & EF_ROTATE)
+	if (clmodel->flags & EF_ROTATE || e->model->ex_flags & EF_FLOAT)
 	{
 		// Floating motion
 		tmatrix[2][3] += sin(e->origin[0] + e->origin[1] + (cl.time*3)) * 5.5;
@@ -1316,6 +1316,7 @@ static void R_DrawTransEntitiesOnList (qboolean inwater)
 #define	TORCH_STYLE	1	/* Flicker	*/
 #define	MISSILE_STYLE	6	/* Flicker	*/
 #define	PULSE_STYLE	11	/* Slow pulse	*/
+#define ftoi(f) ((int)(f >= 0.0 ? (f + 0.5) : (f - 0.5)))
 
 static void R_DrawGlow (entity_t *e)
 {
@@ -1326,7 +1327,8 @@ static void R_DrawGlow (entity_t *e)
 	// Torches & Flames
 	if ((gl_glows.integer && (clmodel->ex_flags & XF_TORCH_GLOW)) ||
 	    (gl_missile_glows.integer && (clmodel->ex_flags & XF_MISSILE_GLOW)) ||
-	    (gl_other_glows.integer && (clmodel->ex_flags & XF_GLOW)) )
+		(gl_other_glows.integer && (clmodel->ex_flags & XF_GLOW)) ||
+	    (gl_other_glows.integer && (clmodel->ex_flags & EF_GLOW)) )
 	{
 		// NOTE: It would be better if we batched these up.
 		//	 All those state changes are not nice. KH
@@ -1347,6 +1349,8 @@ static void R_DrawGlow (entity_t *e)
 		if ( !q_strncasecmp(clmodel->name, "models/i_btmana", 15))
 			radius += 5.0f;
 
+		if(clmodel->glow_settings[ORB_RADIUS] > 1) radius = clmodel->glow_settings[ORB_RADIUS];
+
 		VectorSubtract(lightorigin, r_origin, vp2);
 
 		// See if view is outside the light.
@@ -1361,15 +1365,16 @@ static void R_DrawGlow (entity_t *e)
 			if (clmodel->ex_flags & XF_TORCH_GLOW)
 			{
 				if (clmodel->ex_flags & XF_TORCH_GLOW_EGYPT)	// egypt torch fix
-					glTranslatef_fp (cos(e->angles[1]/180*M_PI)*8.0f, sin(e->angles[1]/180*M_PI)*8.0f, 16.0f);
-				else	glTranslatef_fp (0.0f, 0.0f, 8.0f);
+					glTranslatef_fp (cos(e->angles[1]/180*M_PI)*8.0f + clmodel->glow_settings[ORB_OFFSET_X], sin(e->angles[1]/180*M_PI)*8.0f + clmodel->glow_settings[ORB_OFFSET_Y], 16.0f + clmodel->glow_settings[ORB_OFFSET_Z]);
+				else	glTranslatef_fp (clmodel->glow_settings[ORB_OFFSET_X], clmodel->glow_settings[ORB_OFFSET_Y], 8.0f + clmodel->glow_settings[ORB_OFFSET_Z]);
 			}
 
 			// 'floating' movement
-			if (clmodel->flags & EF_ROTATE)
-				glTranslatef_fp (0, 0, sin(e->origin[0] + e->origin[1] + (cl.time*3))*5.5);
+			if (clmodel->flags & EF_ROTATE || e->model->ex_flags & EF_FLOAT)
+				glTranslatef_fp (clmodel->glow_settings[ORB_OFFSET_X], clmodel->glow_settings[ORB_OFFSET_Y], sin(e->origin[0] + e->origin[1] + (cl.time*3))*5.5 + clmodel->glow_settings[ORB_OFFSET_Z]);
 
 			glBegin_fp(GL_TRIANGLE_FAN);
+
 			// Diminish torch flare inversely with distance.
 			intensity = (1024.0f - distance) / 1024.0f;
 
@@ -1384,54 +1389,23 @@ static void R_DrawGlow (entity_t *e)
 
 			// Now modulate with flicker.
 			j = 0;	// avoid compiler warning
-			if (clmodel->ex_flags & XF_TORCH_GLOW)
+			i = (int)(cl.time*10);
+			if (!cl_lightstyle[ftoi(clmodel->glow_settings[LIGHT_STYLE])].length)
 			{
-				i = (int)(cl.time*10);
-				if (!cl_lightstyle[TORCH_STYLE].length)
-				{
-					j = 256;
-				}
-				else
-				{
-					j = i % cl_lightstyle[TORCH_STYLE].length;
-					j = cl_lightstyle[TORCH_STYLE].map[j] - 'a';
-					j = j * 22;
-				}
+				j = 256;
 			}
-			else if (clmodel->ex_flags & XF_MISSILE_GLOW)
+			else
 			{
-				i = (int)(cl.time*10);
-				if (!cl_lightstyle[MISSILE_STYLE].length)
-				{
-					j = 256;
-				}
-				else
-				{
-					j = i % cl_lightstyle[MISSILE_STYLE].length;
-					j = cl_lightstyle[MISSILE_STYLE].map[j] - 'a';
-					j = j * 22;
-				}
-			}
-			else if (clmodel->ex_flags & XF_GLOW)
-			{
-				i = (int)(cl.time*10);
-				if (!cl_lightstyle[PULSE_STYLE].length)
-				{
-					j = 256;
-				}
-				else
-				{
-					j = i % cl_lightstyle[PULSE_STYLE].length;
-					j = cl_lightstyle[PULSE_STYLE].map[j] - 'a';
-					j = j * 22;
-				}
+				j = i % cl_lightstyle[ftoi(clmodel->glow_settings[LIGHT_STYLE])].length;
+				j = cl_lightstyle[ftoi(clmodel->glow_settings[LIGHT_STYLE])].map[j] - 'a';
+				j = j * 22;
 			}
 
 			intensity *= ((float)j / 255.0f);
-			glColor4f_fp (clmodel->glow_color[0]*intensity,
-					clmodel->glow_color[1]*intensity,
-					clmodel->glow_color[2]*intensity,
-					clmodel->glow_color[3]);
+			glColor4f_fp (clmodel->glow_settings[COLOR_R]*intensity,
+					clmodel->glow_settings[COLOR_G]*intensity,
+					clmodel->glow_settings[COLOR_B]*intensity,
+					clmodel->glow_settings[COLOR_A]);
 
 			for (i = 0; i < 3; i++)
 				glow_vect[i] = lightorigin[i] - vp2[i]*radius;
@@ -1497,6 +1471,83 @@ static void R_DrawAllGlows (void)
 
 //=============================================================================
 
+float PimpModel(edict_t* ed, float glow_color[3]) //Returns 1 if everything is ok, 0 otherwise (notably if it comes too early and the precaches are not done)
+{
+	//Get handle on target model
+	int modelnum = atoi(ED_GetProperty(ed, "model"));
+	qmodel_t* targetmodel = cl.model_precache[modelnum];
+
+	if (targetmodel == NULL)
+		return 0;
+
+	//Replace the original mdl flags by those of the entity
+	targetmodel->flags = atoi(ED_GetProperty(ed, "flags"));
+
+	//Retrieve the spawnflags
+	int spawnflags = atoi(ED_GetProperty(ed, "spawnflags"));
+
+	//Spin
+	if (spawnflags & 1)
+		targetmodel->ex_flags |= EF_SPIN;
+	else
+		targetmodel->ex_flags &= ~(EF_SPIN);
+
+	//Float
+	if (spawnflags & 2)
+		targetmodel->ex_flags |= EF_FLOAT;
+	else
+		targetmodel->ex_flags &= ~(EF_FLOAT);
+
+	//Glow
+	if (spawnflags & 4)
+		targetmodel->ex_flags |= EF_GLOW;
+	else
+		targetmodel->ex_flags &= ~(EF_GLOW | XF_TORCH_GLOW| XF_GLOW | XF_MISSILE_GLOW);
+
+	//Illuminate
+	if (spawnflags & 8)
+		targetmodel->ex_flags |= EF_ILLUMINATE;
+	else
+		targetmodel->ex_flags &= ~(EF_ILLUMINATE);
+
+	//Color
+	if (glow_color[COLOR_R] > 1 || glow_color[COLOR_G] > 1 || glow_color[COLOR_B] > 1)
+	{
+		//Color expressed as Byte [0,255]
+		targetmodel->glow_settings[COLOR_R] = glow_color[COLOR_R] / 255;
+		targetmodel->glow_settings[COLOR_G] = glow_color[COLOR_G] / 255;
+		targetmodel->glow_settings[COLOR_B] = glow_color[COLOR_B] / 255;
+	}
+	else if (glow_color[COLOR_R] != 0 || glow_color[COLOR_G] != 0 || glow_color[COLOR_B] != 0)
+	{
+		//Color expressed as Float [0,1]
+		targetmodel->glow_settings[COLOR_R] = glow_color[COLOR_R];
+		targetmodel->glow_settings[COLOR_G] = glow_color[COLOR_G];
+		targetmodel->glow_settings[COLOR_B] = glow_color[COLOR_B];
+	}
+
+	//Alpha
+	float alpha = atof(ED_GetProperty(ed, "abslight"));
+	targetmodel->glow_settings[COLOR_A] = (alpha != 0.0 ? alpha : 0.75);
+
+	//Orb offset
+	targetmodel->glow_settings[ORB_OFFSET_X] = atof(ED_GetProperty(ed, "view_ofs_x"));
+	targetmodel->glow_settings[ORB_OFFSET_Y] = atof(ED_GetProperty(ed, "view_ofs_y"));
+	targetmodel->glow_settings[ORB_OFFSET_Z] = atof(ED_GetProperty(ed, "view_ofs_z"));
+	
+	//Orb radius
+	targetmodel->glow_settings[ORB_RADIUS] = atof(ED_GetProperty(ed, "health"));
+
+	//Light style
+	targetmodel->glow_settings[LIGHT_STYLE] = atoi(ED_GetProperty(ed, "style"));
+
+	//Light radius
+	targetmodel->glow_settings[LIGHT_RADIUS] = atoi(ED_GetProperty(ed, "max_health"));
+
+	return 1;
+}
+
+//=============================================================================
 
 /*
 =============

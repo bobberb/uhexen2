@@ -491,10 +491,10 @@ static void SV_SendServerinfo (client_t *client)
 			{
 				MSG_WriteString(&client->message, *s);
 				MSG_WriteShort(&client->message, sv.models[i]->ex_flags);
-				MSG_WriteFloat(&client->message, sv.models[i]->glow_color[0]);
-				MSG_WriteFloat(&client->message, sv.models[i]->glow_color[1]);
-				MSG_WriteFloat(&client->message, sv.models[i]->glow_color[2]);
-				MSG_WriteFloat(&client->message, sv.models[i]->glow_color[3]);
+				MSG_WriteFloat(&client->message, sv.models[i]->glow_settings[COLOR_R]);
+				MSG_WriteFloat(&client->message, sv.models[i]->glow_settings[COLOR_G]);
+				MSG_WriteFloat(&client->message, sv.models[i]->glow_settings[COLOR_B]);
+				MSG_WriteFloat(&client->message, sv.models[i]->glow_settings[COLOR_A]);
 			}
 			#endif
 			i++;

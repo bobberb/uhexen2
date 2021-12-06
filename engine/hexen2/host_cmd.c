@@ -977,7 +977,7 @@ static void RestoreClients (int ClientsMode)
 			*sv_globals.time = sv.time;
 			*sv_globals.self = EDICT_TO_PROG(ent);
 			G_FLOAT(OFS_PARM0) = time_diff;
-			PR_ExecuteProgram (*sv_globals.ClientReEnter);
+			PR_ExecuteProgram (*sv_globals.ClientReEnter, "ClientReEnter");
 		}
 	}
 
@@ -1319,7 +1319,7 @@ static void Host_Class_f (void)
 
 	// Change the weapon model used
 	*sv_globals.self = EDICT_TO_PROG(host_client->edict);
-	PR_ExecuteProgram (*sv_globals.ClassChangeWeapon);
+	PR_ExecuteProgram (*sv_globals.ClassChangeWeapon, "ClassChangeWeapon");
 
 // send notification to all clients
 	MSG_WriteByte (&sv.reliable_datagram, svc_updateclass);
@@ -1554,7 +1554,7 @@ static void Host_Kill_f (void)
 
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG(sv_player);
-	PR_ExecuteProgram (*sv_globals.ClientKill);
+	PR_ExecuteProgram (*sv_globals.ClientKill, "ClientKill");
 }
 
 
@@ -1673,12 +1673,12 @@ static void Host_Spawn_f (void)
 			// call the spawn function
 			*sv_globals.time = sv.time;
 			*sv_globals.self = EDICT_TO_PROG(sv_player);
-			PR_ExecuteProgram (*sv_globals.ClientConnect);
+			PR_ExecuteProgram (*sv_globals.ClientConnect, "ClientConnect");
 
 			if ((Sys_DoubleTime() - NET_QSocketGetTime(host_client->netconnection)) <= sv.time)
 				Sys_Printf ("%s entered the game\n", host_client->name);
 
-			PR_ExecuteProgram (*sv_globals.PutClientInServer);
+			PR_ExecuteProgram (*sv_globals.PutClientInServer, "PutClientInServer");
 		}
 	}
 
@@ -1883,7 +1883,7 @@ static void Host_Create_f (void)
 
 	*sv_globals.self = EDICT_TO_PROG(ent);
 	ignore_precache = true;
-	PR_ExecuteProgram (func - pr_functions);
+	PR_ExecuteProgram (func - pr_functions, PR_GetString(func->s_name));
 	ignore_precache = false;
 }
 

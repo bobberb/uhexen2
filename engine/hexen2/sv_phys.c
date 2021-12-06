@@ -152,7 +152,7 @@ static qboolean SV_RunThink (edict_t *ent)
 	*sv_globals.time = thinktime;
 	*sv_globals.self = EDICT_TO_PROG(ent);
 	*sv_globals.other = EDICT_TO_PROG(sv.edicts);
-	PR_ExecuteProgram (ent->v.think);
+	PR_ExecuteProgram (ent->v.think, "think in SV_RunThink");
 
 	return !ent->free;
 }
@@ -177,14 +177,14 @@ static void SV_Impact (edict_t *e1, edict_t *e2)
 	{
 		*sv_globals.self = EDICT_TO_PROG(e1);
 		*sv_globals.other = EDICT_TO_PROG(e2);
-		PR_ExecuteProgram (e1->v.touch);
+		PR_ExecuteProgram (e1->v.touch, "touch");
 	}
 
 	if (e2->v.touch && e2->v.solid != SOLID_NOT)
 	{
 		*sv_globals.self = EDICT_TO_PROG(e2);
 		*sv_globals.other = EDICT_TO_PROG(e1);
-		PR_ExecuteProgram (e2->v.touch);
+		PR_ExecuteProgram (e2->v.touch, "touch");
 	}
 
 	*sv_globals.self = old_self;
@@ -573,6 +573,9 @@ static void SV_PushMove (edict_t *pusher, float movetime, qboolean update_time)
 		pusher->v.ltime += movetime;
 	SV_LinkEdict (pusher, false);
 
+	//Inky No collision check if the moving volume is liquid
+	if (pusher->v.watertype != 0) return;
+
 	// see if any solid entities are inside the final position
 	num_moved = 0;
 	check = NEXT_EDICT(sv.edicts);
@@ -646,7 +649,7 @@ static void SV_PushMove (edict_t *pusher, float movetime, qboolean update_time)
 			{
 				*sv_globals.self = EDICT_TO_PROG(pusher);
 				*sv_globals.other = EDICT_TO_PROG(check);
-				PR_ExecuteProgram (pusher->v.blocked);
+				PR_ExecuteProgram (pusher->v.blocked, "blocked");
 			}
 
 			// move back any entities we already moved
@@ -1234,7 +1237,7 @@ static void SV_PushRotate (edict_t *pusher, float movetime)
 				{
 					*sv_globals.self = EDICT_TO_PROG(pusher);
 					*sv_globals.other = EDICT_TO_PROG(check);
-					PR_ExecuteProgram (pusher->v.blocked);
+					PR_ExecuteProgram (pusher->v.blocked, "blocked");
 				}
 
 				// move back any entities we already moved
@@ -1309,7 +1312,7 @@ static void SV_Physics_Pusher (edict_t *ent)
 		*sv_globals.time = sv.time;
 		*sv_globals.self = EDICT_TO_PROG(ent);
 		*sv_globals.other = EDICT_TO_PROG(sv.edicts);
-		PR_ExecuteProgram (ent->v.think);
+		PR_ExecuteProgram (ent->v.think, "think in SV_Physics_Pusher");
 		if (ent->free)
 			return;
 	}
@@ -1671,7 +1674,7 @@ static void SV_Physics_Client (edict_t *ent, int num)
 //
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (*sv_globals.PlayerPreThink);
+	PR_ExecuteProgram (*sv_globals.PlayerPreThink, "PlayerPreThink");
 
 //
 // do a move
@@ -1735,7 +1738,7 @@ static void SV_Physics_Client (edict_t *ent, int num)
 
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (*sv_globals.PlayerPostThink);
+	PR_ExecuteProgram (*sv_globals.PlayerPostThink, "PlayerPostThink");
 }
 
 
@@ -1751,7 +1754,8 @@ Non moving objects can only think
 static void SV_Physics_None (edict_t *ent)
 {
 // regular thinking
-	SV_RunThink (ent);
+	func_t fnum = ent->v.think;
+	if (fnum && fnum < progs->numfunctions) SV_RunThink (ent);
 }
 
 
@@ -2148,7 +2152,7 @@ void SV_Physics (void)
 	*sv_globals.self = EDICT_TO_PROG(sv.edicts);
 	*sv_globals.other = EDICT_TO_PROG(sv.edicts);
 	*sv_globals.time = sv.time;
-	PR_ExecuteProgram (*sv_globals.StartFrame);
+	PR_ExecuteProgram (*sv_globals.StartFrame, "StartFrame");
 
 	//SV_CheckAllEnts ();
 
@@ -2225,7 +2229,7 @@ void SV_Physics (void)
 					{	// callback function
 						*sv_globals.self = EDICT_TO_PROG(ent2);
 						*sv_globals.other = EDICT_TO_PROG(ent);
-						PR_ExecuteProgram(ent2->v.chainmoved);
+						PR_ExecuteProgram(ent2->v.chainmoved, "chainmoved");
 					}
 
 					ent2 = PROG_TO_EDICT(ent2->v.movechain);
