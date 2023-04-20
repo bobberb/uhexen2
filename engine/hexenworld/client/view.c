@@ -1,6 +1,5 @@
 /*
  * view.c -- player eye positioning
- * $Id$
  *
  * The view is allowed to move slightly from it's true position
  * for bobbing, but if it exceeds 8 pixels linear distance
@@ -120,8 +119,8 @@ static float V_CalcBob (void)
 	// bob is proportional to simulated velocity in the xy plane
 	// (don't count Z, or jumping messes it up)
 
-	bob = sqrt(cl.simvel[0]*cl.simvel[0] + cl.simvel[1]*cl.simvel[1]) * cl_bob.value;
-	bob = bob*0.3 + bob*0.7*sin(cycle);
+	bob = Q_sqrt(cl.simvel[0]*cl.simvel[0] + cl.simvel[1]*cl.simvel[1]) * cl_bob.value;
+	bob = bob*0.3 + bob*0.7*q_sinrad(cycle);
 	if (bob > 4)
 		bob = 4;
 	else if (bob < -7)
@@ -404,7 +403,7 @@ void V_ParseDamage (void)
 // calculate view angle kicks
 //
 	VectorSubtract (from, cl.simorg, from);
-	VectorNormalize (from);
+	VectorNormalizeFast (from);
 
 	AngleVectors (cl.simangles, forward, right, up);
 
@@ -803,9 +802,12 @@ static void CalcGunAngle (void)
 	cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
 	cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
 
-	cl.viewent.angles[ROLL] -= v_idlescale.value * sin(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
-	cl.viewent.angles[PITCH] -= v_idlescale.value * sin(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
-	cl.viewent.angles[YAW] -= v_idlescale.value * sin(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
+	if (v_idlescale.value == 0)
+		return;
+
+	cl.viewent.angles[ROLL] -= v_idlescale.value * q_sinrad(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
+	cl.viewent.angles[PITCH] -= v_idlescale.value * q_sinrad(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
+	cl.viewent.angles[YAW] -= v_idlescale.value * q_sinrad(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
 }
 
 /*
@@ -845,9 +847,12 @@ Idle swaying
 */
 static void V_AddIdle (void)
 {
-	r_refdef.viewangles[ROLL] += v_idlescale.value * sin(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
-	r_refdef.viewangles[PITCH] += v_idlescale.value * sin(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
-	r_refdef.viewangles[YAW] += v_idlescale.value * sin(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
+	if (v_idlescale.value == 0)
+		return;
+
+	r_refdef.viewangles[ROLL] += v_idlescale.value * q_sinrad(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
+	r_refdef.viewangles[PITCH] += v_idlescale.value * q_sinrad(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
+	r_refdef.viewangles[YAW] += v_idlescale.value * q_sinrad(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
 
 //	cl.viewent.angles[ROLL] -= v_idlescale.value * sin(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
 //	cl.viewent.angles[PITCH] -= v_idlescale.value * sin(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;

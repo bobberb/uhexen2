@@ -1,7 +1,4 @@
-/*
- * r_misc.c --
- * $Id: r_misc.c,v 1.14 2007-07-31 21:03:27 sezero Exp $
- *
+/* r_misc.c --
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -23,7 +20,6 @@
 
 #include "quakedef.h"
 #include "r_local.h"
-
 
 /*
 ===============
@@ -284,6 +280,7 @@ void R_PrintAliasStats (void)
 }
 
 
+#if	!id68k
 /*
 ===================
 R_TransformFrustum
@@ -309,6 +306,7 @@ void R_TransformFrustum (void)
 		view_clipplanes[i].dist = DotProduct (modelorg, v2);
 	}
 }
+#endif
 
 
 #if	!id386 && !id68k
@@ -392,10 +390,10 @@ void R_SetupFrame (void)
 // don't allow cheats in multiplayer
 	if (cl.maxclients > 1)
 	{
-		Cvar_Set ("r_draworder", "0");
-		Cvar_Set ("r_fullbright", "0");
-		Cvar_Set ("r_ambient", "0");
-		Cvar_Set ("r_drawflat", "0");
+		r_draworder.integer = 0;
+		r_fullbright.integer = 0;
+		r_ambient.integer = 0;
+		r_drawflat.integer = 0;
 	}
 
 	if (r_numsurfs.integer)
@@ -424,7 +422,7 @@ void R_SetupFrame (void)
 		r_refdef.ambientlight = 0;
 
 	if (!sv.active)
-		r_draworder.integer = 0;	// don't let cheaters look behind walls
+	  r_draworder.integer = 0;		// don't let cheaters look behind walls
 
 	R_CheckVariables ();
 

@@ -1,5 +1,4 @@
 # GNU Makefile for hexen2 jsh2colour tool using GCC.
-# $Id$
 #
 # To cross-compile for Win32 on Unix: either pass the W32BUILD=1
 # argument to make, or export it.  Also see build_cross_win32.sh.
@@ -84,7 +83,7 @@ LDFLAGS += -m64 -mconsole
 LDFLAGS += -Wl,--stack,4194304
 endif
 ifeq ($(TARGET_OS),aros)
-# nothing extra is needed
+CFLAGS += -fno-common
 endif
 ifeq ($(TARGET_OS),morphos)
 CFLAGS  += -noixemul
@@ -92,8 +91,13 @@ LDFLAGS += -noixemul
 LDLIBS  += -lm
 endif
 ifeq ($(TARGET_OS),amigaos)
+# use Bebbo's GCC6 toolchain
+BEBBO_TOOLCHAIN=yes
 # crt: libnix or clib2:
 USE_CLIB2=yes
+ifeq ($(BEBBO_TOOLCHAIN),yes)
+USE_CLIB2=no
+endif
 ifeq ($(USE_CLIB2),yes)
 CRT_FLAGS=-mcrt=clib2
 else
@@ -103,7 +107,6 @@ CFLAGS  += $(CRT_FLAGS) -m68060 -m68881
 LDFLAGS += $(CRT_FLAGS) -m68060 -m68881
 LDLIBS  += -lm
 ifndef DEBUG
-CFLAGS  += -O3
 CFLAGS  += -fno-omit-frame-pointer
 endif
 # for extra missing headers

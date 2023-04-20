@@ -1,7 +1,3 @@
-/*
- * h2/weapons.hc
- */
-
 void (entity targ, entity inflictor, entity attacker, float damage) T_Damage;
 void(entity bomb, entity attacker, float rad, entity ignore) T_RadiusDamage;
 void(vector org, vector vel, float damage,entity victim) SpawnPuff;
@@ -332,7 +328,7 @@ void W_SetCurrentAmmo (void)
 	wp_deselect = 0;
 
 	self.button0=FALSE;
-	attck_cnt=0;
+//	attck_cnt=0;
 
 	if (self.oldweapon==self.weapon)		// Until we get multi skinned weapons
 		return;
@@ -1112,7 +1108,7 @@ void W_SetCurrentWeapon (void)
 		return;
 
 	self.button0=FALSE;
-	attck_cnt=0;
+//	attck_cnt=0;
 
 	if (self.oldweapon==self.weapon)		// Until we get multi skinned weapons
 		return;

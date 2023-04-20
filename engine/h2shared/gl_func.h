@@ -2,8 +2,6 @@
  * gl_func.h -- opengl function pointers
  * make sure NOT to protect this file against multiple inclusions!
  *
- * $Id$
- *
  * Copyright (C) 2001 contributors of the Anvil of Thyrion project
  * Copyright (C) 2005-2016  O.Sezer <sezero@users.sourceforge.net>
  *
@@ -43,8 +41,6 @@ __GL_FUNC_EXTERN func##_f func##_fp;
 GL_FUNCTION(void, glBindTexture, (GLenum,GLuint))
 GL_FUNCTION(void, glDeleteTextures, (GLsizei,const GLuint *))
 GL_FUNCTION(void, glGenTextures, (GLsizei,GLuint *))
-GL_FUNCTION(void, glGetTexImage, (GLenum, GLint, GLenum, GLenum, GLvoid *));
-
 GL_FUNCTION(void, glTexParameterf, (GLenum,GLenum,GLfloat))
 GL_FUNCTION(void, glTexEnvf, (GLenum,GLenum,GLfloat))
 GL_FUNCTION(void, glScalef, (GLfloat,GLfloat,GLfloat))
@@ -61,11 +57,6 @@ GL_FUNCTION(void, glFinish, (void))
 GL_FUNCTION(void, glFlush, (void))
 GL_FUNCTION(void, glClear, (GLbitfield))
 
-GL_FUNCTION(void, glFogf, (GLenum, GLfloat))
-GL_FUNCTION(void, glFogfv, (GLenum, const GLfloat *))
-GL_FUNCTION(void, glFogi, (GLenum, GLint))
-GL_FUNCTION(void, glFogiv, (GLenum, const GLint *))
-
 GL_FUNCTION(void, glVertex2f, (GLfloat,GLfloat))
 GL_FUNCTION(void, glVertex3f, (GLfloat,GLfloat,GLfloat))
 GL_FUNCTION(void, glVertex3fv, (const GLfloat *))
@@ -77,7 +68,6 @@ GL_FUNCTION(void, glColor4ub, (GLubyte,GLubyte,GLubyte,GLubyte))
 GL_FUNCTION(void, glColor4ubv, (const GLubyte *))
 GL_FUNCTION(void, glColor3ubv, (const GLubyte *))
 GL_FUNCTION(void, glColor3f, (GLfloat,GLfloat,GLfloat))
-GL_FUNCTION(void, glColor3fv, (const GLfloat *))
 GL_FUNCTION(void, glClearColor, (GLclampf,GLclampf,GLclampf,GLclampf))
 
 GL_FUNCTION(void, glAlphaFunc, (GLenum,GLclampf))

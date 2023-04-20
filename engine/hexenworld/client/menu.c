@@ -1,6 +1,5 @@
 /*
  * menu.c
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -946,7 +945,6 @@ enum
 	OGL_COLOREDEXTRA,
 	OGL_TEXFILTER,
 	OGL_ANISOTROPY,
-	OGL_SHADOWS,
 	OGL_ITEMS
 };
 
@@ -1035,9 +1033,6 @@ static void M_OpenGL_Draw (void)
 	M_Print (32 + (5 * 8), 90 + 8*OGL_ANISOTROPY,	"Anisotropy level:");
 	M_Print (232, 90 + 8*OGL_ANISOTROPY, (gl_max_anisotropy < 2) ? "N/A" :
 				Cvar_VariableString("gl_texture_anisotropy"));
-
-	M_Print (32 + (15 * 8), 90 + 8*OGL_SHADOWS,	"Shadows");
-	M_DrawCheckbox (232, 90 + 8*OGL_SHADOWS, r_shadows.integer);
 
 	// cursor
 	M_DrawCharacter (216, 90 + opengl_cursor*8, 12+((int)(realtime*4)&1));
@@ -1201,10 +1196,6 @@ static void M_OpenGL_Key (int k)
 				return;
 			}
 			Cvar_SetValue ("gl_texture_anisotropy", tex_mode);
-			break;
-
-		case OGL_SHADOWS:	// shadows
-			Cvar_Set ("r_shadows", r_shadows.integer ? "0" : "1");
 			break;
 
 		default:
@@ -2094,7 +2085,8 @@ static void M_Quit_Draw (void)
 	y += 8;
 	M_PrintWhite (16 + (10 * 8), y,  "Press y to exit");
 
-/*	y = 12;
+	/*
+	y = 12;
 	M_DrawTextBox (0, 0, 38, 23);
 	M_PrintWhite (16, y,  "        Hexen II version 0.0        ");	y += 8;
 	M_PrintWhite (16, y,  "         by Raven Software          ");	y += 16;
@@ -2111,7 +2103,7 @@ static void M_Quit_Draw (void)
 	M_PrintWhite (16, y,  "Sound Effects      Intern           ");	y += 8;
 	M_Print (16, y,       " Kevin Schilder     Josh Weier      ");	y += 16;
 	M_PrintWhite (16, y,  "          Press y to exit           ");	y += 8;
-*/
+	*/
 }
 
 //=============================================================================
@@ -2682,12 +2674,12 @@ void M_Init (void)
 		M_BuildBigCharWidth();
 	else
 	{
-		if (fs_filesize == sizeof(BigCharWidth))
+		if (fs_filesize == (long) sizeof(BigCharWidth))
 			memcpy (BigCharWidth, ptr, sizeof(BigCharWidth));
 		else
 		{
-			Con_Printf ("Unexpected file size (%lu) for %s\n",
-					(unsigned long)fs_filesize, BIGCHAR_WIDTH_FILE);
+			Con_Printf ("Unexpected file size (%ld) for %s\n",
+					fs_filesize, BIGCHAR_WIDTH_FILE);
 			M_BuildBigCharWidth();
 		}
 	}

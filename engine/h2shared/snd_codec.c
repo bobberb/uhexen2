@@ -6,8 +6,6 @@
  * Copyright (C) 2005 Stuart Dalton <badcdev@gmail.com>
  * Copyright (C) 2010-2012 O.Sezer <sezero@users.sourceforge.net>
  *
- * $Id$
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
@@ -33,6 +31,7 @@
 #include "snd_timidity.h"
 #include "snd_wildmidi.h"
 #include "snd_mikmod.h"
+#include "snd_modplug.h"
 #include "snd_xmp.h"
 #include "snd_umx.h"
 #include "snd_wave.h"
@@ -75,6 +74,9 @@ void S_CodecInit (void)
 #endif
 #ifdef USE_CODEC_UMX
 	S_CodecRegister(&umx_codec);
+#endif
+#ifdef USE_CODEC_MODPLUG
+	S_CodecRegister(&modplug_codec);
 #endif
 #ifdef USE_CODEC_MIKMOD
 	S_CodecRegister(&mikmod_codec);
@@ -127,7 +129,7 @@ void S_CodecShutdown (void)
 S_CodecOpenStream
 =================
 */
-snd_stream_t *S_CodecOpenStreamType (const char *filename, unsigned int type)
+snd_stream_t *S_CodecOpenStreamType (const char *filename, unsigned int type, qboolean loop)
 {
 	snd_codec_t *codec;
 	snd_stream_t *stream;
@@ -150,7 +152,7 @@ snd_stream_t *S_CodecOpenStreamType (const char *filename, unsigned int type)
 		Con_Printf("Unknown type for %s\n", filename);
 		return NULL;
 	}
-	stream = S_CodecUtilOpen(filename, codec);
+	stream = S_CodecUtilOpen(filename, codec, loop);
 	if (stream) {
 		if (codec->codec_open(stream))
 			stream->status = STREAM_PLAY;
@@ -159,7 +161,7 @@ snd_stream_t *S_CodecOpenStreamType (const char *filename, unsigned int type)
 	return stream;
 }
 
-snd_stream_t *S_CodecOpenStreamExt (const char *filename)
+snd_stream_t *S_CodecOpenStreamExt (const char *filename, qboolean loop)
 {
 	snd_codec_t *codec;
 	snd_stream_t *stream;
@@ -184,7 +186,7 @@ snd_stream_t *S_CodecOpenStreamExt (const char *filename)
 		Con_Printf("Unknown extension for %s\n", filename);
 		return NULL;
 	}
-	stream = S_CodecUtilOpen(filename, codec);
+	stream = S_CodecUtilOpen(filename, codec, loop);
 	if (stream) {
 		if (codec->codec_open(stream))
 			stream->status = STREAM_PLAY;
@@ -193,7 +195,7 @@ snd_stream_t *S_CodecOpenStreamExt (const char *filename)
 	return stream;
 }
 
-snd_stream_t *S_CodecOpenStreamAny (const char *filename)
+snd_stream_t *S_CodecOpenStreamAny (const char *filename, qboolean loop)
 {
 	snd_codec_t *codec;
 	snd_stream_t *stream;
@@ -208,7 +210,7 @@ snd_stream_t *S_CodecOpenStreamAny (const char *filename)
 		while (codec)
 		{
 			q_snprintf(tmp, sizeof(tmp), "%s.%s", filename, codec->ext);
-			stream = S_CodecUtilOpen(tmp, codec);
+			stream = S_CodecUtilOpen(tmp, codec, loop);
 			if (stream) {
 				if (codec->codec_open(stream)) {
 					stream->status = STREAM_PLAY;
@@ -235,7 +237,7 @@ snd_stream_t *S_CodecOpenStreamAny (const char *filename)
 			Con_Printf("Unknown extension for %s\n", filename);
 			return NULL;
 		}
-		stream = S_CodecUtilOpen(filename, codec);
+		stream = S_CodecUtilOpen(filename, codec, loop);
 		if (stream) {
 			if (codec->codec_open(stream))
 				stream->status = STREAM_PLAY;
@@ -271,6 +273,14 @@ int S_CodecRewindStream (snd_stream_t *stream)
 	return stream->codec->codec_rewind(stream);
 }
 
+int S_CodecJumpToOrder (snd_stream_t *stream, int to)
+{
+	if (stream->codec->codec_jump) {
+		return stream->codec->codec_jump(stream, to);
+	}
+	return -1;
+}
+
 int S_CodecReadStream (snd_stream_t *stream, int bytes, void *buffer)
 {
 	return stream->codec->codec_read(stream, bytes, buffer);
@@ -278,17 +288,17 @@ int S_CodecReadStream (snd_stream_t *stream, int bytes, void *buffer)
 
 /* Util functions (used by codecs) */
 
-snd_stream_t *S_CodecUtilOpen(const char *filename, snd_codec_t *codec)
+snd_stream_t *S_CodecUtilOpen(const char *filename, snd_codec_t *codec, qboolean loop)
 {
 	snd_stream_t *stream;
 	FILE *handle;
 	qboolean pak;
-	size_t length;
+	long length;
 
 	/* Try to open the file */
-	length = FS_OpenFile(filename, &handle, NULL, NULL);
+	length = FS_OpenFile(filename, &handle, NULL);
 	pak = file_from_pak;
-	if (length == (size_t)-1)
+	if (length < 0)
 	{
 		Con_DPrintf("Couldn't open %s\n", filename);
 		return NULL;
@@ -297,10 +307,11 @@ snd_stream_t *S_CodecUtilOpen(const char *filename, snd_codec_t *codec)
 	/* Allocate a stream, Z_Malloc zeroes its content */
 	stream = (snd_stream_t *) Z_Malloc(sizeof(snd_stream_t), Z_MAINZONE);
 	stream->codec = codec;
+	stream->loop = loop;
 	stream->fh.file = handle;
 	stream->fh.start = ftell(handle);
 	stream->fh.pos = 0;
-	stream->fh.length = (long)length;
+	stream->fh.length = length;
 	stream->fh.pak = stream->pak = pak;
 	q_strlcpy(stream->name, filename, MAX_QPATH);
 

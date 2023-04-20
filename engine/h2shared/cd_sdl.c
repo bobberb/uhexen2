@@ -1,6 +1,4 @@
-/*
- * cd_sdl.c
- * $Id$
+/* cd_sdl.c
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Taken from the Twilight project with modifications
@@ -22,7 +20,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-
 #include "cd_unix.h"
 
 #ifdef	__USE_SDL_CDROM__
@@ -33,7 +30,7 @@
 
 /* SDL dropped support for
    cd audio since v1.3.0 */
-#warning SDL CDAudio support disabled
+#pragma message("Warning: SDL CDAudio support disabled")
 #include "cd_null.c"
 
 #else	/* SDL_INIT_CDROM */
@@ -543,4 +540,3 @@ void CDAudio_Shutdown(void)
 #endif	/* SDL_INIT_CDROM */
 
 #endif	/* __USE_SDL_CDROM__ */
-

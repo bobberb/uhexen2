@@ -1,8 +1,4 @@
-/*
- * hwterm.c
- * $Id$
- *
- * HWTERM 1.2 HexenWorld Remote Console Terminal
+/* hwterm.c - HWTERM 1.2 HexenWorld Remote Console Terminal
  * Idea based on QTerm 1.1 by Michael Dwyer/N0ZAP (18-May-1998).
  * Made to work with HexenWorld using code from the HexenWorld
  * engine (C) Raven Software and ID Software.
@@ -25,7 +21,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,13 +31,6 @@
 #include "arch_def.h"
 #include "compiler.h"
 
-#if defined(PLATFORM_UNIX) ||		\
-    defined(PLATFORM_OS2) ||		\
-    defined(PLATFORM_AMIGA) ||		\
-    defined(__DJGPP__) ||		\
-    defined(PLATFORM_RISCOS)
-#include <sys/time.h>	/* struct timeval */
-#endif
 #define	COMPILE_TIME_ASSERT(name, x)	\
 	typedef int dummy_ ## name[(x) * 2 - 1]
 #include "net_sys.h"
@@ -393,7 +381,5 @@ int main (int argc, char *argv[])
 		}
 	}
 
-/* never reached */
-	return 0;
+	return 0;/* never reached */
 }
-

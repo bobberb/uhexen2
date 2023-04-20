@@ -1,6 +1,4 @@
-/*
- * r_part.c -- particles rendering
- * $Id$
+/* r_part.c -- particles rendering
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -21,7 +19,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-
 #include "quakedef.h"
 #include "r_local.h"
 
@@ -41,11 +38,11 @@ static int ramp6[16] = { 256, 256+1, 256+2, 256+3, 256+4, 256+5, 256+6, 256+7, 2
 static int ramp7[16] = { 384, 384+1, 384+2, 384+3, 384+4, 384+5, 384+6, 384+7, 384+8, 384+9, 384+10, 384+11, 384+12, 384+13, 384+14, 384+15 };
 static int ramp8[16] = { 175, 174, 173, 172, 171, 170, 169, 168, 167, 166, 13, 14, 15, 16, 17, 18 };
 static int ramp9[16] = { 416, 416+1, 416+2, 416+3, 416+4, 416+5, 416+6, 416+7, 416+8, 416+9, 416+10, 416+11, 416+12, 416+13, 416+14, 416+15 };
-// MISSION PACK
+/* MISSION PACK */
 static int ramp10[16] ={ 432, 432+1, 432+2, 432+3, 432+4, 432+5, 432+6, 432+7, 432+8, 432+9, 432+10, 432+11, 432+12, 432+13, 432+14, 432+15 };
 static int ramp11[8] = { 424, 424+1, 424+2, 424+3, 424+4, 424+5, 424+6, 424+7 };
 static int ramp12[8] = { 136, 137, 138, 139, 140, 141, 142, 143 };
-// HEXENWORLD
+/* HEXENWORLD */
 static int ramp13[16] ={ 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159 };
 
 //=============================================================================
@@ -131,7 +128,7 @@ void R_DarkFieldParticles (entity_t *ent)
 				p->org[1] = org[1] + j + (rand() & 3);
 				p->org[2] = org[2] + k + (rand() & 3);
 
-				VectorNormalize (dir);
+				VectorNormalizeFast (dir);
 				vel = 50 + (rand() & 63);
 				VectorScale (dir, vel, p->vel);
 			}
@@ -232,6 +229,7 @@ void R_ReadPointFile_f (void)
 }
 
 
+#if 0	/* EF_BRIGHTFIELD used this */
 /*
 ===============
 R_EntityParticles
@@ -294,6 +292,7 @@ void R_EntityParticles (entity_t *ent)
 		p->org[2] = ent->origin[2] + r_avertexnormals[i][2]*dist + forward[2]*beamlength;
 	}
 }
+#endif
 
 void R_SuccubusInvincibleParticles (entity_t *ent)
 {
@@ -303,8 +302,9 @@ void R_SuccubusInvincibleParticles (entity_t *ent)
 
 	ent_angles[0] = ent_angles[2] = 0;
 	ent_angles[1] = cl.time * 12;
-	forward[0] = cos(ent_angles[1]) * 32;
-	forward[1] = sin(ent_angles[1]) * 32;
+	q_sincosrad(ent_angles[1], &forward[1], &forward[0]);
+	forward[0] *= 32;
+	forward[1] *= 32;
 	forward[2] = 0;
 	VectorCopy(ent->origin, org);
 	org[2] += 28;
@@ -821,7 +821,7 @@ void R_LavaSplash (vec3_t org)
 				p->org[1] = org[1] + dir[1];
 				p->org[2] = org[2] + (rand() & 63);
 
-				VectorNormalize (dir);
+				VectorNormalizeFast (dir);
 				vel = 50 + (rand() & 63);
 				VectorScale (dir, vel, p->vel);
 			}
@@ -867,7 +867,7 @@ void R_TargetBallEffect (vec3_t org)
 		p->org[1] = org[1] + (rand() & 3) - 2;
 		p->org[2] = org[2] + (rand() & 3);
 
-		VectorNormalize (dir);
+		VectorNormalizeFast (dir);
 		vel = 50 + (rand() & 63);
 		VectorScale (dir, vel, p->vel);
 	}
@@ -888,7 +888,7 @@ void R_BrightFieldSource (vec3_t org)
 	vec3_t		dir;
 	float		height;
 
-	height = cos(cl.time * 4.0) * 25;
+	height = q_cosrad(cl.time * 4.0) * 25;
 
 	for (i = 0; i < 120 * host_frametime ; i++)
 	{
@@ -909,7 +909,7 @@ void R_BrightFieldSource (vec3_t org)
 	//	p->org[2] = org[2] + (rand() & 3);
 		p->org[2] = org[2] + height;
 
-		VectorNormalize (dir);
+		VectorNormalizeFast (dir);
 		vel = 70 + (rand() & 31);
 		VectorScale (dir, vel, p->vel);
 	}
@@ -933,7 +933,7 @@ void R_BrightFieldSource (vec3_t org)
 	//	p->org[2] = org[2] + (rand() & 3);
 		p->org[2] = org[2] - height;
 
-		VectorNormalize (dir);
+		VectorNormalizeFast (dir);
 		vel = 70 + (rand() & 31);
 		VectorScale (dir, vel, p->vel);
 	}
@@ -974,7 +974,7 @@ void R_TeleportSplash (vec3_t org)
 				p->org[1] = org[1] + j + (rand() & 3);
 				p->org[2] = org[2] + k + (rand() & 3);
 
-				VectorNormalize (dir);
+				VectorNormalizeFast (dir);
 				vel = 50 + (rand() & 63);
 				VectorScale (dir, vel, p->vel);
 			}
@@ -1009,8 +1009,11 @@ void R_RunQuakeEffect (vec3_t org, float distance)
 		num = rand() / RAND_MAX;
 		num2 = distance * num;
 		num = rand() / RAND_MAX;
-		p->org[0] = org[0] + cos(num * 2 * M_PI)*num2;
-		p->org[1] = org[1] + sin(num * 2 * M_PI)*num2;
+		q_sincosrad(num * 2 * M_PI, &p->org[1], &p->org[0]);
+		p->org[0] *= num2;
+		p->org[1] *= num2;
+		p->org[0] += org[0];
+		p->org[1] += org[1];
 		num = rand() / RAND_MAX;
 		p->org[2] = org[2] + 15*num;
 		p->org[2] = org[2];
@@ -1044,7 +1047,7 @@ void R_SunStaffTrail(vec3_t source, vec3_t dest)
 	float		length, size;
 
 	VectorSubtract(dest, source, vec);
-	length = VectorNormalize(vec);
+	length = VectorNormalizeFast(vec);
 	dist[0] = vec[0];
 	dist[1] = vec[1];
 	dist[2] = vec[2];
@@ -1098,13 +1101,15 @@ void RiderParticle (int count, vec3_t origin)
 		p->type = pt_rd;
 		p->ramp = 0;
 
-		VectorCopy(origin, p->org);
-
 		//num = rand() / RAND_MAX;
 		angle = (rand() % 360) / (2 * M_PI);
 		radius = 300 + (rand() % 256);
-		p->org[0] += sin(angle) * radius;
-		p->org[1] += cos(angle) * radius;
+		q_sincosrad(angle, &p->org[0], &p->org[1]);
+		p->org[0] *= radius;
+		p->org[1] *= radius;
+		p->org[0] += origin[0];
+		p->org[1] += origin[1];
+		p->org[2]  = origin[2];
 		p->org[2] += (rand() & 255) - 30;
 
 		p->vel[0] = (rand() & 255) - 127;
@@ -1128,7 +1133,7 @@ void R_RocketTrail (vec3_t start, vec3_t end, int type)
 	static int tracercount;
 
 	VectorSubtract (end, start, vec);
-	len = VectorNormalize (vec);
+	len = VectorNormalizeFast (vec);
 	dist[0] = vec[0];
 	dist[1] = vec[1];
 	dist[2] = vec[2];

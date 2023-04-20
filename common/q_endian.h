@@ -1,5 +1,4 @@
 /* q_endian.h -- endianness detection / handling
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2007-2016  O.Sezer <sezero@users.sourceforge.net>
@@ -56,9 +55,14 @@
 #  include <machine/endian.h>
 # elif defined(__OS2__) && defined(__WATCOMC__)
 #  include <machine/endian.h>
+# elif defined(__MORPHOS__)
+#  include <machine/endian.h>
 # elif defined(__amigaos__) && defined(__NEWLIB__)
 #  include <machine/endian.h>
 # elif defined(__amigaos__) && defined(__CLIB2__)
+#  if !defined(__amigaos4__)
+#  define __NO_NET_API /* have netinclude/ instead */
+#  endif
 #  include <unistd.h>
 # endif
 

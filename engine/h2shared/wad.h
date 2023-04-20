@@ -1,6 +1,5 @@
 /*
  * wad.h -- wad file loading
- * $Id: wad.h,v 1.6 2007-11-11 13:17:42 sezero Exp $
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
@@ -20,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __HX2_WAD_H
-#define __HX2_WAD_H
+#ifndef WAD_H_
+#define WAD_H_
 
 //===============
 //   TYPES
@@ -39,8 +38,6 @@
 #define	TYP_QPIC		66
 #define	TYP_SOUND		67
 #define	TYP_MIPTEX		68
-
-#define	WADFILENAME "gfx.wad" //johnfitz -- filename is now hard-coded for honesty
 
 typedef struct
 {
@@ -72,9 +69,8 @@ extern	byte		*wad_base;
 
 void	W_LoadWadFile (const char *filename);
 void	*W_GetLumpName (const char *name);
-void	*W_GetLumpNum (int num);
+lumpinfo_t	*W_GetLumpinfo (const char *name);
 
 void	SwapPic (qpic_t *pic);
 
-#endif	/* __HX2_WAD_H */
-
+#endif	/* WAD_H_ */

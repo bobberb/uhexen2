@@ -1,6 +1,5 @@
 /*
  * r_light.c
- * $Id: r_light.c,v 1.6 2007-09-14 14:10:02 sezero Exp $
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
@@ -40,7 +39,7 @@ void R_AnimateLight (void)
 	defaultLocus = locusHz[0] = (int)(cl.time*10);
 	locusHz[1] = (int)(cl.time*20);
 	locusHz[2] = (int)(cl.time*30);
-	for (i = 0; i < (mod_bsp2 ? MAX_LIGHTSTYLES : MAX_LIGHTSTYLES_OLD); i++)
+	for (i = 0; i < MAX_LIGHTSTYLES; i++)
 	{
 		if (!cl_lightstyle[i].length)
 		{ // No style def

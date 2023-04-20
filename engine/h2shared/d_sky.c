@@ -1,8 +1,6 @@
 /*
  * d_sky.c
  *
- * $Id$
- *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,6 +27,7 @@
 #define SKY_SPAN_MAX	(1 << SKY_SPAN_SHIFT)
 
 
+#if !id68k
 /*
 =================
 D_Sky_uv_To_st
@@ -60,7 +59,7 @@ static void D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
 	end[2] = vpn[2] + wu*vright[2] + wv*vup[2];
 	// ToChriS - end
 	end[2] *= 3;
-	VectorNormalize (end);
+	VectorNormalizeFast (end);
 
 	temp = skytime*skyspeed;	// TODO: add D_SetupFrame & set this there
 	*s = (int)((temp + 6*(SKYSIZE/2-1)*end[0]) * 0x10000);
@@ -149,4 +148,5 @@ void D_DrawSkyScans8 (espan_t *pspan)
 
 	} while ((pspan = pspan->pnext) != NULL);
 }
+#endif /* !id68k */
 

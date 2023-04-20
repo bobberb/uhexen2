@@ -1,12 +1,11 @@
 /*
  * gl_vidamiga.c -- GL vid component for AmigaOS & variants.
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  * Copyright (C) 2004-2005  Steven Atkinson <stevenaaus@yahoo.com>
  * Copyright (C) 2005-2016  O.Sezer <sezero@users.sourceforge.net>
- * Copyright (C) 2012-2016  Szilárd Biró <col.lawrence@gmail.com>
+ * Copyright (C) 2012-2016  Szilard Biro <col.lawrence@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -963,7 +962,7 @@ static void GL_Init (void)
 	CheckNonPowerOfTwoTextures();
 	CheckStencilBuffer();
 
-	glClearColor_fp (1,0,0,0);
+//	glClearColor_fp(1,0,0,0);
 	glCullFace_fp(GL_FRONT);
 	glEnable_fp(GL_TEXTURE_2D);
 
@@ -1444,7 +1443,7 @@ static void VID_PrepareModes (void)
 		// as the highest reported one.
 		Con_SafePrintf ("WARNING: 640x480 not found in fullscreen modes\n"
 				"Using the largest reported dimension as default\n");
-		vid_default = num_fmodes;
+		vid_default = num_fmodes-1;
 	}
 
 	// limit the windowed (standart) modes list to desktop dimensions

@@ -1,7 +1,4 @@
-/*
- * bspinfo.c
- * $Id: bspinfo.c,v 1.7 2008-01-29 12:03:13 sezero Exp $
- *
+/* bspinfo.c
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,7 +44,7 @@ int main (int argc, char **argv)
 		printf ("%s\n", source);
 
 		LoadBSPFile (source);
-		PrintBSPFileSizes ();
+		PrintBSPFileSizes (is_bsp2);
 		printf ("---------------------\n");
 	}
 

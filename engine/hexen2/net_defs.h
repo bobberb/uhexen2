@@ -1,7 +1,5 @@
-/*
- * net_defs.h -- functions and data private to the network layer
+/* net_defs.h -- functions and data private to the network layer
  * net_sys.h and its dependencies must be included before net_defs.h.
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -41,7 +39,6 @@ struct qsockaddr
 
 #define NET_HEADERSIZE		(2 * sizeof(unsigned int))
 #define NET_DATAGRAMSIZE	(MAX_DATAGRAM + NET_HEADERSIZE)
-#define NET_DATAGRAMSIZE_114	(MAX_DATAGRAM_114 + NET_HEADERSIZE)
 
 // NetHeader flags
 #define NETFLAG_LENGTH_MASK	0x0000ffff

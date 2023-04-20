@@ -1,5 +1,4 @@
 # GNU Makefile for Hexen II dedicated server (h2ded) using GCC.
-# $Id$
 #
 # Remember to "make clean" between different types of builds or targets.
 #
@@ -45,10 +44,6 @@ USE_WINSOCK2=no
 USE_SERIAL=no
 # use WatTCP (WATT-32) for DOS UDP networking?
 USE_WATT32=yes
-# use Beame & Whiteside TCP for DOS networking?
-USE_BWTCP=yes
-# use MPATH for DOS UDP networking under Win9x?
-USE_MPATH=no
 
 # include the common dirty stuff
 include $(UHEXEN2_TOP)/scripts/makefile.inc
@@ -114,12 +109,6 @@ INCLUDES += -I$(OSLIBS)/dos
 
 ifeq ($(USE_SERIAL),yes)
 CPPFLAGS+= -DUSE_SERIAL
-endif
-ifeq ($(USE_BWTCP),yes)
-CPPFLAGS+= -DUSE_BWTCP
-endif
-ifeq ($(USE_MPATH),yes)
-CPPFLAGS+= -DUSE_MPATH
 endif
 ifeq ($(USE_WATT32),yes)
 CPPFLAGS+= -DUSE_WATT32 -DWATT32_NO_OLDIES
@@ -269,6 +258,7 @@ endif
 #############################################################
 ifeq ($(TARGET_OS),aros)
 
+CFLAGS += -fno-common
 INCLUDES+= -I$(OSLIBS)/aros-$(MACH_TYPE)/misc/include
 
 endif
@@ -281,13 +271,23 @@ endif
 #############################################################
 ifeq ($(TARGET_OS),amigaos)
 
+# use Bebbo's GCC6 toolchain
+BEBBO_TOOLCHAIN=yes
+
 # crt: libnix or clib2:
 USE_CLIB2=yes
+ifeq ($(BEBBO_TOOLCHAIN),yes)
+USE_CLIB2=no
+endif
 
 ifndef DEBUG
-CFLAGS  += -O3
+ifneq ($(BEBBO_TOOLCHAIN),yes)
 # -fomit-frame-pointer / -ffast-math causes trouble with gcc2.95
 CFLAGS  += -fno-omit-frame-pointer
+else
+# these break the game with GCC6
+CFLAGS  += -fbbb=- -fno-tree-forwprop -fno-tree-ter -fno-move-loop-invariants
+endif
 endif
 ifeq ($(USE_CLIB2),yes)
 CRT_FLAGS=-mcrt=clib2
@@ -300,8 +300,10 @@ SYSLIBS += -lm
 
 # for extra missing headers
 INCLUDES += -I$(OSLIBS)/amigaos/include
-# AmiTCP SDK
+ifneq ($(BEBBO_TOOLCHAIN),yes)
+# Roadshow SDK
 NET_INC   = -I$(OSLIBS)/amigaos/netinclude
+endif
 
 endif
 # End of AmigaOS settings
@@ -333,20 +335,10 @@ SYSOBJ_SYS := sys_win.o
 endif
 ifeq ($(TARGET_OS),dos)
 DOSTCP :=
-ifeq ($(USE_BWTCP),yes)
-DOSTCP += dos/net_bw.o
-endif
-ifeq ($(USE_MPATH),yes)
-DOSTCP += dos/net_mp.o dos/mplpc.o
-endif
+SYSOBJ_NET := dos/net_dos.o dos/net_ipx.o
 ifeq ($(USE_WATT32),yes)
-DOSTCP += net_udp.o
-else
-# get inet_addr() and inet_ntoa() either from Watt-32
-# or from our local implementation
-DOSTCP += dos/dos_inet.o dos/inet_addr.o
+SYSOBJ_NET += net_udp.o
 endif
-SYSOBJ_NET := dos/net_dos.o dos/net_ipx.o $(DOSTCP)
 ifeq ($(USE_SERIAL),yes)
 SYSOBJ_NET += dos/net_ser.o
 endif
@@ -389,12 +381,12 @@ OBJECTS = \
 	common.o \
 	debuglog.o \
 	quakefs.o \
-	info_str.o \
 	cmd.o \
 	crc.o \
 	cvar.o \
 	mathlib.o \
 	zone.o \
+	hashindex.o \
 	$(SYSOBJ_NET) \
 	net_dgrm.o \
 	net_main.o \
@@ -433,7 +425,6 @@ net_main.o: INCLUDES+= $(NET_INC)
 endif
 
 # deps for *.c including another *.c
-dos/mplpc.o: ../dos/mplib.c
 dos/net_ser.o: ../dos/net_comx.c
 
 clean:

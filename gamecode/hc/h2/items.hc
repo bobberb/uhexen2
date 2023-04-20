@@ -1,13 +1,9 @@
-/*
- * $Header: /cvsroot/uhexen2/gamecode/hc/h2/items.hc,v 1.2 2007-02-07 16:57:07 sezero Exp $
- */
 void() W_SetCurrentAmmo;
 void() W_SetCurrentWeapon;
 void() ring_touch;
 void()puzzle_touch;
 /* ALL LIGHTS SHOULD BE 0 1 0 IN COLOR ALL OTHER ITEMS SHOULD
 BE .8 .3 .4 IN COLOR */
-
 
 
 void() SUB_regen =
@@ -41,8 +37,7 @@ void ItemHitFloorWait ()
 		self.nextthink=-1;
 		return;
 	}
-	else
-		thinktime self : 0.05;
+	thinktime self : 0.05;
 }
 /*
 ============
@@ -374,8 +369,7 @@ void weapon_touch (void)
 	{
 		if(other.items&self.items)
 			return;
-		else
-			leave = 1;
+		leave = 1;
 	}
 	else
 		leave = 0;

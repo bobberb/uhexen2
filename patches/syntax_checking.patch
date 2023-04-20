@@ -12,11 +12,11 @@ options, but also allowing for "+map village1" type args.
 stevenaaus@yahoo.com
 
 
-Index: engine/hexen2/sys_unix.c
-===================================================================
---- engine/hexen2/sys_unix.c	(revision 6015)
-+++ engine/hexen2/sys_unix.c	(working copy)
-@@ -601,65 +601,268 @@ static void PrintVersion (void)
+diff --git a/engine/hexen2/sys_unix.c b/engine/hexen2/sys_unix.c
+index 66797df..4e4461f 100644
+--- a/engine/hexen2/sys_unix.c
++++ b/engine/hexen2/sys_unix.c
+@@ -584,65 +584,267 @@ static void PrintVersion (void)
  }
  
  #include "snd_sys.h"
@@ -164,7 +164,6 @@ Index: engine/hexen2/sys_unix.c
 +#endif
 +/* MISCELLANEOUS */
 +	{"","","",0,"Miscellaneous"},
-+	{"-forcemem",	"",		"",	0, "Force memory option"},
 +	{"-surfcachesize","",		"",	1, "Surface cache size"},
 +	{"-protocol",	"",		"",	1, "Request different game version"},
 +	{"-particles",	"",		"",	1, "Set number of particles"},
@@ -197,12 +196,12 @@ Index: engine/hexen2/sys_unix.c
 +			break;
 +	}
 +	num_avail_options = i;
++
++	if (argc <= 1)
++		return;
  
 -	Sys_Printf ("Usage: %s [options]\n", name);
 -	while (help_strings[i])
-+	if (argc <= 1)
-+		return;
-+
 +	skip = 0;
 +
 +	for (i = 1; i < argc; i++)
@@ -315,7 +314,7 @@ Index: engine/hexen2/sys_unix.c
  }
  
  /*
-@@ -685,23 +888,7 @@ int main (int argc, char **argv)
+@@ -665,23 +867,7 @@ int main (int argc, char **argv)
  
  	PrintVersion();
  
@@ -340,4 +339,7 @@ Index: engine/hexen2/sys_unix.c
  
  	/* initialize the host params */
  	memset (&parms, 0, sizeof(parms));
+
+-- 
+1.7.1
 

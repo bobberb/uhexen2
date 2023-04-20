@@ -1,6 +1,4 @@
-/*
- * hexen2/server.h
- * $Id$
+/* hexen2/server.h
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -30,7 +28,6 @@ typedef struct
 	int			maxclientslimit;
 	struct client_s	*clients;		// [maxclients]
 	int			serverflags;	// episode completion information
-	char		info[MAX_SERVERINFO_STRING];
 	qboolean	changelevel_issued;	// cleared when at SV_SpawnServer
 } server_static_t;
 
@@ -130,17 +127,8 @@ typedef struct client_s
 	byte		current_frame, last_frame;
 	byte		current_sequence, last_sequence;
 
-	struct entity_num_state_s {
-		unsigned int num;	//ascending order, there can be gaps.
-		entity_state_t state;
-	} *previousentities;
-	size_t numpreviousentities;
-	size_t maxpreviousentities;
-
-	// mission pack, objectives strings
+// mission pack, objectives strings
 	unsigned int	info_mask, info_mask2;
-
-	qboolean refreshed;
 } client_t;
 
 
@@ -321,4 +309,3 @@ void SV_SaveEffects (FILE *FH);
 void SV_LoadEffects (FILE *FH);
 
 #endif	/* __HX2_SERVER_H */
-

@@ -1,7 +1,5 @@
 /*
  * winquake.h -- Windows-specific Quake header file
- * $Id$
- *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -54,7 +52,6 @@ extern	int		global_nCmdShow;
 #endif
 
 
-extern qboolean		DDActive;
 extern qboolean		dinput_init;
 
 extern HWND		mainwindow;
@@ -70,6 +67,11 @@ extern HWND		hwnd_dialog;
 #endif
 
 LRESULT CDAudio_MessageHandler (HWND, UINT, WPARAM, LPARAM);
+
+#define WM_MSTREAM_UPDATEVOLUME  (WM_USER + 101)
+#define WM_MSTREAM_UPDATEVOLUMES (WM_USER + 102)
+void MIDI_SetChannelVolume(DWORD chn, DWORD percent);
+void MIDI_SetAllChannelVolumes (DWORD percent);
 
 #endif	/* __WINQUAKE_H */
 

@@ -1,6 +1,5 @@
 /*
  * snd_dma.c -- main control for any streaming sound output device
- * $Id$
  *
  * Copyright (C) 1996-2001 Id Software, Inc.
  * Copyright (C) 2010-2011 O. Sezer <sezero@users.sourceforge.net>
@@ -22,6 +21,7 @@
  */
 
 #include "quakedef.h"
+#include "hashindex.h"
 #include "cfgfile.h"
 #include "snd_sys.h"
 #include "snd_codec.h"
@@ -74,12 +74,13 @@ portable_samplepair_t	s_rawsamples[MAX_RAW_SAMPLES];
 #define	MAX_SFX		512
 static sfx_t	*known_sfx = NULL;	// hunk allocated [MAX_SFX]
 static int	num_sfx;
+static hashindex_t	hash_sfx;
 
 static sfx_t	*ambient_sfx[NUM_AMBIENTS];
 
 static qboolean	sound_started = false;
 
-int		desired_speed = 44100;
+int		desired_speed = 22050;
 int		desired_bits = 16;
 int		desired_channels = 2;
 const int	tryrates[] = { 11025, 22050, 44100, 48000, 96000, 16000, 24000, 8000 };
@@ -300,6 +301,7 @@ void S_Init (void)
 
 	known_sfx = (sfx_t *) Hunk_AllocName (MAX_SFX*sizeof(sfx_t), "sfx_t");
 	num_sfx = 0;
+	Hash_Allocate (&hash_sfx, MAX_SFX);
 
 	snd_initialized = true;
 
@@ -352,7 +354,7 @@ S_FindName
 */
 static sfx_t *S_FindName (const char *name)
 {
-	int		i;
+	int		i, key;
 	sfx_t	*sfx;
 
 	if (!name)
@@ -362,18 +364,20 @@ static sfx_t *S_FindName (const char *name)
 		Sys_Error ("Sound name too long: %s", name);
 
 // see if already loaded
-	for (i = 0; i < num_sfx; i++)
+	key = Hash_GenerateKeyString (&hash_sfx, name, true);
+	for (i = Hash_First(&hash_sfx, key); i != -1; i = Hash_Next(&hash_sfx, i))
 	{
-		if (!strcmp(known_sfx[i].name, name))
-		{
-			return &known_sfx[i];
+		sfx = &known_sfx[i];
+		if (!strcmp(name, sfx->name)) {
+			return sfx;
 		}
 	}
 
 	if (num_sfx == MAX_SFX)
 		Sys_Error ("%s: out of sfx_t", __thisfunc__);
 
-	sfx = &known_sfx[i];
+	Hash_Add (&hash_sfx, key, num_sfx);
+	sfx = &known_sfx[num_sfx];
 	q_strlcpy (sfx->name, name, MAX_QPATH);
 
 	num_sfx++;
@@ -494,7 +498,7 @@ void SND_Spatialize (channel_t *ch)
 
 // calculate stereo seperation and distance attenuation
 	VectorSubtract(ch->origin, listener_origin, source_vec);
-	dist = VectorNormalize(source_vec) * ch->dist_mult;
+	dist = VectorNormalizeFast(source_vec) * ch->dist_mult;
 	dot = DotProduct(listener_right, source_vec);
 
 	if (shm->channels == 1)

@@ -1,7 +1,6 @@
 /*
  * draw.c
  * This is the only file outside the refresh that touches the vid buffer.
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -24,6 +23,7 @@
 
 
 #include "quakedef.h"
+#include "hashindex.h"
 #include "r_shared.h"
 
 typedef struct {
@@ -60,6 +60,7 @@ typedef struct cachepic_s
 #define	MAX_CACHED_PICS		256
 static cachepic_t	menu_cachepics[MAX_CACHED_PICS];
 static int		menu_numcachepics;
+static hashindex_t	hash_cachepics;
 
 
 static void Draw_PicCheckError (void *ptr, const char *name)
@@ -82,17 +83,22 @@ Draw_CachePic
 qpic_t	*Draw_CachePic (const char *path)
 {
 	cachepic_t	*pic;
-	int			i;
+	int			i, key;
 	qpic_t		*dat;
 
-	for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++)
+	key = Hash_GenerateKeyString (&hash_cachepics, path, true);
+	for (i = Hash_First(&hash_cachepics, key); i != -1; i = Hash_Next(&hash_cachepics, i))
+	{
+		pic = &menu_cachepics[i];
 		if (!strcmp (path, pic->name))
 			break;
-
-	if (i == menu_numcachepics)
+	}
+	if (i == -1)
 	{
 		if (menu_numcachepics == MAX_CACHED_PICS)
 			Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
+		Hash_Add (&hash_cachepics, key, menu_numcachepics);
+		pic = &menu_cachepics[menu_numcachepics];
 		menu_numcachepics++;
 		q_strlcpy (pic->name, path, MAX_QPATH);
 	}
@@ -104,7 +110,7 @@ qpic_t	*Draw_CachePic (const char *path)
 //
 // load the pic from disk
 //
-	FS_LoadCacheFile (path, &pic->cache, NULL, NULL);
+	FS_LoadCacheFile (path, &pic->cache, NULL);
 
 	dat = (qpic_t *)pic->cache.data;
 	Draw_PicCheckError (dat, path);
@@ -125,17 +131,22 @@ static const char ls_path[] = "gfx/menu/loading.lmp";
 qpic_t	*Draw_CacheLoadingPic (void)
 {
 	cachepic_t	*pic;
-	int			i;
+	int			i, key;
 	qpic_t		*dat;
 
-	for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++)
+	key = Hash_GenerateKeyString (&hash_cachepics, ls_path, true);
+	for (i = Hash_First(&hash_cachepics, key); i != -1; i = Hash_Next(&hash_cachepics, i))
+	{
+		pic = &menu_cachepics[i];
 		if (!strcmp (ls_path, pic->name))
 			break;
-
-	if (i == menu_numcachepics)
+	}
+	if (i == -1)
 	{
 		if (menu_numcachepics == MAX_CACHED_PICS)
 			Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
+		Hash_Add (&hash_cachepics, key, menu_numcachepics);
+		pic = &menu_cachepics[menu_numcachepics];
 		menu_numcachepics++;
 		q_strlcpy (pic->name, ls_path, MAX_QPATH);
 	}
@@ -147,7 +158,7 @@ qpic_t	*Draw_CacheLoadingPic (void)
 //
 // load the pic from disk
 //
-	FS_LoadCacheFile (ls_path, &pic->cache, NULL, NULL);
+	FS_LoadCacheFile (ls_path, &pic->cache, NULL);
 
 	dat = (qpic_t *)pic->cache.data;
 	Draw_PicCheckError (dat, ls_path);
@@ -162,7 +173,6 @@ qpic_t	*Draw_CacheLoadingPic (void)
 
 	return dat;
 }
-
 #endif	/* !DRAW_PROGRESSBARS */
 
 
@@ -176,19 +186,23 @@ New function by Pa3PyX; will load a pic resizing it (needed for intermissions)
 qpic_t *Draw_CachePicResize (const char *path, int targetWidth, int targetHeight)
 {
 	cachepic_t *pic;
-	int i, j;
+	int i, j, key;
 	int sourceWidth, sourceHeight;
 	qpic_t *dat, *temp;
 
-	for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++)
+	key = Hash_GenerateKeyString (&hash_cachepics, path, true);
+	for (i = Hash_First(&hash_cachepics, key); i != -1; i = Hash_Next(&hash_cachepics, i))
 	{
-		if (!strcmp(path, pic->name))
+		pic = &menu_cachepics[i];
+		if (!strcmp (path, pic->name))
 			break;
 	}
-	if (i == menu_numcachepics)
+	if (i == -1)
 	{
 		if (menu_numcachepics == MAX_CACHED_PICS)
 			Sys_Error("menu_numcachepics == MAX_CACHED_PICS");
+		Hash_Add (&hash_cachepics, key, menu_numcachepics);
+		pic = &menu_cachepics[menu_numcachepics];
 		menu_numcachepics++;
 		q_strlcpy(pic->name, path, MAX_QPATH);
 	}
@@ -198,10 +212,10 @@ qpic_t *Draw_CachePicResize (const char *path, int targetWidth, int targetHeight
 		if (targetWidth == dat->width && targetHeight == dat->height)
 			return dat;
 		else
-			Cache_Free (&pic->cache, true);
+			Cache_Free (&pic->cache);
 	}
 	// Allocate original data temporarily
-	temp = (qpic_t *)FS_LoadTempFile(path, NULL, NULL);
+	temp = (qpic_t *)FS_LoadTempFile(path, NULL);
 	Draw_PicCheckError (temp, path);
 	SwapPic(temp);
 	/* I wish Carmack would thought of something more intuitive than
@@ -257,14 +271,17 @@ void Draw_Init (void)
 
 	if (draw_chars)
 		Z_Free (draw_chars);
-	draw_chars = FS_LoadZoneFile ("gfx/menu/conchars.lmp", Z_SECZONE, NULL, NULL);
+	draw_chars = FS_LoadZoneFile ("gfx/menu/conchars.lmp", Z_SECZONE, NULL);
 	Draw_PicCheckError (draw_chars, "gfx/menu/conchars.lmp");
+	if (fs_filesize != 256*128) {
+		Sys_Error ("gfx/menu/conchars.lmp: bad size.");
+	}
 
 	draw_smallchars = (byte *) W_GetLumpName("tinyfont");
 
 	if (draw_backtile)
 		Z_Free (draw_backtile);
-	draw_backtile = (qpic_t	*)FS_LoadZoneFile ("gfx/menu/backtile.lmp", Z_SECZONE, NULL, NULL);
+	draw_backtile = (qpic_t	*)FS_LoadZoneFile ("gfx/menu/backtile.lmp", Z_SECZONE, NULL);
 	Draw_PicCheckError (draw_backtile, "gfx/menu/backtile.lmp");
 	SwapPic (draw_backtile);
 
@@ -272,6 +289,9 @@ void Draw_Init (void)
 	r_rectdesc.height = draw_backtile->height;
 	r_rectdesc.ptexbytes = draw_backtile->data;
 	r_rectdesc.rowbytes = draw_backtile->width;
+
+	if (!draw_reinit)
+		Hash_Allocate (&hash_cachepics, MAX_CACHED_PICS);
 }
 
 /*
@@ -293,7 +313,6 @@ void Draw_ReInit (void)
 	draw_reinit = true;
 
 	W_LoadWadFile ("gfx.wad");
-	//TexMgr_Init(); //johnfitz
 	Draw_Init();
 	SCR_Init();
 	Sbar_Init();

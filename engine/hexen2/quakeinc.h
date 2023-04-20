@@ -2,7 +2,6 @@
  * quakeinc.h -- primary header for client and server
  * FIXME:	kill this in the future and make each C
  *		file include only the necessary headers.
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
@@ -48,7 +47,6 @@
 #include "printsys.h"
 #include "common.h"
 #include "quakefs.h"
-#include "info_str.h"
 #include "bspfile.h"
 #include "zone.h"
 #include "mathlib.h"
@@ -71,8 +69,6 @@
 #include "world.h"
 
 #else	/* client */
-//#include "SDL.h"
-#include "SDL_opengl.h"
 #include "console.h"
 #include "wad.h"
 #include "vid.h"
@@ -87,8 +83,6 @@
 #if defined(GLQUAKE)
 #include "glheader.h"
 #include "gl_model.h"
-#include "image.h"	//johnfitz
-#include "gl_texmgr.h"	//johnfitz
 #include "glquake.h"
 #else	/* sw client */
 #include "model.h"

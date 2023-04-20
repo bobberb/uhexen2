@@ -1,6 +1,4 @@
-/*
- * r_part.c -- particles rendering
- * $Id$
+/* r_part.c -- particles rendering
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -20,7 +18,6 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-
 
 #include "quakedef.h"
 #include "r_local.h"
@@ -51,7 +48,7 @@ static int ramp7[16] = { 384, 384+1, 384+2, 384+3, 384+4, 384+5, 384+6, 384+7, 3
 static int ramp8[16] = { 175, 174, 173, 172, 171, 170, 169, 168, 167, 166, 13, 14, 15, 16, 17, 18 };
 //static int ramp9[16] ={272, 272+1, 272+2, 272+3, 272+4, 272+5, 272+6, 272+7, 272+8, 272+9, 272+10, 272+11, 272+12, 272+13, 272+14, 272+15 };
 static int ramp9[16] = { 416, 416+1, 416+2, 416+3, 416+4, 416+5, 416+6, 416+7, 416+8, 416+9, 416+10, 416+11, 416+12, 416+13, 416+14, 416+15 };
-// MISSION PACK
+/* MISSION PACK */
 static int ramp10[16] ={ 432, 432+1, 432+2, 432+3, 432+4, 432+5, 432+6, 432+7, 432+8, 432+9, 432+10, 432+11, 432+12, 432+13, 432+14, 432+15 };
 static int ramp11[8] = { 424, 424+1, 424+2, 424+3, 424+4, 424+5, 424+6, 424+7 };
 static int ramp12[8] = { 136, 137, 138, 139, 140, 141, 142, 143 };
@@ -144,7 +141,7 @@ void R_DarkFieldParticles (entity_t *ent)
 				p->org[1] = org[1] + j + (rand() & 3);
 				p->org[2] = org[2] + k + (rand() & 3);
 
-				VectorNormalize (dir);
+				VectorNormalizeFast (dir);
 				vel = 50 + (rand() & 63);
 				VectorScale (dir, vel, p->vel);
 			}
@@ -206,10 +203,10 @@ void R_ReadPointFile_f (void)
 	if (cls.state != ca_connected)
 		return; // need an active map.
 
-	color = (byte)Cvar_VariableValue("leak_color");
+	color = (byte)leak_color.integer;
 	q_snprintf (name, sizeof(name), "maps/%s.pts", cl.mapname);
 
-	FS_OpenFile (name, &f, NULL, NULL);
+	FS_OpenFile (name, &f, NULL);
 	if (!f)
 	{
 		Con_Printf ("couldn't open %s\n", name);
@@ -245,6 +242,7 @@ void R_ReadPointFile_f (void)
 }
 
 
+#if 0	/* EF_BRIGHTFIELD used this */
 /*
 ===============
 R_EntityParticles
@@ -307,6 +305,7 @@ void R_EntityParticles (entity_t *ent)
 		p->org[2] = ent->origin[2] + r_avertexnormals[i][2]*dist + forward[2]*beamlength;
 	}
 }
+#endif
 
 
 /*
@@ -608,7 +607,6 @@ void R_RunParticleEffect2 (vec3_t org, vec3_t dmin, vec3_t dmax, int color, ptyp
 		p->ramp = 0;
 		for (j = 0; j < 3; j++)
 		{
-		//	num = (rand() & 0x7fff) / ((float)0x7fff);
 			num = rand() * (1.0 / RAND_MAX);
 			p->org[j] = org[j] + ((rand() & 8) - 4); //added randomness to org
 			p->vel[j] = dmin[j] + ((dmax[j] - dmin[j]) * num);
@@ -641,7 +639,6 @@ void R_RunParticleEffect3 (vec3_t org, vec3_t box, int color, ptype_t effect, in
 		p->ramp = 0;
 		for (j = 0; j < 3; j++)
 		{
-		//	num = (rand() & 0x7fff) / ((float)0x7fff);
 			num = rand() * (1.0 / RAND_MAX);
 			p->org[j] = org[j] + ((rand() & 15) - 8);
 			p->vel[j] = (box[j] * num * 2) - box[j];
@@ -674,7 +671,6 @@ void R_RunParticleEffect4 (vec3_t org, float radius, int color, ptype_t effect, 
 		p->ramp = 0;
 		for (j = 0; j < 3; j++)
 		{
-		//	num = (rand() & 0x7fff) / ((float)0x7fff);
 			num = rand() * (1.0 / RAND_MAX);
 			p->org[j] = org[j] + ((rand() & 15) - 8);
 			p->vel[j] = (radius * num * 2) - radius;
@@ -717,7 +713,7 @@ void R_LavaSplash (vec3_t org)
 				p->org[1] = org[1] + dir[1];
 				p->org[2] = org[2] + (rand() & 63);
 
-				VectorNormalize (dir);
+				VectorNormalizeFast (dir);
 				vel = 50 + (rand() & 63);
 				VectorScale (dir, vel, p->vel);
 			}
@@ -760,7 +756,7 @@ void R_TeleportSplash (vec3_t org)
 				p->org[1] = org[1] + j + (rand() & 3);
 				p->org[2] = org[2] + k + (rand() & 3);
 
-				VectorNormalize (dir);
+				VectorNormalizeFast (dir);
 				vel = 50 + (rand() & 63);
 				VectorScale (dir, vel, p->vel);
 			}
@@ -791,25 +787,22 @@ void R_RunQuakeEffect (vec3_t org, float distance)
 		p->type = pt_quake;
 		p->ramp = 0;
 
-	//	num = (rand() & 0x7fff) / ((float)0x7fff);
 		num = rand() * (1.0 / RAND_MAX);
 		num2 = distance * num;
-	//	num = (rand() & 0x7fff) / ((float)0x7fff);
 		num = rand() * (1.0 / RAND_MAX);
-		p->org[0] = org[0] + cos(num * 2 * M_PI)*num2;
-		p->org[1] = org[1] + sin(num * 2 * M_PI)*num2;
-	//	num = (rand() & 0x7fff) / ((float)0x7fff);
+		q_sincosrad(num * 2 * M_PI, &p->org[0], &p->org[1]);
+		p->org[0] *= num2;
+		p->org[1] *= num2;
+		p->org[0] += org[0];
+		p->org[1] += org[1];
 		num = rand() * (1.0 / RAND_MAX);
 		p->org[2] = org[2] + 15*num;
 		p->org[2] = org[2];
 
-	//	num = (rand() & 0x7fff) / ((float)0x7fff);
 		num = rand() * (1.0 / RAND_MAX);
 		p->vel[0] = (num * 40) - 20;
-	//	num = (rand() & 0x7fff) / ((float)0x7fff);
 		num = rand() * (1.0 / RAND_MAX);
 		p->vel[1] = (num * 40) - 20;
-	//	num = (rand() & 0x7fff) / ((float)0x7fff);
 		num = rand() * (1.0 / RAND_MAX);
 		p->vel[2] = 65*num + 80;
 	}
@@ -829,7 +822,7 @@ void R_SunStaffTrail(vec3_t source, vec3_t dest)
 	float		length, size;
 
 	VectorSubtract(dest, source, vec);
-	length = VectorNormalize(vec);
+	length = VectorNormalizeFast(vec);
 	dist[0] = vec[0];
 	dist[1] = vec[1];
 	dist[2] = vec[2];
@@ -882,12 +875,14 @@ void RiderParticle (int count, vec3_t origin)
 		p->type = pt_rd;
 		p->ramp = 0;
 
-		VectorCopy(origin, p->org);
-
 		angle = (rand() % 360) / (2 * M_PI);
 		radius = 300 + (rand() & 255);
-		p->org[0] += sin(angle) * radius;
-		p->org[1] += cos(angle) * radius;
+		q_sincosrad(angle, &p->org[0], &p->org[1]);
+		p->org[0] *= radius;
+		p->org[1] *= radius;
+		p->org[0] += origin[0];
+		p->org[1] += origin[1];
+		p->org[2]  = origin[2];
 		p->org[2] += (rand() & 255) - 30;
 
 		p->vel[0] = (rand() & 255) - 127;
@@ -915,12 +910,14 @@ void GravityWellParticle (int count, vec3_t origin, int color)
 		p->type = pt_gravwell;
 		p->ramp = 0;
 
-		VectorCopy(origin, p->org);
-
 		angle = (rand() % 360) / (2 * M_PI);
 		radius = 300 + (rand() & 255);
-		p->org[0] += sin(angle) * radius;
-		p->org[1] += cos(angle) * radius;
+		q_sincosrad(angle, &p->org[0], &p->org[1]);
+		p->org[0] *= radius;
+		p->org[1] *= radius;
+		p->org[0] += origin[0];
+		p->org[1] += origin[1];
+		p->org[2]  = origin[2];
 		p->org[2] += (rand() & 255) - 30;
 
 		p->vel[0] = (rand() & 255) - 127;
@@ -944,7 +941,7 @@ void R_RocketTrail (vec3_t start, vec3_t end, int type)
 	static int tracercount;
 
 	VectorSubtract (end, start, vec);
-	len = VectorNormalize (vec);
+	len = VectorNormalizeFast (vec);
 	dist[0] = vec[0];
 	dist[1] = vec[1];
 	dist[2] = vec[2];
@@ -1258,7 +1255,7 @@ void R_SnowEffect (vec3_t org1, vec3_t org2, int flags, vec3_t alldir, int count
 	particle_t	*p;
 	mleaf_t		*l;
 
-	count *= Cvar_VariableValue("snow_active");
+	count *= snow_active.integer;
 	for (i = 0; i < count; i++)
 	{
 		p = AllocParticle();
@@ -1443,7 +1440,9 @@ void R_DrawParticles (void)
 	glDisable_fp (GL_BLEND);
 	glTexEnvf_fp(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 }
+
 #else	/* !GLQUAKE */
+
 void R_DrawParticles (void)
 {
 	particle_t	*p;
@@ -1641,7 +1640,7 @@ void R_UpdateParticles (void)
 			// increments of 4 & check solid
 				mleaf_t		*l;
 
-				if (Cvar_VariableValue("snow_flurry") == 1)
+				if (snow_flurry.integer == 1)
 				{
 				    if (rand() & 31)
 				    {
@@ -1651,7 +1650,7 @@ void R_UpdateParticles (void)
 					snow_speed = p->vel[0] * p->vel[0] +
 							p->vel[1] * p->vel[1] +
 							p->vel[2] * p->vel[2];
-					snow_speed = sqrt(snow_speed);
+					snow_speed = Q_sqrt(snow_speed);
 
 					VectorCopy(p->vel, save_vel);
 
@@ -1660,7 +1659,7 @@ void R_UpdateParticles (void)
 					if ((rand() & 7) || p->vel[2] > 10)
 						save_vel[2] += ( (rand() * (2.0 / RAND_MAX)) - 1 ) * 30;
 
-					VectorNormalize(save_vel);
+					VectorNormalizeFast(save_vel);
 					VectorScale(save_vel, snow_speed, p->vel);	// retain speed but use new dir
 				    }
 				}

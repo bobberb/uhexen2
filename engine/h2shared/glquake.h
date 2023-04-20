@@ -1,6 +1,4 @@
-/*
- * glquake.h -- common glquake header
- * $Id$
+/* glquake.h -- common glquake header
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2005-2012  O.Sezer <sezero@users.sourceforge.net>
@@ -31,8 +29,13 @@
 #define MAX_GLTEXTURES		2048
 #define MAX_EXTRA_TEXTURES	156	/* 255-100+1 */
 #define	MAX_CACHED_PICS		256
-#define	MAX_LIGHTMAPS		512
-#define MAX_SURFACE_LIGHTMAP	255 //maximum allowed size of a surface vanilla limit was 16+1(for linear sampling), although glquake used 18 for some reason. bigger values allow for less surfaces in certain places
+#define	MAX_LIGHTMAPS		128
+
+/* maximum allowed size of a surface
+ * vanilla limit was 16+1 (for linear sampling),
+ * although glquake used 18 for some reason.
+ * bigger values allow for less surfaces in certain places. */
+#define	MAX_SURFACE_LIGHTMAP	255
 
 #define	GL_UNUSED_TEXTURE	(~(GLuint)0)
 
@@ -60,8 +63,6 @@
 #define SKYSHIFT		7
 #define	SKYSIZE			(1 << SKYSHIFT)
 #define SKYMASK			(SKYSIZE - 1)
-
-extern int gl_warpimagesize; //johnfitz -- for water warp
 
 
 /* ====================================================================
@@ -115,7 +116,7 @@ extern unsigned int	SHIFT_a;
 /* texture types */
 typedef struct
 {
-	gltexture_t *gltexture;
+	GLuint		texnum;
 	float	sl, tl, sh, th;
 } glpic_t;
 
@@ -126,7 +127,6 @@ typedef struct cachepic_s
 	byte		padding[32];	/* for appended glpic */
 } cachepic_t;
 
-/*
 typedef struct
 {
 	GLuint		texnum;
@@ -136,23 +136,12 @@ typedef struct
 	unsigned short	crc;
 } gltexture_t;
 
+/* texture filters */
 typedef struct
 {
 	const char	*name;
 	int	minimize, maximize;
 } glmode_t;
-*/
-/* texture filters */
-typedef struct
-{
-	int	magfilter;
-	int minfilter;
-	char *name;
-} glmode_t;
-extern glmode_t glmodes[6];
-#define NUM_GLMODES 6
-extern int glmode_idx; /* trilinear */
-
 
 /* particle enums and types: note that hexen2 and
    hexenworld versions of these are different!! */
@@ -164,26 +153,13 @@ extern int glmode_idx; /* trilinear */
    ================================================================== */
 
 /* gl texture objects */
-//extern	GLuint		currenttexture;
-extern GLuint	currenttexture[3];
-//extern	GLuint		particletexture;
-extern gltexture_t *particletexture, *particletexture1, *particletexture2, *particletexture3, *particletexture4; //johnfitz
-extern gltexture_t *lightmap_textures[MAX_LIGHTMAPS]; //johnfitz -- changed to an array
-extern	gltexture_t *playertextures[MAX_CLIENTS];
-extern	gltexture_t *gl_extra_textures[MAX_EXTRA_TEXTURES];	// generic textures for models
-extern int gl_lightmap_format, lightmap_bytes;
-
-// Multitexture
-extern	qboolean	mtexenabled;
-extern	qboolean	gl_mtexable;
-//extern PFNGLMULTITEXCOORD2FARBPROC  glMultiTexCoord2fARB_fp;
-//extern PFNGLACTIVETEXTUREARBPROC    glActiveTextureARB_fp;
-extern PFNGLCLIENTACTIVETEXTUREARBPROC	GL_ClientActiveTextureFunc;
-extern GLint		gl_max_texture_units; //ericw
-
+extern	GLuint		currenttexture;
+extern	GLuint		particletexture;
+extern	GLuint		lightmap_textures[MAX_LIGHTMAPS];
+extern	GLuint		playertextures[MAX_CLIENTS];
+extern	GLuint		gl_extra_textures[MAX_EXTRA_TEXTURES];	// generic textures for models
 
 /* the GL_Bind macro */
-/*
 #define GL_Bind(texnum)							\
 	do {								\
 		if (currenttexture != (texnum))				\
@@ -192,14 +168,20 @@ extern GLint		gl_max_texture_units; //ericw
 			glBindTexture_fp(GL_TEXTURE_2D,currenttexture);	\
 		}							\
 	} while (0)
-*/
+
+extern	int		gl_texlevel;
+extern	int		numgltextures;
 extern	qboolean	flush_textures;
+extern	gltexture_t	gltextures[MAX_GLTEXTURES];
 
 extern	int		gl_filter_idx;
 extern	float		gldepthmin, gldepthmax;
 extern	int		glx, gly, glwidth, glheight;
 
+extern	glmode_t	gl_texmodes[NUM_GL_FILTERS];
+
 /* hardware-caps related globals */
+extern	GLint		gl_max_size;
 extern	GLfloat		gl_max_anisotropy;
 extern	qboolean	gl_tex_NPOT;
 extern	qboolean	is_3dfx;
@@ -220,7 +202,6 @@ extern	vrect_t		scr_vrect;
 extern	mleaf_t		*r_viewleaf, *r_oldviewleaf;
 extern	float		r_world_matrix[16];
 extern	entity_t	r_worldentity;
-extern	entity_t	*currententity;
 extern	qboolean	r_cache_thrash;		// compatability
 extern	vec3_t		modelorg, r_entorigin;
 extern	int		r_visframecount;	// ??? what difs?
@@ -250,13 +231,14 @@ extern	cvar_t	r_skyalpha;
 extern	cvar_t	r_dynamic;
 extern	cvar_t	r_novis;
 extern	cvar_t	r_wholeframe;
+extern	cvar_t	r_clearcolor;
 extern	cvar_t	r_texture_external;
 
 #if defined(H2W)
 extern	cvar_t	r_netgraph;
 extern	cvar_t	r_entdistance;
 extern	cvar_t	r_teamcolor;
-#endif	/* H2W */
+#endif
 
 extern	cvar_t	gl_playermip;
 
@@ -282,8 +264,6 @@ extern	cvar_t	gl_coloredlight;
 extern	cvar_t	gl_colored_dynamic_lights;
 extern	cvar_t	gl_extra_dynamic_lights;
 extern	cvar_t	gl_lightmapfmt;
-//extern	cvar_t	gl_max_size;
-extern	cvar_t	gl_farclip;
 
 /* other globals */
 extern	int		gl_coloredstatic;	/* value of gl_coloredlight stored at level start */
@@ -328,17 +308,13 @@ GLuint GL_LoadTexture (const char *identifier, byte *data,
 #define	TEX_HOLEY		(1 << 14)	/* Solid model with color 0			*/
 #define	TEX_SPECIAL_TRANS	(1 << 15)	/* Translucency through the particle table	*/
 
-gltexture_t* GL_LoadPicTexture (qpic_t *pic);
-#ifdef H2W
+GLuint GL_LoadPicTexture (qpic_t *pic);
 void D_ClearOpenGLTextures (int last_tex);
-#endif
 
 qboolean R_CullBox (vec3_t mins, vec3_t maxs);
-qboolean R_CullModelForEntity(entity_t *e);
-
-void R_DrawBrushModel (entity_t *e, qboolean Translucent, qboolean unlit);
+void R_DrawBrushModel (entity_t *e, qboolean Translucent);
 void R_DrawWorld (void);
-void R_RenderBrushPoly (entity_t *e, msurface_t *fa, qboolean override, qboolean unlit);
+void R_RenderBrushPoly (entity_t *e, msurface_t *fa, qboolean override);
 void R_RotateForEntity (entity_t *e);
 void R_StoreEfrags (efrag_t **ppefrag);
 
@@ -346,33 +322,12 @@ void R_StoreEfrags (efrag_t **ppefrag);
 void R_LoadSkys (void);
 void R_DrawSkyBox (void);
 void R_ClearSkyBox (void);
-#endif	/* QUAKE2 */
-
-void Sky_Init(void);
-void Sky_DrawSky(void);
-void Sky_NewMap(void);
-void Sky_LoadTexture(texture_t *mt);
-void Sky_LoadSkyBox(const char *name);
-
-//johnfitz -- fog functions called from outside gl_fog.c
-void Fog_ParseServerMessage(void);
-float *Fog_GetColor(void);
-float Fog_GetDensity(void);
-void Fog_EnableGFog(void);
-void Fog_DisableGFog(void);
-void Fog_StartAdditive(void);
-void Fog_StopAdditive(void);
-void Fog_SetupFrame(void);
-void Fog_NewMap(void);
-void Fog_Init(void);
-void Fog_SetupState(void);
-
-void GL_SubdivideSurface (msurface_t *fa);
+#endif
+void GL_SubdivideSurface (qmodel_t *m, msurface_t *fa);
 void EmitWaterPolys (msurface_t *fa);
 void EmitBothSkyLayers (msurface_t *fa);
 void R_DrawSkyChain (msurface_t *s);
 void R_DrawWaterSurfaces (void);
-GLfloat Fog_GetDensity(void);
 
 void R_RenderDlights (void);
 void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
@@ -391,9 +346,7 @@ void R_InitNetgraphTexture (void);
 #endif
 
 void R_ReadPointFile_f (void);
-void R_TranslatePlayerSkin(int playernum);
-void R_TranslateNewPlayerSkin(int playernum);  //johnfitz -- this handles cases when the actual texture changes
+void R_TranslatePlayerSkin (int playernum);
 
-void DrawGLPoly(glpoly_t *p);
 #endif	/* GLQUAKE_H */
 

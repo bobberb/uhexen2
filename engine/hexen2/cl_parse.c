@@ -1,6 +1,5 @@
 /*
  * cl_parse.c -- parse a message received from the server
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -102,10 +101,32 @@ qmodel_t	*player_models[MAX_PLAYER_CLASS];
 extern	cvar_t	precache;
 extern	qboolean menu_disabled_mouse;
 
-extern void Sky_LoadSkyBox(const char *name);
-extern void Fog_ParseServerMessage(void);
 
 //=============================================================================
+
+
+/*
+===============
+CL_EntityNum
+
+This error checks and tracks the total number of entities
+===============
+*/
+static entity_t *CL_EntityNum (int num)
+{
+	if (num >= cl.num_entities)
+	{
+		if (num >= MAX_EDICTS)
+			Host_Error ("%s: %i is an invalid number", __thisfunc__, num);
+		while (cl.num_entities <= num)
+		{
+			cl_entities[cl.num_entities].colormap = vid.colormap;
+			cl.num_entities++;
+		}
+	}
+
+	return &cl_entities[num];
+}
 
 
 /*
@@ -228,8 +249,8 @@ CL_ParseServerInfo
 static void CL_ParseServerInfo (void)
 {
 	const char	*str;
-	int		i, j;
-	int		nummodels, numsounds, numfx;
+	int		i;
+	int		nummodels, numsounds;
 	char	model_precache[MAX_MODELS][MAX_QPATH];
 	char	sound_precache[MAX_SOUNDS][MAX_QPATH];
 // rjr	edict_t		*ent;
@@ -253,12 +274,11 @@ static void CL_ParseServerInfo (void)
 	case PROTOCOL_RAVEN_111:
 	case PROTOCOL_RAVEN_112:
 	case PROTOCOL_UQE_113:
-	case PROTOCOL_UH2_114:
 		Con_DPrintf ("\nServer using protocol %i\n", cl_protocol);
 		break;
 	default:
-		Con_Printf ("\nServer returned version %i, not %i, %i or %i\n",
-				cl_protocol, PROTOCOL_RAVEN_112, PROTOCOL_UQE_113, PROTOCOL_UH2_114);
+		Con_Printf ("\nServer returned version %i, not %i or %i\n",
+				cl_protocol, PROTOCOL_RAVEN_112, PROTOCOL_UQE_113);
 		return;
 	}
 
@@ -271,43 +291,10 @@ static void CL_ParseServerInfo (void)
 	}
 	cl.scores = (scoreboard_t *) Hunk_AllocName (cl.maxclients*sizeof(*cl.scores), "scores");
 
-// parse gamedir
-	if (cl_protocol == PROTOCOL_UH2_114)
-	{
-		str = MSG_ReadString();
-
-		if (q_strcasecmp(fs_gamedir_list, str))
-		{
-			Con_Printf("Server set the gamedir to %s\n", str);
-			// save current config
-			//Host_WriteConfiguration("config.cfg");
-
-			// set the new gamedirs and userdir
-			FS_Gamedir(str);
-
-			// ZOID - run autoexec.cfg in the gamedir if it exists
-			if (FS_FileInGamedir("config.cfg"))
-			{
-				// remove any weird mod specific key bindings / aliases
-				Cbuf_AddText("unbindall\n");
-				Cbuf_AddText("unaliasall\n");
-				Cbuf_AddText("exec autoexec.cfg\n");
-				Cbuf_AddText("exec config.cfg\n");
-			}
-			// gamespy crap
-			if (FS_FileInGamedir("frontend.cfg"))
-				Cbuf_AddText("exec frontend.cfg\n");
-
-			Cbuf_Execute();
-
-			// re-init draw
-			Draw_ReInit();
-		}
-	}
-
 // parse gametype
-	cl.gametype = MSG_ReadByte();
-	if ((cl.gametype == GAME_DEATHMATCH) && (cl_protocol > PROTOCOL_RAVEN_111))
+	cl.gametype = MSG_ReadByte ();
+
+	if (cl.gametype == GAME_DEATHMATCH && cl_protocol > PROTOCOL_RAVEN_111)
 		sv_kingofhill = MSG_ReadShort ();
 
 // parse signon message
@@ -397,40 +384,6 @@ static void CL_ParseServerInfo (void)
 	player_models[3] = (qmodel_t *)Mod_FindName ("models/assassin.mdl");
 	player_models[4] = (gameflags & GAME_PORTALS) ? (qmodel_t *)Mod_FindName ("models/succubus.mdl") : NULL;
 
-	if (cl_protocol == PROTOCOL_UH2_114)
-	{
-		// load model fx from server
-		for (numfx = 1; ; numfx++)
-		{
-			str = MSG_ReadString();
-			if (!str[0])
-				break;
-			if (numfx == MAX_MODELS)
-			{
-				Con_Printf("Server sent too many model effects\n");
-				return;
-			}
-			for (j = 2; j < nummodels; j++)
-			{
-				if (!strcmp(cl.model_precache[j]->name, str))
-				{
-					#ifdef GLQUAKE
-					cl.model_precache[j]->ex_flags = MSG_ReadShort();
-					cl.model_precache[j]->glow_settings[COLOR_R] = MSG_ReadFloat();
-					cl.model_precache[j]->glow_settings[COLOR_G] = MSG_ReadFloat();
-					cl.model_precache[j]->glow_settings[COLOR_B] = MSG_ReadFloat();
-					cl.model_precache[j]->glow_settings[COLOR_A] = MSG_ReadFloat();
-					#endif
-				}
-			}
-		}
-
-		if (precache.integer)
-		{
-			total_loading_size = nummodels + numsounds + numfx;
-		}
-	}
-
 	S_BeginPrecaching ();
 	for (i = 1; i < numsounds; i++)
 	{
@@ -454,7 +407,7 @@ static void CL_ParseServerInfo (void)
 	R_NewMap ();
 
 	if (!sv.active)
-		Host_LoadStrings(NULL);
+		Host_LoadStrings();
 	CL_LoadPuzzleStrings();
 	// mission pack, objectives strings
 	if (gameflags & GAME_PORTALS)
@@ -583,13 +536,13 @@ static void CL_ParseUpdate (int bits)
 		if (model)
 		{
 			if (model->synctype == ST_RAND)
-				ent->syncbase = rand() * (1.0 / RAND_MAX);//(float)(rand() & 0x7fff) / 0x7fff;
+				ent->syncbase = rand() * (1.0 / RAND_MAX);
 			else	ent->syncbase = 0.0;
 		}
 		else	forcelink = true;	// hack to make null model players work
 #ifdef GLQUAKE
 		if (num > 0 && num <= cl.maxclients)
-			R_TranslateNewPlayerSkin(num - 1); //johnfitz -- was R_TranslatePlayerSkin
+			R_TranslatePlayerSkin (num - 1);
 #endif
 	}
 
@@ -976,7 +929,7 @@ static void CL_NewTranslation (int slot)
 		return;
 
 #ifdef GLQUAKE
-	R_TranslatePlayerSkin(slot);
+	R_TranslatePlayerSkin (slot);
 	return;
 #else
 
@@ -1115,11 +1068,12 @@ static void CL_ParseRainEffect(void)
 	R_RainEffect(org,e_size,x_dir,y_dir,color,count);
 }
 
+
 #if 0	/* for debugging. from fteqw. */
 static void CL_DumpPacket (void)
 {
 	int			i, pos;
-	char	*packet = net_message.data;
+	unsigned char	*packet = net_message.data;
 
 	Con_Printf("%s, BEGIN:\n", __thisfunc__);
 	pos = 0;
@@ -1130,7 +1084,7 @@ static void CL_DumpPacket (void)
 		{
 			if (pos >= net_message.cursize)
 				Con_Printf(" X ");
-			else	Con_Printf("%2x ", (unsigned char)packet[pos]);
+			else	Con_Printf("%2x ", packet[pos]);
 			pos++;
 		}
 		pos -= 16;
@@ -1140,7 +1094,7 @@ static void CL_DumpPacket (void)
 				Con_Printf("X");
 			else if (packet[pos] == 0)
 				Con_Printf(".");
-			else	Con_Printf("%c", (unsigned char)packet[pos]);
+			else	Con_Printf("%c", packet[pos]);
 			pos++;
 		}
 		Con_Printf("\n");
@@ -1257,13 +1211,12 @@ void CL_ParseServerMessage (void)
 			case PROTOCOL_RAVEN_111:
 			case PROTOCOL_RAVEN_112:
 			case PROTOCOL_UQE_113:
-			case PROTOCOL_UH2_114:
 				Con_Printf ("Server using protocol %i\n", cl_protocol);
 				break;
 			default:
-				Host_Error ("%s: Server is protocol %i instead of %i, %i or %i",
+				Host_Error ("%s: Server is protocol %i instead of %i or %i",
 						__thisfunc__, cl_protocol,
-						PROTOCOL_RAVEN_112, PROTOCOL_UQE_113, PROTOCOL_UH2_114);
+						PROTOCOL_RAVEN_112, PROTOCOL_UQE_113);
 			}
 			break;
 
@@ -1346,9 +1299,8 @@ void CL_ParseServerMessage (void)
 
 		case svc_lightstyle:
 			i = MSG_ReadByte ();
-			if (i >= (mod_bsp2 ? MAX_LIGHTSTYLES : MAX_LIGHTSTYLES_OLD))
-				Sys_Error("svc_lightstyle > MAX_LIGHTSTYLES");
-
+			if (i >= MAX_LIGHTSTYLES)
+				Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 			q_strlcpy (cl_lightstyle[i].map, MSG_ReadString(), MAX_STYLESTRING);
 			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
 			break;
@@ -1810,14 +1762,8 @@ void CL_ParseServerMessage (void)
 
 		case svc_mod_name:
 		case svc_skybox:
-#ifdef GLQUAKE
-			Sky_LoadSkyBox(MSG_ReadString());
-#endif
-			break;
-		case svc_fog:
-#ifdef GLQUAKE
-			Fog_ParseServerMessage();
-#endif
+			MSG_ReadString();
+			Con_DPrintf ("Ignored server msg %d (%s)\n", cmd, svc_strings[cmd]);
 			break;
 		}
 	}

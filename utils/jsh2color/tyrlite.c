@@ -1,7 +1,4 @@
-/*
- * tyrlite.c
- * $Id$
- *
+/* tyrlite.c
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Modifications by Kevin Shanahan, 1999-2000
  * MH, 2001,  Juraj Styk, 2002,  O.Sezer 2012
@@ -68,7 +65,10 @@ static void ColorLightThread (void *junk)
 		if (i >= numfaces)
 			return;
 
-		LightFaceLIT (i, faceoffset[i]);
+		if (is_bsp2)
+			LightFaceLIT2 (i, faceoffset[i]);
+		else
+			LightFaceLIT (i, faceoffset[i]);
 	}
 }
 
@@ -86,7 +86,10 @@ static void TestLightThread (void *junk)
 		if (i >= numfaces)
 			return;
 
-		TestLightFace (i, faceoffset[i]);
+		if (is_bsp2)
+			TestLightFace2 (i, faceoffset[i]);
+		else
+			TestLightFace (i, faceoffset[i]);
 	}
 }
 
@@ -256,7 +259,7 @@ int main (int argc, char **argv)
 	extfilename = NULL;
 	nodefault = false;
 
-	wantthreads = 1;	// default to single threaded
+	wantthreads = -1;		// default to auto-detect.
 
 	for (i = 1 ; i < argc ; i++)
 	{
@@ -352,4 +355,3 @@ int main (int argc, char **argv)
 
 	return 0;
 }
-

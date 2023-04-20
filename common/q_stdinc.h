@@ -1,13 +1,10 @@
-/*
- * q_stdinc.h - includes the minimum necessary stdc headers,
+/* q_stdinc.h - includes the minimum necessary stdc headers,
  *		defines common and / or missing types.
  *
  * NOTE:	for net stuff use net_sys.h,
  *		for byte order use q_endian.h,
  *		for math stuff use mathlib.h,
  *		for locale-insensitive ctype.h functions use q_ctype.h.
- *
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2007-2011  O.Sezer <sezero@users.sourceforge.net>
@@ -86,8 +83,14 @@
 /* Make sure the types really have the right
  * sizes: These macros are from SDL headers.
  */
-#define	COMPILE_TIME_ASSERT(name, x)	\
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+#define COMPILE_TIME_ASSERT(name, x) _Static_assert(x, #x)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L)
+#define COMPILE_TIME_ASSERT(name, x)  static_assert(x, #x)
+#else /* universal, but may trigger -Wunused-local-typedefs */
+#define COMPILE_TIME_ASSERT(name, x) \
 	typedef int dummy_ ## name[(x) * 2 - 1]
+#endif
 
 COMPILE_TIME_ASSERT(char, sizeof(char) == 1);
 COMPILE_TIME_ASSERT(float, sizeof(float) == 4);
@@ -106,7 +109,7 @@ COMPILE_TIME_ASSERT(enum, sizeof(THE_DUMMY_ENUM) == sizeof(int));
  * This variant works on most (but not *all*) systems...
  */
 #ifndef offsetof
-#define offsetof(t,m) ((size_t)&(((t *)0)->m))
+#define offsetof(t,m) ((intptr_t)&(((t *)0)->m))
 #endif
 
 
@@ -194,4 +197,3 @@ typedef ptrdiff_t	ssize_t;
 
 
 #endif	/* __QSTDINC_H */
-

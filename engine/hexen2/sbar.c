@@ -1,6 +1,4 @@
-/*
- * sbar.c -- Hexen II status bar
- * $Id$
+/* sbar.c -- Hexen II status bar
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -214,7 +212,7 @@ void Sbar_Draw(void)
 	char	tempStr[80];
 	int	mana, maxMana;
 
-	if (intro_playing || cl.v.cameramode)		// the mission pack intro is active or cameramode is active
+	if (intro_playing)		// the mission pack intro is active
 	{
 		scr_fullupdate = 0;
 		scr_copyeverything = 1;
@@ -616,7 +614,38 @@ static void DrawLowerBar(void)
 
 static int CalcAC(void)
 {
-	return cl.v.armor_amulet + cl.v.armor_bracer + cl.v.armor_helmet + cl.v.armor_breastplate;
+	int	a;
+	int	playerClass;
+
+	//playerClass = cl.v.playerclass;
+	playerClass = cl_playerclass.integer -1;
+	if (playerClass < 0 || playerClass >= MAX_PLAYER_CLASS)
+		playerClass = 1;	// Default to paladin
+	if (!(gameflags & GAME_PORTALS) && playerClass > MAX_PLAYER_CLASS - PORTALS_EXTRA_CLASSES)
+		playerClass = 1;	// Default to paladin
+
+	a = 0;
+	if (cl.v.armor_amulet > 0)
+	{
+		a += AmuletAC[playerClass];
+		a += cl.v.armor_amulet/5;
+	}
+	if (cl.v.armor_bracer > 0)
+	{
+		a += BracerAC[playerClass];
+		a += cl.v.armor_bracer/5;
+	}
+	if (cl.v.armor_breastplate > 0)
+	{
+		a += BreastplateAC[playerClass];
+		a += cl.v.armor_breastplate/5;
+	}
+	if (cl.v.armor_helmet > 0)
+	{
+		a += HelmetAC[playerClass];
+		a += cl.v.armor_helmet/5;
+	}
+	return a;
 }
 
 //==========================================================================
@@ -1504,14 +1533,12 @@ void SB_ViewSizeChanged(void)
 
 static void Sbar_DrawPic(int x, int y, qpic_t *pic)
 {
-	//Draw_Pic
-	Draw_PicCropped(x+((vid.width-320)>>1), y+(vid.height-(int)BarHeight), pic);
+	Draw_PicCropped (x+((vid.width-320)>>1), y+(vid.height-(int)BarHeight), pic);
 }
 
 static void Sbar_DrawTransPic(int x, int y, qpic_t *pic)
 {
-	//Draw_TransPic
-	Draw_TransPicCropped(x+((vid.width-320)>>1), y+(vid.height-(int)BarHeight), pic);
+	Draw_TransPicCropped (x+((vid.width-320)>>1), y+(vid.height-(int)BarHeight), pic);
 }
 
 #if 0	/* no callers */

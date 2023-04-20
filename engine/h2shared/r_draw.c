@@ -1,6 +1,5 @@
 /*
  * r_draw.c
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -692,6 +691,7 @@ void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 }
 
 
+#if 0
 /*
 ================
 R_RenderPoly
@@ -906,4 +906,5 @@ void R_ZDrawSubmodelPolys (qmodel_t *pmodel)
 		}
 	}
 }
+#endif
 

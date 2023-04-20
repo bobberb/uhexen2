@@ -1,8 +1,4 @@
-/*
- * hwmquery.c
- * $Id$
- *
- * HWMQUERY 0.2 HexenWorld Master Server Query
+/* hwmquery.c - HWMQUERY 0.2 HexenWorld Master Server Query
  * Copyright (C) 2006-2011 O. Sezer <sezero@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,7 +17,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,13 +25,6 @@
 
 #include "arch_def.h"
 #include "compiler.h"
-#if defined(PLATFORM_UNIX) ||		\
-    defined(PLATFORM_OS2) ||		\
-    defined(PLATFORM_AMIGA) ||		\
-    defined(__DJGPP__) ||		\
-    defined(PLATFORM_RISCOS)
-#include <sys/time.h>	/* struct timeval */
-#endif
 #define	COMPILE_TIME_ASSERT(name, x)	\
 	typedef int dummy_ ## name[(x) * 2 - 1]
 #include "net_sys.h"
@@ -352,4 +340,3 @@ int main (int argc, char **argv)
 	NET_Shutdown ();
 	return 0;
 }
-

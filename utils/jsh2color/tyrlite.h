@@ -1,7 +1,4 @@
-/*
- * tyrlite.h
- * $Id$
- *
+/* tyrlite.h
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Modifications by Kevin Shanahan, 1999-2000
  * MH, 2001,  Juraj Styk, 2002,  O.Sezer 2012
@@ -43,16 +40,12 @@ extern	vec3_t		bsp_origin;
 
 extern	qboolean	extrasamples;
 
-//void	TransformSample (vec3_t in, vec3_t out);
-//void	RotateSample (vec3_t in, vec3_t out);
-//void	LoadNodes (char *file);
-
 qboolean TestLine (const vec3_t start, const vec3_t stop);
 void	TestLightFace (int surfnum, const vec3_t faceoffset);
+void	TestLightFace2 (int surfnum, const vec3_t faceoffset);
 void	LightFaceLIT (int surfnum, const vec3_t faceoffset);
+void	LightFaceLIT2 (int surfnum, const vec3_t faceoffset);
 
-void	LightLeaf (dleaf_t *leaf);
 void	MakeTnodes (dmodel_t *bm);
 
 #endif	/* TYRLITE_H */
-

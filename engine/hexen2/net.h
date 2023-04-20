@@ -1,7 +1,6 @@
 /*
  * net.h -- quake's interface to the networking layer
  * network functions and data, common to the whole engine
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
@@ -27,7 +26,7 @@
 
 #define	NET_NAMELEN		64
 
-#define NET_MAXMESSAGE		65000
+#define NET_MAXMESSAGE		16384
 
 
 extern int		DEFAULTnet_hostport;

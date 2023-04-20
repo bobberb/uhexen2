@@ -1,7 +1,6 @@
 /*
  * vid_sdl.c -- SDL video driver
  * Select window size and mode and init SDL in SOFTWARE mode.
- * $Id$
  *
  * Changed by S.A. 7/11/04, 27/12/04
  * Options are now: -fullscreen | -window, -height , -width
@@ -141,7 +140,19 @@ static void VID_MenuKey (int key);
 #	define WM_ICON_TEXT	"HEXEN2"
 #endif
 
+
 //====================================
+
+qboolean VID_HasMouseOrInputFocus (void)
+{
+	return (SDL_GetAppState() & (SDL_APPMOUSEFOCUS | SDL_APPINPUTFOCUS)) != 0;
+}
+
+qboolean VID_IsMinimized (void)
+{
+	return !(SDL_GetAppState() & SDL_APPACTIVE);
+}
+
 
 /*
 ================
@@ -1020,16 +1031,16 @@ void VID_ToggleFullscreen (void)
 {
 	int	is_fullscreen;
 
+	if (!screen) return;
 	if (!fs_toggle_works)
 		return;
 	if (!num_fmodes)
 		return;
-	if (!screen)
-		return;
 
 	S_ClearBuffer ();
 
-	if (SDL_WM_ToggleFullScreen(screen) == 1)
+	fs_toggle_works = (SDL_WM_ToggleFullScreen(screen) == 1);
+	if (fs_toggle_works)
 	{
 		is_fullscreen = (screen->flags & SDL_FULLSCREEN) ? 1 : 0;
 		Cvar_SetValueQuick(&vid_config_fscr, is_fullscreen);
@@ -1052,7 +1063,6 @@ void VID_ToggleFullscreen (void)
 	}
 	else
 	{
-		fs_toggle_works = false;
 		Con_Printf ("SDL_WM_ToggleFullScreen failed\n");
 	}
 }

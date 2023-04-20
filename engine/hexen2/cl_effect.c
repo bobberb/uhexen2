@@ -1,6 +1,4 @@
-/*
- * cl_effect.c -- Client side effects.
- * $Id$
+/* cl_effect.c -- Client side effects.
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -193,7 +191,7 @@ void CL_ParseEffect (void)
 	qboolean	ImmediateFree;
 	entity_t	*ent;
 	int		dir;
-	float		angleval, sinval, cosval;
+	float		sinval, cosval;
 	float		skinnum;
 	float		final;
 
@@ -549,10 +547,7 @@ void CL_ParseEffect (void)
 				ent = &EffectEntities[cl.Effects[idx].ef.Teleporter.entity_index[i]];
 				VectorCopy(cl.Effects[idx].ef.Teleporter.origin, ent->origin);
 
-				angleval = dir * M_PI*2 / 360;
-
-				sinval = sin(angleval);
-				cosval = cos(angleval);
+				q_sincosdeg(dir, &sinval, &cosval);
 
 				cl.Effects[idx].ef.Teleporter.velocity[i][0] = 10*cosval;
 				cl.Effects[idx].ef.Teleporter.velocity[i][1] = 10*sinval;
@@ -1050,7 +1045,7 @@ void CL_UpdateEffects (void)
 
 			VectorSubtract(snow_org, r_origin, snow_org);
 
-			distance = VectorNormalize(snow_org);
+			distance = VectorNormalizeFast(snow_org);
 
 			cl.Effects[idx].ef.Rain.next_time += frametime;
 			/* jfm:  fixme, check distance to player first */
@@ -1096,8 +1091,7 @@ void CL_UpdateEffects (void)
 
 			/*
 			memset(&test, 0, sizeof(test));
-			trace = SV_Move (cl.Effects[idx].ef.Fountain.pos, mymin, mymax, mymin,
-										false, &test);
+			trace = SV_Move (cl.Effects[idx].ef.Fountain.pos, mymin, mymax, mymin, false, &test);
 			Con_Printf("Fraction is %f\n", trace.fraction);
 			*/
 			break;
@@ -1267,7 +1261,8 @@ void CL_UpdateEffects (void)
 			}
 			break;
 
-		case CE_RIDER_DEATH:
+		case CE_RIDER_DEATH: {
+			float sinval, cosval;
 			cl.Effects[idx].ef.RD.time_amount += frametime;
 			if (cl.Effects[idx].ef.RD.time_amount >= 1)
 			{
@@ -1276,8 +1271,9 @@ void CL_UpdateEffects (void)
 			}
 
 			VectorCopy(cl.Effects[idx].ef.RD.origin, org);
-			org[0] += sin(cl.Effects[idx].ef.RD.time_amount * 2 * M_PI) * 30;
-			org[1] += cos(cl.Effects[idx].ef.RD.time_amount * 2 * M_PI) * 30;
+			q_sincosrad(cl.Effects[idx].ef.RD.time_amount * 2 * M_PI, &sinval, &cosval);
+			org[0] += sinval * 30;
+			org[1] += cosval * 30;
 
 			if (cl.Effects[idx].ef.RD.stage <= 6)
 			{
@@ -1300,17 +1296,19 @@ void CL_UpdateEffects (void)
 				//	cl.Effects[idx].ef.RD.stage = 0;
 					CL_FreeEffect(idx);
 				}
-			}
+			} }
 			break;
 
-		case CE_GRAVITYWELL:
+		case CE_GRAVITYWELL: {
+			float sinval, cosval;
 			cl.Effects[idx].ef.RD.time_amount += frametime*2;
 			if (cl.Effects[idx].ef.RD.time_amount >= 1)
 				cl.Effects[idx].ef.RD.time_amount -= 1;
 
 			VectorCopy(cl.Effects[idx].ef.RD.origin, org);
-			org[0] += sin(cl.Effects[idx].ef.RD.time_amount * 2 * M_PI) * 30;
-			org[1] += cos(cl.Effects[idx].ef.RD.time_amount * 2 * M_PI) * 30;
+			q_sincosrad(cl.Effects[idx].ef.RD.time_amount * 2 * M_PI, &sinval, &cosval);
+			org[0] += sinval * 30;
+			org[1] += cosval * 30;
 
 			if (cl.Effects[idx].ef.RD.lifetime < cl.time)
 			{
@@ -1319,8 +1317,7 @@ void CL_UpdateEffects (void)
 			else
 			{
 				GravityWellParticle(rand() % 8, org, cl.Effects[idx].ef.RD.color);
-			}
-
+			} }
 			break;
 
 		case CE_TELEPORTERPUFFS:

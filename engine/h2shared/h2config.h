@@ -1,6 +1,5 @@
 /*
  * h2config.h -- Compile time options for Hexen II: Hammer of Thyrion.
- * $Id$
  *
  * Copyright (C) 2005-2012  O.Sezer <sezero@users.sourceforge.net>
  *
@@ -125,6 +124,19 @@
 
 
 /* ====================================================================
+   ENABLE_BSP2
+   Value  :	not a value, but a define or undef
+   Affects:	many places regarding world model.
+
+   Whether we want BSP2 format support. Default is enabled.
+
+   NOTE: If you change this, remember to change both NASM and MASM
+         versions worlda.inc !!!
+   ================================================================== */
+#define	ENABLE_BSP2
+
+
+/* ====================================================================
    USE_AOT_FRICTION
    Value  :	0 or 1
    Affects:	sv_user.c (SV_UserFriction(), hexen2 only)
@@ -186,7 +198,12 @@
    ================================================================== */
 
 #define	LIBMAD_NEEDMEM	0x10000	/* 64K is fairly enough for libmad */
+#if defined(VORBIS_USE_TREMOR)
+#define	VORBIS_NEEDMEM	0x10000	/* 64K is fairly enough for vorbis */
+		/* with libvorbisidec (tremor) from the lowmem branch. */
+#else
 #define	VORBIS_NEEDMEM	0x60000	/* 400K enough for vorbis most times */
+#endif
 
 
 /* ====================================================================

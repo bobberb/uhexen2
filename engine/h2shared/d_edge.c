@@ -1,7 +1,4 @@
-/*
- * d_edge.c
- *
- * $Id: d_edge.c,v 1.18 2008-03-21 14:45:11 sezero Exp $
+/* d_edge.c
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -24,6 +21,7 @@
 
 #include "quakedef.h"
 #include "d_local.h"
+#include "r_local.h"
 
 static int	miplevel;
 
@@ -33,11 +31,11 @@ int		vstartscan;
 
 // FIXME: should go away
 extern void	R_RotateBmodel (void);
-extern void	R_TransformFrustum (void);
 
 vec3_t		transformed_modelorg;
 
 
+#if 0
 /*
 ==============
 D_DrawPoly
@@ -48,6 +46,7 @@ void D_DrawPoly (void)
 {
 // this driver takes spans, not polygons
 }
+#endif
 
 
 /*
@@ -113,6 +112,43 @@ static void D_DrawSolidSurface (surf_t *surf, int color)
 			for ( ; u <= u2 ; u++)
 				((byte *)pdest)[u] = pix;
 		}
+	}
+}
+
+
+/*
+==============
+D_DrawSolidSurfaceT
+==============
+*/
+static void D_DrawSolidSurfaceT (surf_t *surf, int color)
+{
+	espan_t	*pspan;
+	byte	*pdest;
+	short	*pz;
+	int		izi, izistep, count;
+	float	zi, dv, du;
+
+	izistep = (int)(d_zistepu * 0x8000 * 0x10000);
+	for (pspan = surf->spans ; pspan ; pspan = pspan->pnext)
+	{
+		pdest = (byte *)d_viewbuffer + screenwidth*pspan->v + pspan->u;
+		pz = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+		count = pspan->count;
+		du = (float)pspan->u;
+		dv = (float)pspan->v;
+		zi = d_ziorigin + dv*d_zistepv + du*d_zistepu;
+		izi = (int)(zi * 0x8000 * 0x10000);
+		do
+		{
+			if (*pz <= (izi >> 16))
+			{
+				*pdest = mainTransTable[(color<<8) + (*pdest)];
+			}
+			izi += izistep;
+			pdest++;
+			pz++;
+		} while (--count > 0);
 	}
 }
 
@@ -355,18 +391,38 @@ void D_DrawSurfaces (qboolean Translucent)
 					}
 
 					pface = (msurface_t *) s->data;
-					miplevel = D_MipLevelForScale (s->nearzi * scale_for_mip
-									* pface->texinfo->mipadjust);
+					if ((s->flags & SURF_DRAWSOLID) &&
+						((s->entity->drawflags & MLS_ABSLIGHT) == MLS_ABSLIGHT || !pface->samples))
+					{
+						byte *pixels = ((byte *)pface->texinfo->texture +
+							pface->texinfo->texture->offsets[0]);
+						int light;
+						if (!r_fullbright.integer)
+						{
+							if ((s->entity->drawflags & MLS_ABSLIGHT) == MLS_ABSLIGHT)
+								light = s->entity->abslight;
+							else
+								light = r_refdef.ambientlight;
+						}
+						else
+							light = 255;
+						D_DrawSolidSurface (s, ((unsigned char *)vid.colormap)[(((255-light)<<VID_CBITS) & 0xFF00) + pixels[0]]);
+					}
+					else
+					{
+						miplevel = D_MipLevelForScale (s->nearzi * scale_for_mip
+										* pface->texinfo->mipadjust);
 
-				// FIXME: make this passed in to D_CacheSurface
-					pcurrentcache = D_CacheSurface (pface, miplevel);
+					// FIXME: make this passed in to D_CacheSurface
+						pcurrentcache = D_CacheSurface (pface, miplevel);
 
-					cacheblock = (pixel_t *)pcurrentcache->data;
-					cachewidth = pcurrentcache->width;
+						cacheblock = (pixel_t *)pcurrentcache->data;
+						cachewidth = pcurrentcache->width;
 
-					D_CalcGradients (pface);
+						D_CalcGradients (pface);
 
-					(*d_drawspans) (s->spans);
+						(*d_drawspans) (s->spans);
+					}
 
 					D_DrawZSpans (s->spans);
 
@@ -476,23 +532,43 @@ void D_DrawSurfaces (qboolean Translucent)
 					}
 
 					pface = (msurface_t *) s->data;
-					miplevel = D_MipLevelForScale (s->nearzi * scale_for_mip
-									* pface->texinfo->mipadjust);
+					if ((s->flags & SURF_DRAWSOLID) &&
+						((s->entity->drawflags & MLS_ABSLIGHT) == MLS_ABSLIGHT || !pface->samples))
+					{
+						byte *pixels = ((byte *)pface->texinfo->texture +
+							pface->texinfo->texture->offsets[0]);
+						int light;
+						if (!r_fullbright.integer)
+						{
+							if ((s->entity->drawflags & MLS_ABSLIGHT) == MLS_ABSLIGHT)
+								light = s->entity->abslight;
+							else
+								light = r_refdef.ambientlight;
+						}
+						else
+							light = 255;
+						D_DrawSolidSurfaceT (s, ((unsigned char *)vid.colormap)[(((255-light)<<VID_CBITS) & 0xFF00) + pixels[0]]);
+					}
+					else
+					{
+						miplevel = D_MipLevelForScale (s->nearzi * scale_for_mip
+										* pface->texinfo->mipadjust);
 
-				// FIXME: make this passed in to D_CacheSurface
-					pcurrentcache = D_CacheSurface (pface, miplevel);
+					// FIXME: make this passed in to D_CacheSurface
+						pcurrentcache = D_CacheSurface (pface, miplevel);
 
-					cacheblock = (pixel_t *)pcurrentcache->data;
-					cachewidth = pcurrentcache->width;
+						cacheblock = (pixel_t *)pcurrentcache->data;
+						cachewidth = pcurrentcache->width;
 
-					D_CalcGradients (pface);
+						D_CalcGradients (pface);
 
-				//	(*d_drawspans) (s->spans);
-#if id386
-					D_DrawSpans16T(s->spans);
+					//	(*d_drawspans) (s->spans);
+#if id386 || id68k
+						D_DrawSpans16T(s->spans);
 #else
-					D_DrawSpans8T(s->spans);
+						D_DrawSpans8T(s->spans);
 #endif
+					}
 
 				//	D_DrawZSpans (s->spans);
 

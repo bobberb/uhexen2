@@ -1,7 +1,4 @@
 /*
- * $Header: /cvsroot/uhexen2/gamecode/hc/siege/barrel.hc,v 1.2 2007-02-07 17:00:33 sezero Exp $
- */
-/*
 ==============================================================================
 
 BARRELS
@@ -283,10 +280,12 @@ void()barrel_check_float;
 void float(void)
 {
 float x_mod, y_mod, z_mod;
+float content;
 vector org;
 
 	org=self.origin;
-	if(pointcontents(org)==CONTENT_WATER||pointcontents(org)==CONTENT_SLIME||pointcontents(org)==CONTENT_LAVA)
+	content=pointcontents(org);
+	if(content==CONTENT_WATER||content==CONTENT_SLIME||content==CONTENT_LAVA)
 	{
 		if(self.velocity_x)
 			self.velocity_x/=1.1;
@@ -294,7 +293,8 @@ vector org;
 			self.velocity_y/=1.1;
 
 		org_z+= self.maxs_z*0.77;//float only 23% above waterlevel
-		if(pointcontents(org)==CONTENT_WATER||pointcontents(org)==CONTENT_SLIME||pointcontents(org)==CONTENT_LAVA)
+		content=pointcontents(org);
+		if(content==CONTENT_WATER||content==CONTENT_SLIME||content==CONTENT_LAVA)
 		{
 //			self.flags(+)FL_SWIM;
 			self.flags(-)FL_ONGROUND;
@@ -348,8 +348,10 @@ vector org;
 void barrel_check_float (void)
 {
 vector org;
+float content;
 	org=self.origin;
-	if(pointcontents(org)==CONTENT_WATER||pointcontents(org)==CONTENT_SLIME||pointcontents(org)==CONTENT_LAVA&&(!self.spawnflags&BARREL_SINK))
+	content=pointcontents(org);
+	if(content==CONTENT_WATER||content==CONTENT_SLIME||content==CONTENT_LAVA&&(!self.spawnflags&BARREL_SINK))
 	{
 		self.classname=="barrel_floating";
 		self.think=float;

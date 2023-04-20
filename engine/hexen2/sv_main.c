@@ -1,6 +1,5 @@
 /*
  * sv_main.c -- server main program
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -39,7 +38,6 @@ static	cvar_t	sv_update_misc		= {"sv_update_misc", "1", CVAR_ARCHIVE};
 cvar_t	sv_ce_scale		= {"sv_ce_scale", "0", CVAR_ARCHIVE};
 cvar_t	sv_ce_max_size		= {"sv_ce_max_size", "0", CVAR_ARCHIVE};
 
-extern  cvar_t  sv_gamedir;
 extern	cvar_t	sv_maxvelocity;
 extern	cvar_t	sv_gravity;
 extern	cvar_t	sv_nostep;
@@ -77,7 +75,6 @@ void SV_Init (void)
 	int		i;
 	const char	*p;
 
-	Cvar_RegisterVariable (&sv_gamedir);
 	Cvar_RegisterVariable (&sv_maxvelocity);
 	Cvar_RegisterVariable (&sv_gravity);
 	Cvar_RegisterVariable (&sv_friction);
@@ -127,12 +124,9 @@ void SV_Init (void)
 	case PROTOCOL_UQE_113:
 		p = "UQE/1.13";
 		break;
-	case PROTOCOL_UH2_114:
-		p = "Raven/MP/1.14";
-		break;
 	default:
-		Sys_Error ("Bad protocol version request %i. Accepted values: %i, %i, %i, %i.",
-				sv_protocol, PROTOCOL_RAVEN_111, PROTOCOL_RAVEN_112, PROTOCOL_UQE_113, PROTOCOL_UH2_114 );
+		Sys_Error ("Bad protocol version request %i. Accepted values: %i, %i, %i.",
+				sv_protocol, PROTOCOL_RAVEN_111, PROTOCOL_RAVEN_112, PROTOCOL_UQE_113);
 		return; /* silence compiler */
 	}
 	Sys_Printf ("Server using protocol %i (%s)\n", sv_protocol, p);
@@ -209,7 +203,7 @@ void SV_StartParticle (vec3_t org, vec3_t dir, int color, int count)
 {
 	int		i, v;
 
-	if (sv.datagram.cursize > (sv_protocol == PROTOCOL_UH2_114 ? MAX_DATAGRAM_114 : MAX_DATAGRAM)-16)
+	if (sv.datagram.cursize > MAX_DATAGRAM-16)
 		return;
 	MSG_WriteByte (&sv.datagram, svc_particle);
 	MSG_WriteCoord (&sv.datagram, org[0]);
@@ -237,7 +231,7 @@ Make sure the event gets sent to all clients
 */
 void SV_StartParticle2 (vec3_t org, vec3_t dmin, vec3_t dmax, int color, int effect, int count)
 {
-	if (sv.datagram.cursize > (sv_protocol == PROTOCOL_UH2_114 ? MAX_DATAGRAM_114 : MAX_DATAGRAM)-36)
+	if (sv.datagram.cursize > MAX_DATAGRAM-36)
 		return;
 	MSG_WriteByte (&sv.datagram, svc_particle2);
 	MSG_WriteCoord (&sv.datagram, org[0]);
@@ -264,7 +258,7 @@ Make sure the event gets sent to all clients
 */
 void SV_StartParticle3 (vec3_t org, vec3_t box, int color, int effect, int count)
 {
-	if (sv.datagram.cursize > (sv_protocol == PROTOCOL_UH2_114 ? MAX_DATAGRAM_114 : MAX_DATAGRAM)-15)
+	if (sv.datagram.cursize > MAX_DATAGRAM-15)
 		return;
 	MSG_WriteByte (&sv.datagram, svc_particle3);
 	MSG_WriteCoord (&sv.datagram, org[0]);
@@ -288,7 +282,7 @@ Make sure the event gets sent to all clients
 */
 void SV_StartParticle4 (vec3_t org, float radius, int color, int effect, int count)
 {
-	if (sv.datagram.cursize > (sv_protocol == PROTOCOL_UH2_114 ? MAX_DATAGRAM_114 : MAX_DATAGRAM)-13)
+	if (sv.datagram.cursize > MAX_DATAGRAM-13)
 		return;
 	MSG_WriteByte (&sv.datagram, svc_particle4);
 	MSG_WriteCoord (&sv.datagram, org[0]);
@@ -310,7 +304,7 @@ void SV_StopSound (edict_t *entity, int channel)
 {
 	int			ent;
 
-	if (sv.datagram.cursize > (sv_protocol == PROTOCOL_UH2_114 ? MAX_DATAGRAM_114 : MAX_DATAGRAM)-4)
+	if (sv.datagram.cursize > MAX_DATAGRAM-4)
 		return;
 
 	ent = NUM_FOR_EDICT(entity);
@@ -330,7 +324,7 @@ void SV_UpdateSoundPos (edict_t *entity, int channel)
 	int			ent;
 	int			i;
 
-	if (sv.datagram.cursize > (sv_protocol == PROTOCOL_UH2_114 ? MAX_DATAGRAM_114 : MAX_DATAGRAM)-4)
+	if (sv.datagram.cursize > MAX_DATAGRAM-4)
 		return;
 
 	ent = NUM_FOR_EDICT(entity);
@@ -376,7 +370,7 @@ void SV_StartSound (edict_t *entity, int channel, const char *sample, int volume
 	if (channel < 0 || channel > 7)
 		Host_Error ("%s: channel = %i", __thisfunc__, channel);
 
-	if (sv.datagram.cursize > (sv_protocol == PROTOCOL_UH2_114 ? MAX_DATAGRAM_114 : MAX_DATAGRAM)-16)
+	if (sv.datagram.cursize > MAX_DATAGRAM-16)
 		return;
 
 // find precache number for sound
@@ -447,9 +441,6 @@ static void SV_SendServerinfo (client_t *client)
 	int			i;
 	const char		**s;
 	char			message[2048];
-	const char *gamedir;
-
-	gamedir = Info_ValueForKey(svs.info, "*gamedir");
 
 	MSG_WriteByte (&client->message, svc_print);
 	sprintf (message, "%c\nVERSION %4.2f SERVER (%i CRC)", 2, ENGINE_VERSION, pr_crc);
@@ -458,8 +449,6 @@ static void SV_SendServerinfo (client_t *client)
 	MSG_WriteByte (&client->message, svc_serverinfo);
 	MSG_WriteLong (&client->message, sv_protocol);
 	MSG_WriteByte (&client->message, svs.maxclients);
-	if (sv_protocol == PROTOCOL_UH2_114)
-		MSG_WriteString (&client->message, gamedir);
 
 	if (!coop.integer && deathmatch.integer)
 	{
@@ -477,30 +466,9 @@ static void SV_SendServerinfo (client_t *client)
 		MSG_WriteString (&client->message, *s);
 	MSG_WriteByte (&client->message, 0);
 
-	for (i = 1, s = sv.sound_precache + 1; i < MAX_SOUNDS && *s; s++) //i is not incrementing, this can overflow
+	for (i = 1, s = sv.sound_precache + 1; i < MAX_SOUNDS && *s; s++)
 		MSG_WriteString (&client->message, *s);
 	MSG_WriteByte (&client->message, 0);
-
-	if (sv_protocol == PROTOCOL_UH2_114)
-	{
-		// send model effects
-		for (i = 1, s = sv.model_precache + 1; i < MAX_MODELS && *s; s++)
-		{
-			#if !defined(SERVERONLY) && defined(GLQUAKE)
-			if (sv.models[i]->ex_flags != 0)
-			{
-				MSG_WriteString(&client->message, *s);
-				MSG_WriteShort(&client->message, sv.models[i]->ex_flags);
-				MSG_WriteFloat(&client->message, sv.models[i]->glow_settings[COLOR_R]);
-				MSG_WriteFloat(&client->message, sv.models[i]->glow_settings[COLOR_G]);
-				MSG_WriteFloat(&client->message, sv.models[i]->glow_settings[COLOR_B]);
-				MSG_WriteFloat(&client->message, sv.models[i]->glow_settings[COLOR_A]);
-			}
-			#endif
-			i++;
-		}
-		MSG_WriteByte(&client->message, 0);
-	}
 
 // send music
 	MSG_WriteByte (&client->message, svc_cdtrack);
@@ -510,7 +478,7 @@ static void SV_SendServerinfo (client_t *client)
 	MSG_WriteByte (&client->message, svc_midi_name);
 	MSG_WriteString (&client->message, sv.midi_name);
 
-	if (sv_protocol == PROTOCOL_UQE_113)
+	if (sv_protocol >= PROTOCOL_UQE_113)
 	{
 		MSG_WriteByte (&client->message, svc_mod_name);
 		MSG_WriteString (&client->message, "");	/* uqe-hexen2 sends sv.mod_name */
@@ -658,13 +626,12 @@ crosses a waterline.
 =============================================================================
 */
 
-static long	fatbytes;
-static byte	*fatpvs;
-static long	fatpvs_capacity;
+static int	fatbytes;
+static byte	fatpvs[MAX_MAP_LEAFS/8];
 
 static void SV_AddToFatPVS (vec3_t org, mnode_t *node)
 {
-	long		i;
+	int		i;
 	byte	*pvs;
 	mplane_t	*plane;
 	float	d;
@@ -705,26 +672,18 @@ Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
 given point.
 =============
 */
-byte *SV_FatPVS(vec3_t org) //johnfitz -- added worldmodel as a parameter
+static byte *SV_FatPVS (vec3_t org)
 {
-	fatbytes = (sv.worldmodel->numleafs + 7) >> 3; // ericw -- was +31, assumed to be a bug/typo
-	if (fatpvs == NULL || fatbytes > fatpvs_capacity)
-	{
-		fatpvs_capacity = fatbytes;
-		fatpvs = (byte *)realloc(fatpvs, fatpvs_capacity);
-		if (!fatpvs)
-			Sys_Error("SV_FatPVS: realloc() failed on %d bytes", fatpvs_capacity);
-	}
-
-	memset(fatpvs, 0, fatbytes);
-	SV_AddToFatPVS(org, sv.worldmodel->nodes); //johnfitz -- worldmodel as a parameter
+	fatbytes = (sv.worldmodel->numleafs+31)>>3;
+	memset (fatpvs, 0, fatbytes);
+	SV_AddToFatPVS (org, sv.worldmodel->nodes);
 	return fatpvs;
 }
 
 #define CLIENT_FRAME_INIT	255
 #define CLIENT_FRAME_RESET	254
 
-static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t *msg)
+static void SV_PrepareClientEntities (client_t *client, edict_t	*clent, sizebuf_t *msg)
 {
 	int		e, i;
 	int		bits;
@@ -740,10 +699,10 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 	client_frames_t	*reference, *build;
 	client_state2_t	*state;
 	entity_state2_t	*ref_ent, *set_ent, build_ent;
-	qboolean		FoundInList, DoRemove, DoPlayer, DoMonsters, DoMissiles, DoMisc, IgnoreEnt;
-	short			RemoveList[MAX_CLIENT_STATES], NumToRemove;
+	qboolean		FoundInList,DoRemove,DoPlayer,DoMonsters,DoMissiles,DoMisc,IgnoreEnt;
+	short			RemoveList[MAX_CLIENT_STATES],NumToRemove;
 
-	client_num = client - svs.clients;
+	client_num = client-svs.clients;
 	state = &sv.states[client_num];
 	reference = &state->frames[0];
 
@@ -751,12 +710,12 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 	{	// Old sequence
 	//	Con_Printf("SV: Old sequence SV(%d,%d) CL(%d,%d)\n",client->current_sequence, client->current_frame, client->last_sequence, client->last_frame);
 		client->current_frame++;
-		if (client->current_frame > MAX_FRAMES + 1)
-			client->current_frame = MAX_FRAMES + 1;
+		if (client->current_frame > MAX_FRAMES+1)
+			client->current_frame = MAX_FRAMES+1;
 	}
 	else if (client->last_frame == CLIENT_FRAME_INIT ||
-		client->last_frame == 0 ||
-		client->last_frame == MAX_FRAMES + 1)
+			 client->last_frame == 0 ||
+			 client->last_frame == MAX_FRAMES+1)
 	{	// Reference expired in current sequence
 	//	Con_Printf("SV: Expired SV(%d,%d) CL(%d,%d)\n",client->current_sequence, client->current_frame, client->last_sequence, client->last_frame);
 		client->current_frame = 1;
@@ -791,8 +750,8 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 	{	// Normal frame advance
 	//	Con_Printf("SV: Normal SV(%d,%d) CL(%d,%d)\n",client->current_sequence, client->current_frame, client->last_sequence, client->last_frame);
 		client->current_frame++;
-		if (client->current_frame > MAX_FRAMES + 1)
-			client->current_frame = MAX_FRAMES + 1;
+		if (client->current_frame > MAX_FRAMES+1)
+			client->current_frame = MAX_FRAMES+1;
 	}
 
 	DoPlayer = DoMonsters = DoMissiles = DoMisc = false;
@@ -811,9 +770,9 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 	client->last_frame = CLIENT_FRAME_RESET;
 
 	NumToRemove = 0;
-	MSG_WriteByte(msg, svc_reference);
-	MSG_WriteByte(msg, client->current_frame);
-	MSG_WriteByte(msg, client->current_sequence);
+	MSG_WriteByte (msg, svc_reference);
+	MSG_WriteByte (msg, client->current_frame);
+	MSG_WriteByte (msg, client->current_sequence);
 
 	// find the client's PVS
 	if (clent->v.cameramode)
@@ -822,9 +781,9 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 		VectorCopy(ent->v.origin, org);
 	}
 	else
-		VectorAdd(clent->v.origin, clent->v.view_ofs, org);
+		VectorAdd (clent->v.origin, clent->v.view_ofs, org);
 
-	pvs = SV_FatPVS(org);
+	pvs = SV_FatPVS (org);
 
 	// send over all entities (except the client) that touch the pvs
 	ent = NEXT_EDICT(sv.edicts);
@@ -841,7 +800,7 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 		// ignore if not touching a PV leaf
 		if (ent != clent)	// clent is ALWAYS sent
 		{	// ignore ents without visible models
-			if (!ent->v.modelindex || !PR_GetString(ent->v.model)[0])
+			if (!ent->v.modelindex || !*PR_GetString(ent->v.model))
 			{
 				DoRemove = true;
 				goto skipA;
@@ -849,24 +808,18 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 
 			for (i = 0; i < ent->num_leafs; i++)
 			{
-				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)) )
 					break;
 			}
 
-			// ericw -- added ent->num_leafs < MAX_ENT_LEAFS condition.
-			//
-			// if ent->num_leafs == MAX_ENT_LEAFS, the ent is visible from too many leafs
-			// for us to say whether it's in the PVS, so don't try to vis cull it.
-			// this commonly happens with rotators, because they often have huge bboxes
-			// spanning the entire map, or really tall lifts, etc.
-			if (i == ent->num_leafs && ent->num_leafs < MAX_ENT_LEAFS)
+			if (i == ent->num_leafs)
 			{
 				DoRemove = true;
 				goto skipA;
 			}
 		}
 
-	skipA:
+skipA:
 		IgnoreEnt = false;
 		flagtest = (long)ent->v.flags;
 		if (!DoRemove)
@@ -882,8 +835,8 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 					IgnoreEnt = true;
 			}
 			else if (ent->v.movetype == MOVETYPE_FLYMISSILE ||
-				ent->v.movetype == MOVETYPE_BOUNCEMISSILE ||
-				ent->v.movetype == MOVETYPE_BOUNCE)
+					 ent->v.movetype == MOVETYPE_BOUNCEMISSILE ||
+					 ent->v.movetype == MOVETYPE_BOUNCE)
 			{
 				if (!DoMissiles)
 					IgnoreEnt = true;
@@ -897,8 +850,8 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 
 		bits = 0;
 
-		while (position < reference->count &&
-			e > reference->states[position].index)
+		while (position < reference->count && 
+			   e > reference->states[position].index)
 			position++;
 
 		if (position < reference->count && reference->states[position].index == e)
@@ -923,7 +876,7 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 			ref_ent = &build_ent;
 
 			build_ent.index = e;
-			build_ent.origin[0] = ent->baseline.origin[0]; //shan nack networking?
+			build_ent.origin[0] = ent->baseline.origin[0];
 			build_ent.origin[1] = ent->baseline.origin[1];
 			build_ent.origin[2] = ent->baseline.origin[2];
 			build_ent.angles[0] = ent->baseline.angles[0];
@@ -951,8 +904,6 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 		}
 		*set_ent = *ref_ent;
 
-		//IgnoreEnt = ((!VectorCompare(ent->v.origin, vec3_origin)) && VectorCompare(ent->v.origin, ent->baseline.origin) && (FoundInList == true) ? true : false);
-		//IgnoreEnt = false;
 		if (IgnoreEnt)
 			continue;
 
@@ -960,26 +911,26 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 		for (i = 0; i < 3; i++)
 		{
 			miss = ent->v.origin[i] - ref_ent->origin[i];
-			if (miss < -0.1 || miss > 0.1)
+			if ( miss < -0.1 || miss > 0.1 )
 			{
-				bits |= U_ORIGIN1 << i;
+				bits |= U_ORIGIN1<<i;
 				set_ent->origin[i] = ent->v.origin[i];
 			}
 		}
 
-		if (ent->v.angles[0] != ref_ent->angles[0])
+		if ( ent->v.angles[0] != ref_ent->angles[0] )
 		{
 			bits |= U_ANGLE1;
 			set_ent->angles[0] = ent->v.angles[0];
 		}
 
-		if (ent->v.angles[1] != ref_ent->angles[1])
+		if ( ent->v.angles[1] != ref_ent->angles[1] )
 		{
 			bits |= U_ANGLE2;
 			set_ent->angles[1] = ent->v.angles[1];
 		}
 
-		if (ent->v.angles[2] != ref_ent->angles[2])
+		if ( ent->v.angles[2] != ref_ent->angles[2] )
 		{
 			bits |= U_ANGLE3;
 			set_ent->angles[2] = ent->v.angles[2];
@@ -1014,7 +965,7 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 			set_ent->effects = ent->v.effects;
 		}
 
-		//	flagtest = (long)ent->v.flags;
+	//	flagtest = (long)ent->v.flags;
 		if (flagtest & 0xff000000)
 		{
 			Host_Error("Invalid flags setting for class %s", PR_GetString(ent->v.classname));
@@ -1024,9 +975,9 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 		temp_index = ent->v.modelindex;
 		if (((int)ent->v.flags & FL_CLASS_DEPENDENT) && ent->v.model)
 		{
-			strcpy(NewName, PR_GetString(ent->v.model));
-			NewName[strlen(NewName) - 5] = client->playerclass + 48;
-			temp_index = SV_ModelIndex(NewName);
+			strcpy (NewName, PR_GetString(ent->v.model));
+			NewName[strlen(NewName)-5] = client->playerclass + 48;
+			temp_index = SV_ModelIndex (NewName);
 		}
 
 		if (ref_ent->modelindex != temp_index)
@@ -1035,8 +986,8 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 			set_ent->modelindex = temp_index;
 		}
 
-		if (ref_ent->scale != ((int)(ent->v.scale * 100.0) & 255)
-			|| ref_ent->abslight != ((int)(ent->v.abslight * 255.0) & 255))
+		if ( ref_ent->scale != ((int)(ent->v.scale * 100.0) & 255)
+			|| ref_ent->abslight != ((int)(ent->v.abslight * 255.0) & 255) )
 		{
 			bits |= U_SCALE;
 			set_ent->scale = ((int)(ent->v.scale * 100.0) & 255);
@@ -1066,62 +1017,60 @@ static void SV_PrepareClientEntities(client_t *client, edict_t	*clent, sizebuf_t
 		if (bits >= 65536)
 			bits |= U_MOREBITS2;
 
-		//
-		// write the message
-		//
-		MSG_WriteByte(msg, bits | U_SIGNAL);
+	//
+	// write the message
+	//
+		MSG_WriteByte (msg,bits | U_SIGNAL);
 
 		if (bits & U_MOREBITS)
-			MSG_WriteByte(msg, bits >> 8);
+			MSG_WriteByte (msg, bits >> 8);
 		if (bits & U_MOREBITS2)
-			MSG_WriteByte(msg, bits >> 16);
+			MSG_WriteByte (msg, bits >> 16);
 
 		if (bits & U_LONGENTITY)
-			MSG_WriteShort(msg, e);
+			MSG_WriteShort (msg, e);
 		else
-			MSG_WriteByte(msg, e);
+			MSG_WriteByte (msg, e);
 
 		if (bits & U_MODEL)
-			MSG_WriteShort(msg, temp_index);
+			MSG_WriteShort (msg, temp_index);
 		if (bits & U_FRAME)
-			MSG_WriteByte(msg, ent->v.frame);
+			MSG_WriteByte (msg, ent->v.frame);
 		if (bits & U_COLORMAP)
-			MSG_WriteByte(msg, ent->v.colormap);
+			MSG_WriteByte (msg, ent->v.colormap);
 		if (bits & U_SKIN)
 		{ // Used for skin and drawflags
 			MSG_WriteByte(msg, ent->v.skin);
 			MSG_WriteByte(msg, ent->v.drawflags);
 		}
 		if (bits & U_EFFECTS)
-			MSG_WriteByte(msg, ent->v.effects);
+			MSG_WriteByte (msg, ent->v.effects);
 		if (bits & U_ORIGIN1)
-			MSG_WriteCoord(msg, ent->v.origin[0]); //shan nack networking?
+			MSG_WriteCoord (msg, ent->v.origin[0]);
 		if (bits & U_ANGLE1)
-			MSG_WriteAngle(msg, ent->v.angles[0]);
+			MSG_WriteAngle (msg, ent->v.angles[0]);
 		if (bits & U_ORIGIN2)
-			MSG_WriteCoord(msg, ent->v.origin[1]);
+			MSG_WriteCoord (msg, ent->v.origin[1]);
 		if (bits & U_ANGLE2)
-			MSG_WriteAngle(msg, ent->v.angles[1]);
+			MSG_WriteAngle (msg, ent->v.angles[1]);
 		if (bits & U_ORIGIN3)
-			MSG_WriteCoord(msg, ent->v.origin[2]);
+			MSG_WriteCoord (msg, ent->v.origin[2]);
 		if (bits & U_ANGLE3)
-			MSG_WriteAngle(msg, ent->v.angles[2]);
+			MSG_WriteAngle (msg, ent->v.angles[2]);
 		if (bits & U_SCALE)
 		{ // Used for scale and abslight
-			MSG_WriteByte(msg, (int)(ent->v.scale * 100.0) & 255);
-			MSG_WriteByte(msg, (int)(ent->v.abslight * 255.0) & 255);
+			MSG_WriteByte (msg, (int)(ent->v.scale * 100.0) & 255);
+			MSG_WriteByte (msg, (int)(ent->v.abslight * 255.0) & 255);
 		}
 
 		if (build->count >= MAX_CLIENT_STATES)
 			break;
 	}
 
-	MSG_WriteByte(msg, svc_clear_edicts);
-	MSG_WriteByte(msg, NumToRemove);
+	MSG_WriteByte (msg, svc_clear_edicts);
+	MSG_WriteByte (msg, NumToRemove);
 	for (i = 0; i < NumToRemove; i++)
-		MSG_WriteShort(msg, RemoveList[i]);
-
-	client->refreshed = true;
+		MSG_WriteShort (msg, RemoveList[i]);
 }
 
 /*
@@ -2032,13 +1981,6 @@ void SV_SpawnServer (const char *server, const char *startspot)
 //
 // set up the new server
 //
-	if (sv.worldmodel)
-	{
-		//Mod_ClearAll();
-		//Mod_ResetAll();
-		//TexMgr_FreeTexturesForOwner(sv.worldmodel);
-	}
-
 	//memset (&sv, 0, sizeof(sv));
 	Host_ClearMemory ();
 
@@ -2058,14 +2000,7 @@ void SV_SpawnServer (const char *server, const char *startspot)
 	current_loading_size += 10;
 	D_ShowLoadingSize();
 #endif
-
-	char		modelname[MAX_QPATH];	// maps/<name>.bsp, for model_precache[0]
-
-	q_snprintf(modelname, sizeof(modelname), "maps/%s.bsp", server);
-	unsigned int dir_path_id;
-	FS_GetPathId(modelname, &dir_path_id);
-
-	Host_LoadStrings(&dir_path_id);
+	Host_LoadStrings();
 #if !defined(SERVERONLY)
 	current_loading_size += 5;
 	D_ShowLoadingSize();
@@ -2127,9 +2062,6 @@ void SV_SpawnServer (const char *server, const char *startspot)
 	sv.sound_precache[0] = dummy;
 	sv.model_precache[0] = dummy;
 	sv.model_precache[1] = sv.modelname;
-
-	if (1+sv.worldmodel->numsubmodels > MAX_MODELS)
-		Sys_Error ("%s: %s has too many inline models", __thisfunc__, sv.modelname);
 	for (i = 1; i < sv.worldmodel->numsubmodels; i++)
 	{
 		sv.model_precache[1+i] = localmodels[i];

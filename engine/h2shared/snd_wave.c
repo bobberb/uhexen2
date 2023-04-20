@@ -5,8 +5,6 @@
  * Copyright (C) 2005 Stuart Dalton <badcdev@gmail.com>
  * Copyright (C) 2010-2012 O.Sezer <sezero@users.sourceforge.net>
  *
- * $Id$
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
@@ -39,9 +37,7 @@ FGetLittleLong
 static int FGetLittleLong (FILE *f)
 {
 	int		v;
-
 	fread(&v, 1, sizeof(v), f);
-
 	return LittleLong(v);
 }
 
@@ -53,9 +49,7 @@ FGetLittleShort
 static short FGetLittleShort(FILE *f)
 {
 	short	v;
-
 	fread(&v, 1, sizeof(v), f);
-
 	return LittleShort(v);
 }
 
@@ -270,6 +264,7 @@ snd_codec_t wav_codec =
 	S_WAV_CodecOpenStream,
 	S_WAV_CodecReadStream,
 	S_WAV_CodecRewindStream,
+	NULL, /* jump */
 	S_WAV_CodecCloseStream,
 	NULL
 };

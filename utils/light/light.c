@@ -1,7 +1,4 @@
-/*
- * lighting.c
- * $Id: light.c,v 1.13 2008-12-27 16:45:08 sezero Exp $
- *
+/* light.c
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -78,7 +75,10 @@ void LightThread (void *junk)
 		if (i >= numfaces)
 			return;
 
-		LightFace (i);
+		if (is_bsp2)
+			LightFace2 (i);
+		else
+			LightFace (i);
 	}
 }
 
@@ -118,7 +118,7 @@ int main (int argc, char **argv)
 
 	ValidateByteorder ();
 
-	wantthreads = 1;	// default to single threaded
+	wantthreads = -1;		// default to auto-detect.
 
 	for (i = 1 ; i < argc ; i++)
 	{
@@ -170,11 +170,10 @@ int main (int argc, char **argv)
 	LightWorld ();
 
 	WriteEntitiesToString ();
-	WriteBSPFile (source);
+	WriteBSPFile (source, is_bsp2);
 
 	end = COM_GetTime ();
 	printf ("%5.1f seconds elapsed\n", end-start);
 
 	return 0;
 }
-

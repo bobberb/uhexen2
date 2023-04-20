@@ -1,6 +1,4 @@
-/*
- * quakedef.h -- common definitions for client and server.
- * $Id$
+/* quakedef.h -- common definitions for client and server.
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -29,8 +27,8 @@
 
 #define	HOT_VERSION_MAJ		1
 #define	HOT_VERSION_MID		5
-#define	HOT_VERSION_MIN		9
-#define	HOT_VERSION_REL_DATE	"2018-07-31"
+#define	HOT_VERSION_MIN		10
+#define	HOT_VERSION_REL_DATE	"2022-10-25"
 #define	HOT_VERSION_STR		STRINGIFY(HOT_VERSION_MAJ) "." STRINGIFY(HOT_VERSION_MID) "." STRINGIFY(HOT_VERSION_MIN)
 #define	GLQUAKE_VERSION		1.00
 #define	ENGINE_VERSION		1.29
@@ -76,22 +74,20 @@
 
 //#define	MAX_MSGLEN	8000		// max length of a reliable message
 //#define	MAX_MSGLEN	16000		// max length of a reliable message
-#define	MAX_MSGLEN	NET_MAXMESSAGE//20000		// for mission pack tibet2
+#define	MAX_MSGLEN	20000		// for mission pack tibet2
 
 //#define	MAX_DATAGRAM	2048		// max length of unreliable message  TEMP: This only for E3
 #define	MAX_DATAGRAM	1024		// max length of unreliable message
-#define	MAX_DATAGRAM_114	2048		// max length of unreliable message for protocol 1.14
 
 #define MAX_PRINTMSG	4096		// maximum allowed print message length
 
 //
 // per-level limits
 //
-#define	MAX_EDICTS	10000//600		// FIXME: ouch! ouch! ouch!
-#define	MAX_LIGHTSTYLES	255
-#define	MAX_LIGHTSTYLES_OLD	64
+#define	MAX_EDICTS	600		// FIXME: ouch! ouch! ouch!
+#define	MAX_LIGHTSTYLES	64
 
-#define	MAX_MODELS	4096//512		/* Sent over the net as a short */
+#define	MAX_MODELS	512		/* Sent over the net as a word */
 #define	MAX_SOUNDS_OLD	256		/* Hexen2 v1.11 (protocol 18) and older: sent as a byte	*/
 #define	MAX_SOUNDS_H2MP	512		/* Mission Pack (protocol 19), messy thing:		*/
 					/* SV_StartSound sends it as a byte, but PF_ambientsound
@@ -226,4 +222,3 @@
 #include "quakeinc.h"
 
 #endif	/* __QUAKEDEFS_H */
-

@@ -1,7 +1,3 @@
-/*
- * $Header: /cvsroot/uhexen2/gamecode/hc/siege/damage.hc,v 1.2 2007-02-07 17:00:37 sezero Exp $
- */
-
 void() T_MissileTouch;
 void() info_player_start;
 void necromancer_sphere(entity ent);
@@ -1202,7 +1198,8 @@ vector	org;
 		{
 			if (head.takedamage)
 			{
-				if (pointcontents(head.origin) == CONTENT_WATER || pointcontents(head.origin) == CONTENT_SLIME) //  visible(inflictor)?
+				points=pointcontents(head.origin);
+				if (points == CONTENT_WATER || points == CONTENT_SLIME) //  visible(inflictor)?
 				{
 					if (head.classname == "player" && head != attacker)
 						head.enemy = attacker;

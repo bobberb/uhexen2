@@ -1,7 +1,6 @@
 /*
  * cl_string.c: Hexen II internationalized stuff
  * strings for the client-side puzzle piece and objectives displays.
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -41,7 +40,7 @@ void CL_LoadPuzzleStrings (void)
 
 	puzzle_string_index = NULL;
 	puzzle_string_count = 0;
-	puzzle_strings = (char *)FS_LoadHunkFile ("puzzles.txt", NULL, NULL);
+	puzzle_strings = (char *)FS_LoadHunkFile ("puzzles.txt", NULL);
 	if (!puzzle_strings)
 		return;
 
@@ -182,7 +181,7 @@ void CL_LoadInfoStrings (void)
 	int		i, count, start;
 	signed char	newline_char;
 
-	info_strings = (char *)FS_LoadHunkFile ("infolist.txt", NULL, NULL);
+	info_strings = (char *)FS_LoadHunkFile ("infolist.txt", NULL);
 	if (!info_strings)
 		Host_Error ("%s: couldn't load infolist.txt", __thisfunc__);
 

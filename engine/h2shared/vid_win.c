@@ -1,6 +1,5 @@
 /*
  * vid_win.c -- Win32 video driver
- * $Id$
  *
  * Adapted from Quake2 and from an initial work by MH with many
  * modifications to make it work in Hexen II: Hammer of Thyrion.
@@ -54,7 +53,6 @@ byte		globalcolormap[VID_GRADES*256], lastglobalcolor = 0;
 byte		*lastsourcecolormap = NULL;
 
 HWND		mainwindow;
-qboolean	DDActive;
 qboolean	msg_suppress_1 = false;
 
 static int	DIBWidth, DIBHeight;
@@ -2116,6 +2114,16 @@ static LRESULT WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 #endif	/* ! _NO_CDAUDIO */
 		break;
 
+#if !defined(_NO_MIDIDRV)
+	case WM_MSTREAM_UPDATEVOLUME:
+		MIDI_SetChannelVolume((DWORD)wParam, (DWORD)lParam);
+		return 1;
+
+	case WM_MSTREAM_UPDATEVOLUMES:
+		MIDI_SetAllChannelVolumes((DWORD) wParam);
+		return 1;
+#endif	/* ! _NO_MIDIDRV */
+
 	default:
 		/* pass all unhandled messages to DefWindowProc */
 		ret = DefWindowProc (hWnd, uMsg, wParam, lParam);
@@ -2408,4 +2416,3 @@ static void VID_MenuKey (int key)
 		break;
 	}
 }
-

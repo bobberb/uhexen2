@@ -3,8 +3,6 @@
  * these are the only functions outside the refresh
  * allowed to touch the vid buffer
  *
- * $Id$
- *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -35,7 +33,7 @@ void Draw_Init (void);
 void Draw_ReInit (void);
 
 qpic_t *Draw_PicFromWad (const char *name);
-//qpic_t *Draw_PicFromFile (const char *name);
+qpic_t *Draw_PicFromFile (const char *name);
 
 qpic_t *Draw_CachePic (const char *path);
 #if !defined(DRAW_PROGRESSBARS)

@@ -1,7 +1,5 @@
 /*
  * cmd.c - Quake script command processing module
- * $Id$
- *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -308,7 +306,7 @@ static void Cmd_Exec_f (void)
 
 	// FIXME: is this safe freeing the hunk here???
 	mark = Hunk_LowMark ();
-	f = (char *)FS_LoadHunkFile (Cmd_Argv(1), NULL, NULL);
+	f = (char *)FS_LoadHunkFile (Cmd_Argv(1), NULL);
 	if (!f)
 	{
 		Con_Printf ("couldn't exec %s\n",Cmd_Argv(1));
@@ -581,7 +579,7 @@ void Cmd_AddCommand (const char *cmd_name, xcommand_t function)
 	cmd_function_t	*cmd;
 
 	if (host_initialized)	// because hunk allocation would get stomped
-		Sys_Error ("%s Cmd_AddCommand after host_initialized", cmd_name);
+		Sys_Error ("Cmd_AddCommand after host_initialized");
 
 // fail if the command is a variable name
 	if (Cvar_VariableString(cmd_name)[0])
@@ -657,6 +655,30 @@ qboolean Cmd_CheckCommand (const char *partial)
 	}
 
 	return false;
+}
+
+/*
+============
+Cmd_MoveToFront
+============
+*/
+void Cmd_MoveToFront (const char *name)
+{
+	cmd_function_t	*cmd, *next;
+
+	for (cmd = cmd_functions; cmd; cmd = cmd->next)
+	{
+		next = cmd->next;
+		if (next && !strcmp(name, next->name))
+		{
+			// remove from the list
+			cmd->next = next->next;
+			// move to the front
+			next->next = cmd_functions;
+			cmd_functions = next;
+			break;
+		}
+	}
 }
 
 /*

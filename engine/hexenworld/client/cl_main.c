@@ -1,6 +1,5 @@
 /*
  * cl_main.c -- hexenworld client main loop
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -1422,6 +1421,9 @@ void Host_Init (void)
 	IN_Init ();
 
 	CFG_CloseConfig();
+
+// move commands and cvars used by progs to the front for faster access
+	Cmd_MoveToFront ("bf");
 
 #ifdef GLQUAKE
 /* analogous to host_hunklevel, this will mark OpenGL texture

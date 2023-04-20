@@ -80,7 +80,7 @@ static int read_meta_data(MidIStream *stream, MidSong *song, sint32 len, uint8 t
     "Text event: ", "Text: ", "Copyright: ", "Track name: ",
     "Instrument: ", "Lyric: ", "Marker: ", "Cue point: " };
 
-  char *s = (char *)timi_calloc(len+1);
+  char *s = (char *)timi_malloc(len+1);
 
   if (!s)
     {
@@ -104,12 +104,14 @@ static int read_meta_data(MidIStream *stream, MidSong *song, sint32 len, uint8 t
   timi_free(s);
   return 0;
 #else
+  TIMI_UNUSED(song);
+  TIMI_UNUSED(type);
   return mid_istream_skip(stream, len);
 #endif
 }
 
 #define MIDIEVENT(at,t,ch,pa,pb)				\
-  newlist = (MidEventList *) timi_calloc(sizeof(MidEventList));	\
+  newlist = (MidEventList *)timi_calloc(1,sizeof(MidEventList));\
   if (!newlist) {song->oom = 1; return NULL;}			\
   newlist->event.time = at;					\
   newlist->event.type = t;					\
@@ -117,7 +119,6 @@ static int read_meta_data(MidIStream *stream, MidSong *song, sint32 len, uint8 t
   newlist->event.a = pa;					\
   newlist->event.b = pb;					\
   return newlist;
-/*newlist->next = NULL;*/	/* timi_calloc() clears mem already */
 
 #define MAGIC_EOT ((MidEventList *)(-1))
 
@@ -302,7 +303,8 @@ static int read_track(MidIStream *stream, MidSong *song, int append)
 {
   MidEventList *meep;
   MidEventList *next, *newlist;
-  sint32 len, next_pos, pos;
+  sint32 len;
+  long next_pos, pos;
   char tmp[4];
 
   meep = song->evlist;
@@ -399,18 +401,18 @@ static MidEvent *groom_list(MidSong *song, sint32 divisions,sint32 *eventsp,
   tempo=500000;
   compute_sample_increment(song, tempo, divisions);
 
-  our_event_count=0;
-  st=at=sample_cum=0;
-  counting_time=2; /* We strip any silence before the first NOTE ON. */
-
   /* This may allocate a bit more than we need */
-  groomed_list=lp=(MidEvent *) timi_calloc(sizeof(MidEvent) * (song->event_count+1));
+  groomed_list=lp=(MidEvent *) timi_malloc(sizeof(MidEvent) * (song->event_count+1));
   if (!groomed_list) {
     song->oom=1;
     free_midi_list(song);
     return NULL;
   }
   meep=song->evlist;
+
+  our_event_count=0;
+  st=at=sample_cum=0;
+  counting_time=2; /* We strip any silence before the first NOTE ON. */
 
   for (i = 0; i < song->event_count; i++)
     {
@@ -582,6 +584,7 @@ MidEvent *read_midi_file(MidIStream *stream, MidSong *song, sint32 *count, sint3
       return NULL;
     }
 
+  format=tracks=divisions_tmp = -1;
   mid_istream_read(stream, &format, 2, 1);
   mid_istream_read(stream, &tracks, 2, 1);
   mid_istream_read(stream, &divisions_tmp, 2, 1);
@@ -621,14 +624,12 @@ MidEvent *read_midi_file(MidIStream *stream, MidSong *song, sint32 *count, sint3
 	  format, tracks, divisions);
 
   /* Put a do-nothing event first in the list for easier processing */
-  song->evlist=(MidEventList *) timi_calloc(sizeof(MidEventList));
+  song->evlist=(MidEventList *) timi_calloc(1, sizeof(MidEventList));
   if (!song->evlist) {
     song->oom=1;
     return NULL;
   }
   song->evlist->event.type=ME_NONE;
-/*song->evlist->event.time=0;
-  song->evlist->next = NULL;*/	/* timi_calloc() clears mem already */
   song->event_count++;
 
   switch(format)

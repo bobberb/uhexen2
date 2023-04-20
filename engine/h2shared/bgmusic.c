@@ -5,8 +5,6 @@
  * Copyright (C) 1999-2005 Id Software, Inc.
  * Copyright (C) 2010-2018 O.Sezer <sezero@users.sourceforge.net>
  *
- * $Id$
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
@@ -98,14 +96,11 @@ static snd_stream_t *bgmstream = NULL;
 
 static void BGM_Play_f (void)
 {
-	if (Cmd_Argc() == 2)
-	{
+	if (Cmd_Argc() == 2) {
 		BGM_Play (Cmd_Argv(1));
 	}
-	else
-	{
+	else {
 		Con_Printf ("music <musicfile>\n");
-		return;
 	}
 }
 
@@ -121,16 +116,17 @@ static void BGM_Resume_f (void)
 
 static void BGM_Loop_f (void)
 {
-	if (Cmd_Argc() == 2)
-	{
+	if (Cmd_Argc() == 2) {
 		if (q_strcasecmp(Cmd_Argv(1),  "0") == 0 ||
 		    q_strcasecmp(Cmd_Argv(1),"off") == 0)
 			bgmloop = false;
 		else if (q_strcasecmp(Cmd_Argv(1), "1") == 0 ||
-		         q_strcasecmp(Cmd_Argv(1),"on") == 0)
+			 q_strcasecmp(Cmd_Argv(1),"on") == 0)
 			bgmloop = true;
 		else if (q_strcasecmp(Cmd_Argv(1),"toggle") == 0)
 			bgmloop = !bgmloop;
+
+		if (bgmstream) bgmstream->loop = bgmloop;
 	}
 
 	if (bgmloop)
@@ -142,6 +138,16 @@ static void BGM_Loop_f (void)
 static void BGM_Stop_f (void)
 {
 	BGM_Stop();
+}
+
+static void BGM_Jump_f (void)
+{
+	if (Cmd_Argc() != 2) {
+		Con_Printf ("music_jump <ordernum>\n");
+	}
+	else if (bgmstream) {
+		S_CodecJumpToOrder(bgmstream, atoi(Cmd_Argv(1)));
+	}
 }
 
 void BGM_RegisterMidiDRV (void *drv)
@@ -164,6 +170,7 @@ qboolean BGM_Init (void)
 	Cmd_AddCommand("music_resume", BGM_Resume_f);
 	Cmd_AddCommand("music_loop", BGM_Loop_f);
 	Cmd_AddCommand("music_stop", BGM_Stop_f);
+	Cmd_AddCommand("music_jump", BGM_Jump_f);
 
 	if (COM_CheckParm("-noextmusic") != 0)
 		no_extmusic = true;
@@ -266,7 +273,7 @@ static void BGM_Play_noext (const char *filename, unsigned int allowed_types)
 				break;
 			handler = handler->next;
 		case BGM_STREAMER:
-			bgmstream = S_CodecOpenStreamType(tmp, handler->type);
+			bgmstream = S_CodecOpenStreamType(tmp, handler->type, bgmloop);
 			if (bgmstream)
 				return;		/* success */
 			break;
@@ -331,7 +338,7 @@ void BGM_Play (const char *filename)
 			break;
 		handler = handler->next;
 	case BGM_STREAMER:
-		bgmstream = S_CodecOpenStreamType(tmp, handler->type);
+		bgmstream = S_CodecOpenStreamType(tmp, handler->type, bgmloop);
 		if (bgmstream)
 			return;		/* success */
 		break;
@@ -430,7 +437,7 @@ void BGM_PlayMIDIorMusic (const char *filename)
 				break;
 			type = CODECTYPE_MID;
 		default:
-			bgmstream = S_CodecOpenStreamType(tmp, type);
+			bgmstream = S_CodecOpenStreamType(tmp, type, bgmloop);
 			if (bgmstream)
 				return;		/* success */
 		}
@@ -491,7 +498,7 @@ void BGM_PlayCDtrack (byte track, qboolean looping)
 	{
 		q_snprintf(tmp, sizeof(tmp), "%s/track%02d.%s",
 				MUSIC_DIRNAME, (int)track, ext);
-		bgmstream = S_CodecOpenStreamType(tmp, type);
+		bgmstream = S_CodecOpenStreamType(tmp, type, bgmloop);
 		if (! bgmstream)
 			Con_Printf("Couldn't handle music file %s\n", tmp);
 	}
@@ -644,15 +651,7 @@ void BGM_Update (void)
 		}
 	}
 	if (midi_handle.handle)
-	{
-		if (midi_handle.driver->done)
-		{
-			midi_handle.driver->done = false;
-			midi_handle.driver->mididrv_setvol(&midi_handle.handle, bgmvolume.value);
-		}
-
-		midi_handle.driver->mididrv_advance(&midi_handle.handle);
-	}
+		midi_handle.driver->mididrv_advance (& midi_handle.handle);
 	if (bgmstream)
 		BGM_UpdateStream ();
 }

@@ -1,6 +1,4 @@
-/*
- * r_surf.c -- surface-related refresh code
- * $Id$
+/* r_surf.c -- surface-related refresh code
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -609,6 +607,7 @@ static void R_DrawSurfaceBlock16 (void)
 
 //============================================================================
 
+#if 0
 /*
 ================
 R_GenTurbTile
@@ -697,4 +696,5 @@ void R_GenTile (msurface_t *psurf, void *pdest)
 		Sys_Error ("Unknown tile type");
 	}
 }
+#endif
 

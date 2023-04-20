@@ -1,8 +1,6 @@
-/*
- * in_win.c -- windows 95 mouse and joystick code
+/* in_win.c -- windows 95 mouse and joystick code
  * 02/21/97 JCB Added extended DirectInput code to support
  * external controllers
- * $Id$
  *
  * Copyright (C) 1996-2001  Id Software, Inc.
  * Copyright (C) 2005-2012  O.Sezer <sezero@users.sourceforge.net>
@@ -615,8 +613,6 @@ void IN_ReInit (void)
 	}
 }
 
-extern cvar_t cl_maxpitch; /* johnfitz -- variable pitch clamping */
-extern cvar_t cl_minpitch; /* johnfitz -- variable pitch clamping */
 
 /*
 ===========
@@ -785,11 +781,10 @@ static void IN_MouseMove (usercmd_t *cmd)
 	if ( (in_mlook.state & 1) && !(in_strafe.state & 1))
 	{
 		cl.viewangles[PITCH] += m_pitch.value * mouse_y;
-		/* johnfitz -- variable pitch clamping */
-		if (cl.viewangles[PITCH] > cl_maxpitch.value)
-			cl.viewangles[PITCH] = cl_maxpitch.value;
-		if (cl.viewangles[PITCH] < cl_minpitch.value)
-			cl.viewangles[PITCH] = cl_minpitch.value;
+		if (cl.viewangles[PITCH] > 80)
+			cl.viewangles[PITCH] = 80;
+		if (cl.viewangles[PITCH] < -70)
+			cl.viewangles[PITCH] = -70;
 	}
 	else
 	{

@@ -1,6 +1,4 @@
-/*
- * net_wipx.c -- winsock ipx driver
- * $Id$
+/* net_wipx.c -- winsock ipx driver
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -27,7 +25,7 @@
 
 #ifndef __LCC__
 #include <wsipx.h>
-#else	/* no wsipx.h in lcc */
+#else
 #define NSPROTO_IPX	1000
 #define NSPROTO_SPX	1256
 #define NSPROTO_SPXII	1257
@@ -51,7 +49,7 @@ static sys_socket_t net_controlsocket;
 static struct sockaddr_ipx broadcastaddr;
 
 /* externs from net_wins.c: */
-extern qboolean winsock_initialized;
+extern int	winsock_initialized;
 extern WSADATA		winsockdata;
 extern const char *__WSAE_StrError (int);
 

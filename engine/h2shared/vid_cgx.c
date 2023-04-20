@@ -1,12 +1,11 @@
 /*
  * vid_cgx.c -- CyberGraphX video driver for AmigaOS & variants.
  * Select window size and mode and init CGX in SOFTWARE mode.
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2004-2005  Steven Atkinson <stevenaaus@yahoo.com>
  * Copyright (C) 2005-2016  O.Sezer <sezero@users.sourceforge.net>
- * Copyright (C) 2012-2016  Szilárd Biró <col.lawrence@gmail.com>
+ * Copyright (C) 2012-2016  Szilard Biro <col.lawrence@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +27,7 @@
 #include <intuition/intuitionbase.h>
 #include <cybergraphx/cybergraphics.h>
 #include <exec/execbase.h>
+#include <graphics/videocontrol.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
@@ -56,6 +56,7 @@ ULONG __WriteLUTPixelArray(__reg("a6") void *, __reg("a0") APTR srcRect, __reg("
 
 struct Window *window = NULL; /* used by in_amiga.c */
 static struct Screen *screen = NULL;
+static ULONG spal[1 + (256 * 3) + 1];
 static unsigned char ppal[256 * 4];
 static pixel_t *buffer = NULL;
 static byte *directbitmap = NULL;
@@ -69,17 +70,8 @@ static qboolean use_c2p = false;
 static int currentBitMap;
 static struct ScreenBuffer *sbuf[2];
 
-#define C2P_BITMAP
-
-#ifdef C2P_BITMAP
 typedef void (*c2p_write_bm_func)(REG(d0, WORD chunkyx), REG(d1, WORD chunkyy), REG(d2, WORD offsx), REG(d3, WORD offsy), REG(a0, APTR chunkyscreen), REG(a1, struct BitMap *bitmap));
 static c2p_write_bm_func c2p_write_bm;
-#else
-typedef void (*c2p_init_func)(REG(d0, WORD chunkyx), REG(d1, WORD chunkyy), REG(d3, WORD scroffsy), REG(d5, LONG bplsize));
-typedef void (*c2p_write_func)(REG(a0, APTR c2pscreen), REG(a1, APTR bitplanes));
-static c2p_init_func c2p_init;
-static c2p_write_func c2p_write;
-#endif
 
 ASM_LINKAGE_BEGIN
 extern void c2p1x1_8_c5_030_smcinit(REG(d0, WORD chunkyx), REG(d1, WORD chunkyy), REG(d3, WORD scroffsy), REG(d5, LONG bplsize));
@@ -93,8 +85,6 @@ ASM_LINKAGE_END
 #endif /* PLATFORM_AMIGAOS3 */
 
 /* ----------------------------------------- */
-
-static unsigned char	vid_curpal[256*3];	/* save for mode changes */
 
 unsigned short	d_8to16table[256];
 unsigned int	d_8to24table[256];
@@ -496,6 +486,10 @@ static void VID_NumModes_f (void)
 
 static void VID_DestroyWindow (void)
 {
+	extern cvar_t v_gamma;
+	// always call VID_ShiftPalette after mode changes
+	v_gamma.flags |= CVAR_CHANGED;
+
 	if (window)
 	{
 		CloseWindow(window);
@@ -576,6 +570,12 @@ static qboolean VID_SetMode (int modenum, const unsigned char *palette)
 		#if defined(PLATFORM_AMIGAOS3) && defined(USE_C2P)
 		struct BitMap *bm;
 		#endif
+		struct TagItem vctl[] =
+		{
+			{VTAG_BORDERBLANK_SET, TRUE},
+			{VC_IntermediateCLUpdate, FALSE},
+			{VTAG_END_CM, 0}
+		};
 
 		/*ModeID = BestCModeIDTags(
 			CYBRBIDTG_Depth, 8,
@@ -590,6 +590,9 @@ static qboolean VID_SetMode (int modenum, const unsigned char *palette)
 			SA_Height, modelist[modenum].height,
 			SA_Depth, 8,
 			SA_Quiet, TRUE,
+			SA_Draggable, FALSE,
+			SA_Type, CUSTOMSCREEN,
+			SA_VideoControl, (IPTR)vctl,
 			TAG_DONE);
 
 		#if defined(PLATFORM_AMIGAOS3) && defined(USE_C2P)
@@ -601,9 +604,6 @@ static qboolean VID_SetMode (int modenum, const unsigned char *palette)
 			if ((sbuf[0] = AllocScreenBuffer(screen, 0, SB_SCREEN_BITMAP)) && (sbuf[1] = AllocScreenBuffer(screen, 0, 0)))
 			{
 				use_c2p = true;
-				#ifndef C2P_BITMAP
-				c2p_init(modelist[modenum].width, modelist[modenum].height, 0, bm->BytesPerRow*bm->Rows);
-				#endif
 				// this fixes some RTG modes which would otherwise display garbage on the 1st buffer swap
 				//VID_Update(NULL);
 			}
@@ -705,7 +705,7 @@ static void VID_ChangeVideoMode (int newmode)
 	BGM_Pause ();
 	S_ClearBuffer ();
 
-	if (!VID_SetMode (newmode, vid_curpal))
+	if (!VID_SetMode (newmode, NULL))
 	{
 		if (vid_modenum == newmode)
 			Sys_Error ("Couldn't set video mode");
@@ -713,7 +713,7 @@ static void VID_ChangeVideoMode (int newmode)
 		// failed setting mode, probably due to insufficient
 		// memory. go back to previous mode.
 		Cvar_SetValueQuick (&vid_mode, vid_modenum);
-		if (!VID_SetMode (vid_modenum, vid_curpal))
+		if (!VID_SetMode (vid_modenum, NULL))
 			Sys_Error ("Couldn't set video mode");
 	}
 
@@ -750,14 +750,11 @@ void VID_SetPalette(const unsigned char *palette)
 	unsigned char *pp;
 	int i;
 
-	palette_changed = true;
-
-	if (palette != vid_curpal)
-		memcpy(vid_curpal, palette, sizeof(vid_curpal));
+	if (!palette)
+		return;
 
 	if (screen)
 	{
-		ULONG spal[1 + (256 * 3) + 1];
 		ULONG *sp = spal;
 
 		*sp++ = 256 << 16;
@@ -773,23 +770,26 @@ void VID_SetPalette(const unsigned char *palette)
 
 		LoadRGB32(&screen->ViewPort, spal);
 	}
-
-	for (i = 0, p = palette, pp = ppal; i < 256; i++)
+	else
 	{
-		if (host_bigendian)
+		for (i = 0, p = palette, pp = ppal; i < 256; i++)
 		{
-			*pp++ = 0;
-			*pp++ = *p++;
-			*pp++ = *p++;
-			*pp++ = *p++;
-		}
-		else
-		{
-			*pp++ = p[2];
-			*pp++ = p[1];
-			*pp++ = p[0];
-			*pp++ = 0;
-			p += 3;
+			if (host_bigendian)
+			{
+				*pp++ = 0;
+				*pp++ = *p++;
+				*pp++ = *p++;
+				*pp++ = *p++;
+			}
+			else
+			{
+				*pp++ = p[2];
+				*pp++ = p[1];
+				*pp++ = p[0];
+				*pp++ = 0;
+				p += 3;
+			}
+			palette_changed = true;
 		}
 	}
 }
@@ -816,29 +816,15 @@ void VID_Init (const unsigned char *palette)
 #endif
 
 #ifdef PLATFORM_AMIGAOS3
-	CyberGfxBase = OpenLibrary("cybergraphics.library", 0);
+	CyberGfxBase = OpenLibrary("cybergraphics.library", 41);
 	/*if (!CyberGfxBase)
 		Sys_Error ("Cannot open cybergraphics.library!");*/
 
 #ifdef USE_C2P
 	if (SysBase->AttnFlags & AFF_68040)
-	{
-#ifdef C2P_BITMAP
 		c2p_write_bm = c2p1x1_8_c5_bm_040;
-#else
-		c2p_init = c2p1x1_8_c5_040_init;
-		c2p_write = c2p1x1_8_c5_040;
-#endif
-	}
 	else
-	{
-#ifdef C2P_BITMAP
 		c2p_write_bm = c2p1x1_8_c5_bm;
-#else
-		c2p_init = c2p1x1_8_c5_030_smcinit;
-		c2p_write = c2p1x1_8_c5_030;
-#endif
-	}
 #endif
 #endif
 
@@ -1019,11 +1005,7 @@ static void FlipScreen (vrect_t *rects)
 	if (use_c2p)
 	{
 		currentBitMap ^= 1;
-#ifdef C2P_BITMAP
 		c2p_write_bm(vid.width, vid.height, 0, 0, vid.buffer, sbuf[currentBitMap]->sb_BitMap);
-#else
-		c2p_write(vid.buffer, sbuf[currentBitMap]->sb_BitMap->Planes[0]);
-#endif
 		ChangeScreenBuffer(screen, sbuf[currentBitMap]);
 		return;
 	}

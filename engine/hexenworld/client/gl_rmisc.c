@@ -1,6 +1,4 @@
-/*
- * r_misc.c --
- * $Id$
+/* r_misc.c --
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -22,6 +20,7 @@
  */
 
 #include "quakedef.h"
+#include "hashindex.h"
 
 byte			*playerTranslation;
 const int	color_offsets[MAX_PLAYER_CLASS] =
@@ -45,6 +44,8 @@ qboolean		flush_textures;
 int			gl_texlevel;
 extern int		menu_numcachepics;
 extern cachepic_t	menu_cachepics[MAX_CACHED_PICS];
+extern hashindex_t	hash_gltextures;
+extern hashindex_t	hash_cachepics;
 
 extern void R_InitBubble (void);
 
@@ -167,6 +168,18 @@ static void R_TimeRefresh_f (void)
 }
 
 /*
+====================
+R_SetClearColor_f -- johnfitz
+====================
+*/
+static void R_SetClearColor_f (cvar_t *var)
+{
+	int s = var->integer & 0xFF;
+	byte *rgb = (byte *)(d_8to24table + s);
+	glClearColor_fp(rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0, 0);
+}
+
+/*
 ===============
 R_Init
 ===============
@@ -190,6 +203,8 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_novis);
 	Cvar_RegisterVariable (&r_speeds);
 	Cvar_RegisterVariable (&r_wholeframe);
+	Cvar_RegisterVariable (&r_clearcolor);
+	Cvar_SetCallback (&r_clearcolor, R_SetClearColor_f);
 	Cvar_RegisterVariable (&r_texture_external);
 
 	Cvar_RegisterVariable (&r_netgraph);
@@ -229,6 +244,8 @@ void R_Init (void)
 
 	R_InitNetgraphTexture ();
 	flush_textures = true;
+
+	R_SetClearColor_f (&r_clearcolor);
 
 	playerTranslation = (byte *)FS_LoadHunkFile ("gfx/player.lmp", NULL);
 	if (!playerTranslation)
@@ -416,11 +433,15 @@ void R_NewMap (void)
 */
 void D_ClearOpenGLTextures (int last_tex)
 {
-	int		i;
+	int		i, key;
 
 	// Delete OpenGL textures
 	for (i = last_tex; i < numgltextures; i++)
+	{
 		glDeleteTextures_fp(1, &(gltextures[i].texnum));
+		key = Hash_GenerateKeyString (&hash_gltextures, gltextures[i].identifier, true);
+		Hash_Remove(&hash_gltextures, key, i);
+	}
 
 	memset(&(gltextures[last_tex]), 0, (numgltextures - last_tex) * sizeof(gltexture_t));
 	numgltextures = last_tex;
@@ -431,6 +452,7 @@ void D_ClearOpenGLTextures (int last_tex)
 	// Clear menu pic cache
 	memset(menu_cachepics, 0, menu_numcachepics * sizeof(cachepic_t));
 	menu_numcachepics = 0;
+	Hash_Clear(&hash_cachepics);
 
 	Con_DPrintf ("Purged OpenGL textures\n");
 }

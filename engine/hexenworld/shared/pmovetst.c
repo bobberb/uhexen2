@@ -1,6 +1,5 @@
 /*
  * pmovetst.c -- player movement testing
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -24,7 +23,7 @@
 #include "quakedef.h"
 
 static	hull_t		box_hull;
-static	dclipnode_t	box_clipnodes[6];
+static	mclipnode_t	box_clipnodes[6];
 static	mplane_t	box_planes[6];
 
 extern	vec3_t player_mins;
@@ -100,7 +99,7 @@ PM_HullPointContents
 int PM_HullPointContents (hull_t *hull, int num, vec3_t p)
 {
 	float		d;
-	dclipnode_t	*node;
+	mclipnode_t	*node;
 	mplane_t	*plane;
 
 	while (num >= 0)
@@ -133,7 +132,7 @@ PM_PointContents
 int PM_PointContents (vec3_t p)
 {
 	float		d;
-	dclipnode_t	*node;
+	mclipnode_t	*node;
 	mplane_t	*plane;
 	hull_t		*hull;
 	int			num;
@@ -179,7 +178,7 @@ PM_RecursiveHullCheck
 */
 static qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, pmtrace_t *trace)
 {
-	dclipnode_t	*node;
+	mclipnode_t	*node;
 	mplane_t	*plane;
 	float		t1, t2;
 	float		frac;

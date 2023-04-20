@@ -1,6 +1,5 @@
 /*
  * model.h -- header for model loading and caching
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -21,8 +20,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __HX2_MODEL_H
-#define __HX2_MODEL_H
+#ifndef GL_MODEL_H
+#define GL_MODEL_H
 
 #include "genmodel.h"
 #include "spritegn.h"
@@ -41,9 +40,6 @@ BRUSH MODELS
 
 ==============================================================================
 */
-
-//spike -- these don't need internal types, other than to refer to the larger forms.
-typedef dlclipnode_t mclipnode_t;
 
 
 //
@@ -71,24 +67,12 @@ typedef struct mplane_s
 	byte	pad[2];
 } mplane_t;
 
-// ericw -- each texture has two chains, so we can clear the model chains
-//          without affecting the world
-typedef enum {
-	chain_world = 0,
-	chain_model = 1
-} texchain_t;
-
 typedef struct texture_s
 {
 	char		name[16];
 	unsigned int	width, height;
-	//GLuint			gl_texturenum;
-	struct gltexture_s	*gltexture; //johnfitz -- pointer to gltexture
-	struct gltexture_s	*fullbright; //johnfitz -- fullbright mask texture
-	struct gltexture_s	*warpimage; //johnfitz -- for water animation
-	qboolean			update_warp; //johnfitz -- update warp this frame
-	//struct msurface_s	*texturechain;	// for gl_texsort drawing
-	struct msurface_s	*texturechains[2];	// for texture chains
+	GLuint			gl_texturenum;
+	struct msurface_s	*texturechain;	// for gl_texsort drawing
 	int		anim_total;		// total tenths in sequence ( 0 = no)
 	int		anim_min, anim_max;	// time for this frame min <=time< max
 	struct texture_s *anim_next;		// in the animation sequence
@@ -97,9 +81,9 @@ typedef struct texture_s
 } texture_t;
 
 
-#define	SURF_PLANEBACK		0x2
-#define	SURF_DRAWSKY		0x4
-#define SURF_DRAWSPRITE		0x8
+#define	SURF_PLANEBACK		2
+#define	SURF_DRAWSKY		4
+#define SURF_DRAWSPRITE		8
 #define SURF_DRAWTURB		0x10
 #define SURF_DRAWTILED		0x20
 #define SURF_DRAWBACKGROUND	0x40
@@ -107,19 +91,17 @@ typedef struct texture_s
 #define SURF_DRAWBLACK		0x100
 #define SURF_UNDERWATER		0x200
 #define SURF_DONTWARP		0x400
-#define SURF_DRAWFENCE		0x800
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct
 {
 	unsigned int	v[2];
-//	unsigned int	cachededgeoffset;
+	unsigned int	cachededgeoffset;
 } medge_t;
 
 typedef struct
 {
 	float		vecs[2][4];
-	float		mipadjust;
 	texture_t	*texture;
 	int		flags;
 } mtexinfo_t;
@@ -138,9 +120,6 @@ typedef struct glpoly_s
 typedef struct msurface_s
 {
 	int		visframe;	// should be drawn when node is crossed
-	qboolean	culled;			// johnfitz -- for frustum culling
-	float		mins[3];		// johnfitz -- for frustum culling
-	float		maxs[3];		// johnfitz -- for frustum culling
 
 	mplane_t	*plane;
 	int		flags;
@@ -208,6 +187,12 @@ typedef struct mleaf_s
 	byte		ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;
 
+#ifdef ENABLE_BSP2
+typedef dclipnode2_t	mclipnode_t;
+#else
+typedef dclipnode_t	mclipnode_t;
+#endif
+
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
 {
@@ -239,11 +224,10 @@ SPRITE MODELS
 // FIXME: shorten these?
 typedef struct mspriteframe_s
 {
-	int			width, height;
+	short		width;
+	short		height;
 	float		up, down, left, right;
-	float		smax, tmax; //johnfitz -- image might be padded
-	//GLuint		gl_texturenum;
-	struct gltexture_s	*gltexture;
+	GLuint		gl_texturenum;
 } mspriteframe_t;
 
 typedef struct
@@ -269,6 +253,7 @@ typedef struct
 	//void			*cachespot;		// remove?
 	mspriteframedesc_t	frames[1];
 } msprite_t;
+
 
 /*
 ==============================================================================
@@ -334,9 +319,7 @@ typedef struct {
 	int		poseverts;
 	int		posedata;	// numposes*poseverts trivert_t
 	int		commands;	// gl command list with embedded s/t
-	//GLuint		gl_texturenum[MAX_SKINS][4];
-	struct gltexture_s	*gltextures[MAX_SKINS][4]; //johnfitz
-	struct gltexture_s	*fbtextures[MAX_SKINS][4]; //johnfitz
+	GLuint		gl_texturenum[MAX_SKINS][4];
 	maliasframedesc_t	frames[1];	// variable sized
 } aliashdr_t;
 
@@ -428,6 +411,7 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 #define	EF_SCARAB		(1 << 21)	/* white transparent particles with little gravity	*/
 #define	EF_ACIDBALL		(1 << 22)	/* Green drippy acid shit				*/
 #define	EF_BLOODSHOT		(1 << 23)	/* Blood rain shot trail				*/
+
 #define	EF_MIP_MAP_FAR		(1 << 24)	/* Set per frame, this model will use the far mip map	*/
 
 // XF_ Extra model effects set by engine: qmodel_t->ex_flags
@@ -436,24 +420,6 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 #define XF_TORCH_GLOW_EGYPT	(1 << 30)	/* glowing torches, egypt			*/
 #define XF_GLOW			(1 << 1 )	/* other glows					*/
 #define XF_MISSILE_GLOW		(1 << 2 )	/* missile glows				*/
-#define XF_COLOR_LIGHT		(1 << 3 )	/* color dynamic light			*/
-#define	EF_SPIN				(1 << 4)	/* Inky: Rotate without floating upside down */
-#define	EF_FLOAT			(1 << 5)	/* Inky: Float upside down without rotating */
-#define	EF_GLOW				(1 << 6)	/* Inky: Feature a custom glowing orb around the model, override the various XF_*GLOW presets */
-#define	EF_ILLUMINATE		(1 << 7)	/* Inky: Cast light dynamically around */
-
-// slots for qmodel_t->glow_settings
-#define	GLOW_SETTINGS_COUNT 10
-#define	COLOR_R 0
-#define	COLOR_G 1
-#define	COLOR_B 2
-#define	COLOR_A 3
-#define	ORB_OFFSET_X 4
-#define	ORB_OFFSET_Y 5
-#define	ORB_OFFSET_Z 6
-#define	ORB_RADIUS 7
-#define	LIGHT_STYLE 8
-#define	LIGHT_RADIUS 9
 
 typedef struct qmodel_s
 {
@@ -472,10 +438,8 @@ typedef struct qmodel_s
 //
 // volume occupied by the model graphics
 //
-	float		radius; //johnfitz -- removed float radius;
 	vec3_t		mins, maxs;
-	vec3_t		ymins, ymaxs; //johnfitz -- bounds for entities with nonzero yaw
-	vec3_t		rmins, rmaxs; //johnfitz -- bounds for entities with nonzero pitch or roll
+	float		radius;
 
 //
 // brush model
@@ -488,7 +452,7 @@ typedef struct qmodel_s
 	int		numplanes;
 	mplane_t	*planes;
 
-	long		numleafs;		// number of visible leafs, not counting 0
+	int		numleafs;		// number of visible leafs, not counting 0
 	mleaf_t		*leafs;
 
 	int		numvertexes;
@@ -497,7 +461,7 @@ typedef struct qmodel_s
 	int		numedges;
 	medge_t		*edges;
 
-	long		numnodes;
+	int		numnodes;
 	mnode_t		*nodes;
 
 	int		numtexinfo;
@@ -527,9 +491,9 @@ typedef struct qmodel_s
 //
 // additional model data
 //
-	float		glow_settings[GLOW_SETTINGS_COUNT];
+	cache_user_t	cache;		// only access through Mod_Extradata
 
-	cache_user_t	cache;		// only access through Mod_Extradata - MUST BE LAST MEMBER
+	float		glow_color[4];
 } qmodel_t;
 
 // values for qmodel_t->needload
@@ -541,15 +505,14 @@ typedef struct qmodel_s
 
 void	Mod_Init (void);
 void	Mod_ClearAll (void);
-void	Mod_ResetAll(void); // for gamedir changes (Host_Game_f)
 qmodel_t *Mod_ForName (const char *name, qboolean crash);
 qmodel_t *Mod_FindName (const char *name);
 void	*Mod_Extradata (qmodel_t *mod);	// handles caching
 void	Mod_TouchModel (const char *name);
 void	Mod_ReloadTextures (void);
 
-mleaf_t *Mod_PointInLeaf (float *p, qmodel_t *model);
+mleaf_t *Mod_PointInLeaf (vec3_t p, qmodel_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model);
 
-#endif	/* __HX2_MODEL_H */
+#endif	/* GL_MODEL_H */
 

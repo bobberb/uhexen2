@@ -1,6 +1,5 @@
 /*
  * mathlib.h -- math primitives
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2005-2012  O.Sezer <sezero@users.sourceforge.net>
@@ -41,8 +40,41 @@ static inline int IS_NAN (float x) {
 }
 #endif
 int Q_isnan (float x);	/* For 32 bit floats only. */
-#define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5)) //johnfitz -- from joequake
 
+// square root approximation for single precision floats
+// https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Approximations_that_depend_on_the_floating_point_representation
+static inline float Q_sqrt (float x)
+{
+	union
+	{
+		float f;
+		unsigned int i;
+	} t;
+
+	t.f = x;
+	t.i -= 1 << 23;
+	t.i >>= 1;
+	t.i += 1 << 29;
+
+	return t.f;
+}
+
+// fast inverse square root
+// https://en.wikipedia.org/wiki/Fast_inverse_square_root
+static inline float Q_rsqrt (float x)
+{
+	union
+	{
+		float f;
+		unsigned int i;
+	} t;
+
+	t.f = x;
+	t.i  = 0x5f3759df - (t.i >> 1);
+	t.f *= 1.5F - (x * 0.5F * t.f * t.f);
+
+	return t.f;
+}
 
 extern vec3_t vec3_origin;
 
@@ -53,6 +85,7 @@ extern vec3_t vec3_origin;
 				 (double)(x)[1] * (double)(y)[1] + \
 				 (double)(x)[2] * (double)(y)[2])
 #define VectorLengthDBL(a)	sqrt(DotProductDBL((a), (a)))
+#define VectorLengthFast(a)	Q_sqrt(DotProduct((a),(a)))
 
 #define CrossProduct(v1,v2,cross)					\
 	do {								\
@@ -141,6 +174,17 @@ static inline float _inl_VectorNormalize (vec3_t v)
 }
 #define VectorNormalize(a)	_inl_VectorNormalize((a))
 
+static inline float _inl_VectorNormalizeFast (vec3_t v)
+{
+	float	d = DotProduct(v, v);
+	float	ilength = Q_rsqrt(d);
+	v[0] *= ilength;
+	v[1] *= ilength;
+	v[2] *= ilength;
+	return Q_sqrt(d);
+}
+#define VectorNormalizeFast(a)	_inl_VectorNormalizeFast((a))
+
 int Q_log2(int val);
 
 void R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3]);
@@ -168,5 +212,73 @@ ASM_LINKAGE_BEGIN
 fixed16_t Invert24To16 (fixed16_t val);
 ASM_LINKAGE_END
 
-#endif	/* __MATHLIB_H */
+#define SINCOS_ANGLES 2048
+#define SINCOS_SIZE (SINCOS_ANGLES*2)
+#define SINCOS_SINE 0
+#define SINCOS_COSINE 1
+#define SINCOS_DEG(angle) (((int)((angle) * (1.0f/360.0f) * SINCOS_ANGLES) & (SINCOS_ANGLES-1)) * 2)
+#define SINCOS_RAD(angle) (((int)((angle) * (1.0f/M_PI/2.0f) * SINCOS_ANGLES) & (SINCOS_ANGLES-1)) * 2)
 
+/* FIXME: make this into a makefile option? */
+#if !defined(GLQUAKE) && !defined(SERVERONLY)
+#define USE_SINCOS_TABLE 1
+#endif
+
+#ifdef USE_SINCOS_TABLE
+extern	const float	sincos_tab[SINCOS_SIZE];
+
+static inline float q_sindeg(float ang) {
+	const int val = SINCOS_DEG(ang);
+	return sincos_tab[val];
+}
+static inline float q_sinrad(float ang) {
+	const int val = SINCOS_RAD(ang);
+	return sincos_tab[val];
+}
+static inline float q_cosdeg(float ang) {
+	const int val = SINCOS_DEG(ang);
+	return sincos_tab[val + SINCOS_COSINE];
+}
+static inline float q_cosrad(float ang) {
+	const int rad = SINCOS_RAD(ang);
+	return sincos_tab[rad + SINCOS_COSINE];
+}
+static inline void q_sincosdeg(float ang, float *sinval, float *cosval) {
+	const int val = SINCOS_DEG(ang);
+	const float *psincos = &sincos_tab[val];
+	*sinval = *psincos++;
+	*cosval = *psincos;
+}
+static inline void q_sincosrad(float ang, float *sinval, float *cosval) {
+	const int val = SINCOS_RAD(ang);
+	const float *psincos = &sincos_tab[val];
+	*sinval = *psincos++;
+	*cosval = *psincos;
+}
+#else
+static inline float q_sindeg(float ang) {
+	const float val = ang*M_PI*2 / 360;
+	return sin(val);
+}
+static inline float q_sinrad(float ang) {
+	return sin(ang);
+}
+static inline float q_cosdeg(float ang) {
+	const float val = ang*M_PI*2 / 360;
+	return cos(val);
+}
+static inline float q_cosrad(float ang) {
+	return cos(ang);
+}
+static inline void q_sincosdeg(float ang, float *sinval, float *cosval) {
+	const float val = ang*M_PI*2 / 360;
+	*sinval = sin(val);
+	*cosval = cos(val);
+}
+static inline void q_sincosrad(float ang, float *sinval, float *cosval) {
+	*sinval = sin(ang);
+	*cosval = cos(ang);
+}
+#endif
+
+#endif	/* __MATHLIB_H */

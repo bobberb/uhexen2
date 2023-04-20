@@ -1,6 +1,5 @@
 /*
  * snd_mem.c -- wav sound caching
- * $Id$
  *
  * Copyright (C) 1996-2001 Id Software, Inc.
  * Copyright (C) 2010-2011 O. Sezer <sezero@users.sourceforge.net>
@@ -114,7 +113,7 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 
 //	Con_Printf ("loading %s\n",namebuffer);
 
-	data = FS_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf), NULL, NULL);
+	data = FS_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf), NULL);
 
 	if (!data)
 	{
@@ -252,7 +251,7 @@ static void DumpChunks (void)
 GetWavinfo
 ============
 */
-wavinfo_t GetWavinfo (const char *name, byte *wav, size_t wavlength)
+wavinfo_t GetWavinfo (const char *name, byte *wav, int wavlength)
 {
 	wavinfo_t	info;
 	int	i;

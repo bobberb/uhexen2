@@ -3,8 +3,6 @@
  * Mark Olsen <bigfoot@private.dk>
  * Adapted to uHexen2 by Szilard Biro <col.lawrence@gmail.com>
  *
- * $Id$
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
@@ -54,7 +52,6 @@ struct AHIdata
 {
 	struct MsgPort *msgport;
 	struct AHIRequest *ahireq;
-	int ahiopen;
 	struct AHIAudioCtrl *audioctrl;
 	void *samplebuffer;
 	struct Hook EffectHook;
@@ -77,6 +74,10 @@ IPTR EffectFuncTramp()
 	struct Hook *hook = (struct Hook *)REG_A0;
 	struct AHIEffChannelInfo *aeci = (struct AHIEffChannelInfo *)REG_A1;
 #else
+#if defined(__AROS__) && !defined(HOOKPROTO) /* ABIv1 ? */
+#define HOOKPROTO(name, ret, obj, param) static SAVEDS ret \
+                  name(struct Hook *hook, obj, param)
+#endif
 HOOKPROTO(EffectFunc, IPTR, struct AHIAudioCtrl *aac, struct AHIEffChannelInfo *aeci)
 {
 #endif
@@ -88,8 +89,8 @@ HOOKPROTO(EffectFunc, IPTR, struct AHIAudioCtrl *aac, struct AHIEffChannelInfo *
 
 static qboolean S_AHI_Init(dma_t *dma)
 {
-	ULONG channels, speed, bits;
-	ULONG r, samples;
+	IPTR channels, speed, bits;
+	IPTR r, samples;
 	struct AHISampleInfo sample;
 	char modename[64];
 
@@ -112,8 +113,7 @@ static qboolean S_AHI_Init(dma_t *dma)
 		ad->ahireq = (struct AHIRequest *)CreateIORequest(ad->msgport, sizeof(struct AHIRequest));
 		if (ad->ahireq)
 		{
-			ad->ahiopen = !OpenDevice(AHINAME, AHI_NO_UNIT, (struct IORequest *)ad->ahireq, 0);
-			if (ad->ahiopen)
+			if (!OpenDevice(AHINAME, AHI_NO_UNIT, (struct IORequest *)ad->ahireq, 0))
 			{
 				AHIBase = (struct Library *)ad->ahireq->ahir_Std.io_Device;
 

@@ -1,79 +1,17 @@
-#ifndef NET_IF_ARP_H
-#define NET_IF_ARP_H \
-       "$Id: if_arp.h,v 4.1 1994/10/05 23:16:26 ppessi Exp ppessi $"
 /*
- *      Interface to the Address Resolution Protocol
+ * :ts=8
  *
- *      Copyright © 1994 AmiTCP/IP Group,
- *                       Network Solutions Development, Inc.
- *                       All rights reserved.
- */
-
-/*
- * Address Resolution Protocol.
+ * 'Roadshow' -- Amiga TCP/IP stack
+ * Copyright © 2001-2016 by Olaf Barthel.
+ * All Rights Reserved.
  *
- * See RFC 826 for protocol description.  ARP packets are variable
- * in size; the arphdr structure defines the fixed-length portion.
- * Protocol type values are the same as those for 10 Mb/s Ethernet.
- * It is followed by the variable-sized fields ar_sha, arp_spa,
- * arp_tha and arp_tpa in that order, according to the lengths
- * specified.  Field names used correspond to RFC 826.
+ * Amiga specific TCP/IP 'C' header files;
+ * Freely Distributable
  */
-struct	arphdr {
-	u_short	ar_hrd;		/* format of hardware address */
-#define ARPHRD_ETHER 	1	/* ethernet hardware address */
-#define ARPHRD_ARCNET 	7	/* ARCNET hardware address */
-	u_short	ar_pro;		/* format of protocol address */
-	u_char	ar_hln;		/* length of hardware address */
-	u_char	ar_pln;		/* length of protocol address */
-	u_short	ar_op;		/* one of: */
-#define	ARPOP_REQUEST	1	/* request to resolve address */
-#define	ARPOP_REPLY	2	/* response to previous request */
-/*
- * The remaining fields are variable in size,
- * according to the sizes above.
- */
-/*	u_char	ar_sha[];	\* sender hardware address */
-/*	u_char	ar_spa[];	\* sender protocol address */
-/*	u_char	ar_tha[];	\* target hardware address */
-/*	u_char	ar_tpa[];	\* target protocol address */
-};
-
-#define MAXADDRARP  16          /* Maximum number of octets in hw address */
 
 /*
- * ARP ioctl request. 
- */
-struct arpreq {
-	struct	sockaddr arp_pa;		/* protocol address */
-	struct	{		                /* hardware address */
-	  u_char sa_len;
-	  u_char sa_family;		
-	  char	 sa_data[MAXADDRARP];		
-	}  arp_ha;		
-	int	arp_flags;			/* flags */
-};
-
-/*  arp_flags and at_flags field values */
-#define	ATF_INUSE	0x01	/* entry in use */
-#define ATF_COM		0x02	/* completed entry (enaddr valid) */
-#define	ATF_PERM	0x04	/* permanent entry */
-#define	ATF_PUBL	0x08	/* publish entry (respond for other host) */
-#define	ATF_USETRAILERS	0x10	/* has requested trailers */
-
-/* 
- * An AmiTCP/IP specific ARP table ioctl request
- */
-struct arptabreq {
-	struct arpreq  atr_arpreq; /* We want to identify the interface */
-	long           atr_size;          /* # of elements in art_table */
-	long           atr_inuse;               /* # of elements in use */
-	struct arpreq *atr_table;
-};
-
-/*
- * Copyright (c) 1986 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -103,8 +41,107 @@ struct arptabreq {
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if_arp.h	7.4 (Berkeley) 6/28/90
+ *	@(#)if_arp.h	8.1 (Berkeley) 6/10/93
  */
-#endif /* NET_IF_ARP_H */
 
+#ifndef _NET_IF_ARP_H
+#define _NET_IF_ARP_H
 
+/****************************************************************************/
+
+#ifndef _SYS_NETINCLUDE_TYPES_H
+#include <sys/netinclude_types.h>
+#endif /* _SYS_NETINCLUDE_TYPES_H */
+
+#ifndef _SYS_SOCKET_H
+#include <sys/socket.h>
+#endif /* _SYS_SOCKET_H */
+
+/****************************************************************************/
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+/****************************************************************************/
+
+#ifdef __GNUC__
+ #ifdef __PPC__
+  #pragma pack(2)
+ #endif
+#elif defined(__VBCC__)
+ #pragma amiga-align
+#endif
+
+/****************************************************************************/
+
+/*
+ * Address Resolution Protocol.
+ *
+ * See RFC 826 for protocol description.  ARP packets are variable
+ * in size; the arphdr structure defines the fixed-length portion.
+ * Protocol type values are the same as those for 10 Mb/s Ethernet.
+ * It is followed by the variable-sized fields ar_sha, arp_spa,
+ * arp_tha and arp_tpa in that order, according to the lengths
+ * specified.  Field names used correspond to RFC 826.
+ */
+struct	arphdr {
+	__UWORD	ar_hrd;		/* format of hardware address */
+#define ARPHRD_ETHER 	1	/* ethernet hardware format */
+#define ARPHRD_FRELAY 	15	/* frame relay hardware format */
+	__UWORD	ar_pro;		/* format of protocol address */
+	__UBYTE	ar_hln;		/* length of hardware address */
+	__UBYTE	ar_pln;		/* length of protocol address */
+	__UWORD	ar_op;		/* one of: */
+#define	ARPOP_REQUEST	1	/* request to resolve address */
+#define	ARPOP_REPLY	2	/* response to previous request */
+#define	ARPOP_REVREQUEST 3	/* request protocol address given hardware */
+#define	ARPOP_REVREPLY	4	/* response giving protocol address */
+#define ARPOP_INVREQUEST 8 	/* request to identify peer */
+#define ARPOP_INVREPLY	9	/* response identifying peer */
+/*
+ * The remaining fields are variable in size,
+ * according to the sizes above.
+ */
+#ifdef COMMENT_ONLY
+	__UBYTE	ar_sha[];	/* sender hardware address */
+	__UBYTE	ar_spa[];	/* sender protocol address */
+	__UBYTE	ar_tha[];	/* target hardware address */
+	__UBYTE	ar_tpa[];	/* target protocol address */
+#endif
+};
+
+/*
+ * ARP ioctl request
+ */
+struct arpreq {
+	struct	sockaddr arp_pa;		/* protocol address */
+	struct	sockaddr arp_ha;		/* hardware address */
+	__LONG	arp_flags;			/* flags */
+};
+/*  arp_flags and at_flags field values */
+#define	ATF_INUSE	0x01	/* entry in use */
+#define ATF_COM		0x02	/* completed entry (enaddr valid) */
+#define	ATF_PERM	0x04	/* permanent entry */
+#define	ATF_PUBL	0x08	/* publish entry (respond for other host) */
+#define	ATF_USETRAILERS	0x10	/* has requested trailers */
+
+/****************************************************************************/
+
+#ifdef __GNUC__
+ #ifdef __PPC__
+  #pragma pack()
+ #endif
+#elif defined(__VBCC__)
+ #pragma default-align
+#endif
+
+/****************************************************************************/
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+/****************************************************************************/
+
+#endif /* _NET_IF_ARP_H */

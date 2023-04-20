@@ -1,6 +1,5 @@
 /*
  * common.h -- misc utilities used in client and server
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2008-2012  O.Sezer <sezero@users.sourceforge.net>
@@ -28,9 +27,6 @@
 #undef	max
 #define	q_min(a, b)	(((a) < (b)) ? (a) : (b))
 #define	q_max(a, b)	(((a) > (b)) ? (a) : (b))
-#define	CLAMP(_minval, x, _maxval)		\
-	((x) < (_minval) ? (_minval) :		\
-	 (x) > (_maxval) ? (_maxval) : (x))
 
 #if defined(PLATFORM_WINDOWS) && !defined(F_OK)
 /* constants for access() mode argument. MS does not define them.

@@ -1,7 +1,5 @@
 /*
  * gl_warp.c -- sky and water polygons
- * $Id$
- *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,16 +20,12 @@
 
 #include "quakedef.h"
 
-extern	qmodel_t	*loadmodel;
-
 int		skytexturenum;
 
-static gltexture_t	*solidskytexturez, *alphaskytexturez;
+static GLuint	solidskytexture, alphaskytexture;
 static float	speedscale;	// for top sky and bottom sky
 
 static msurface_t	*warpface;
-
-int gl_warpimagesize;
 
 #define	SUBDIVIDE_SIZE	64
 
@@ -40,12 +34,10 @@ static void BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 	int		i, j;
 	float	*v;
 
-	i=0;
+	mins[0] = mins[1] = mins[2] = 9999999;	/* FIXME: change these two to FLT_MAX/-FLT_MAX */
+	maxs[0] = maxs[1] = maxs[2] = -9999999;
 	v = verts;
-	VectorCopy(v, mins);
-	VectorCopy(v, maxs);
-	v+=3; i++;
-	for (; i < numverts; i++)
+	for (i = 0; i < numverts; i++)
 	{
 		for (j = 0; j < 3; j++, v++)
 		{
@@ -149,7 +141,7 @@ boundaries so that turbulent and sky warps
 can be done reasonably.
 ================
 */
-void GL_SubdivideSurface (msurface_t *fa)
+void GL_SubdivideSurface (qmodel_t *mod, msurface_t *fa)
 {
 	vec3_t		verts[64];
 	int		numverts;
@@ -165,12 +157,12 @@ void GL_SubdivideSurface (msurface_t *fa)
 	numverts = 0;
 	for (i = 0; i < fa->numedges; i++)
 	{
-		lindex = loadmodel->surfedges[fa->firstedge + i];
+		lindex = mod->surfedges[fa->firstedge + i];
 
 		if (lindex > 0)
-			vec = loadmodel->vertexes[loadmodel->edges[lindex].v[0]].position;
+			vec = mod->vertexes[mod->edges[lindex].v[0]].position;
 		else
-			vec = loadmodel->vertexes[loadmodel->edges[-lindex].v[1]].position;
+			vec = mod->vertexes[mod->edges[-lindex].v[1]].position;
 		VectorCopy (vec, verts[numverts]);
 		numverts++;
 	}
@@ -250,12 +242,12 @@ static void EmitSkyPolysMulti (msurface_t *fa)
 	float		length;
 
 	glTexEnvf_fp(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	GL_Bind (solidskytexturez);
+	GL_Bind (solidskytexture);
 
 	glActiveTextureARB_fp (GL_TEXTURE1_ARB);
 	glTexEnvf_fp(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	glEnable_fp(GL_TEXTURE_2D);
-	GL_Bind (alphaskytexturez);
+	GL_Bind (alphaskytexture);
 
 	for (p = fa->polys ; p ; p = p->next)
 	{
@@ -341,7 +333,7 @@ void EmitBothSkyLayers (msurface_t *fa)
 		return;
 	}
 
-	GL_Bind(solidskytexturez);
+	GL_Bind(solidskytexture);
 	speedscale = realtime*8;
 	speedscale -= (int)speedscale & ~127;
 
@@ -350,7 +342,7 @@ void EmitBothSkyLayers (msurface_t *fa)
 	glEnable_fp (GL_BLEND);
 	glTexEnvf_fp(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glColor4f_fp(1.0f, 1.0f, 1.0f, r_skyalpha.value);
-	GL_Bind (alphaskytexturez);
+	GL_Bind (alphaskytexture);
 	speedscale = realtime*16;
 	speedscale -= (int)speedscale & ~127;
 
@@ -378,7 +370,7 @@ void R_DrawSkyChain (msurface_t *s)
 		return;
 	}
 
-	GL_Bind(solidskytexturez);
+	GL_Bind(solidskytexture);
 	speedscale = realtime*8;
 	speedscale -= (int)speedscale & ~127;
 
@@ -388,7 +380,7 @@ void R_DrawSkyChain (msurface_t *s)
 	glEnable_fp (GL_BLEND);
 	glTexEnvf_fp(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glColor4f_fp(1.0f, 1.0f, 1.0f, r_skyalpha.value);
-	GL_Bind (alphaskytexturez);
+	GL_Bind (alphaskytexture);
 	speedscale = realtime*16;
 	speedscale -= (int)speedscale & ~127;
 
@@ -1015,8 +1007,8 @@ void R_ClearSkyBox (void)
 
 	for (i = 0; i < 6; i++)
 	{
-		skymins[0][i] = skymins[1][i] = 9999;
-		skymaxs[0][i] = skymaxs[1][i] = -9999;
+		skymins[0][i] = skymins[1][i] = 9999999;	/* FIXME: change these two to FLT_MAX/-FLT_MAX */
+		skymaxs[0][i] = skymaxs[1][i] = -9999999;
 	}
 }
 
@@ -1102,7 +1094,6 @@ void R_DrawSkyBox (void)
 #endif
 }
 
-
 #endif	/* end of Quake2 sky */
 
 //===============================================================
@@ -1147,10 +1138,7 @@ void R_InitSky (texture_t *mt)
 	((byte *)&transpix)[2] = b / (128*128);
 	((byte *)&transpix)[3] = 0;
 
-	//solidskytexture = GL_LoadTexture("upsky", (byte *)trans, 128, 128, TEX_RGBA|TEX_LINEAR);
-	solidskytexturez = TexMgr_LoadImage(NULL, WADFILENAME":upsky", 128, 128, SRC_RGBA, (byte *)trans,
-		WADFILENAME, (src_offset_t)trans, TEXPREF_RGBA | TEXPREF_LINEAR);
-		//WADFILENAME, 0, TEXPREF_ALPHA | TEXPREF_LINEAR | TEXPREF_NOPICMIP | TEXPREF_RGBA);
+	solidskytexture = GL_LoadTexture("upsky", (byte *)trans, 128, 128, TEX_RGBA|TEX_LINEAR);
 
 	for (i = 0; i < 128; i++)
 	{
@@ -1164,9 +1152,5 @@ void R_InitSky (texture_t *mt)
 		}
 	}
 
-	//alphaskytexture = GL_LoadTexture("lowsky", (byte *)trans, 128, 128, TEX_ALPHA|TEX_RGBA|TEX_LINEAR);
-	alphaskytexturez = TexMgr_LoadImage(NULL, WADFILENAME":lowsky", 128, 128, SRC_RGBA, (byte *)trans,
-		WADFILENAME, (src_offset_t)trans, TEXPREF_ALPHA | TEXPREF_RGBA | TEXPREF_LINEAR);
-		//WADFILENAME, 0, TEXPREF_ALPHA | TEXPREF_NEAREST | TEXPREF_NOPICMIP);
+	alphaskytexture = GL_LoadTexture("lowsky", (byte *)trans, 128, 128, TEX_ALPHA|TEX_RGBA|TEX_LINEAR);
 }
-

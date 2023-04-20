@@ -1,7 +1,6 @@
 /*
  * gl_vidsdl.c -- SDL GL vid component
  * Select window size and mode and init SDL in GL mode.
- * $Id$
  *
  * Changed 7/11/04 by S.A.
  * - Fixed fullscreen opengl mode, window sizes
@@ -164,9 +163,7 @@ static const char	*gl_version;
 static const char	*gl_extensions;
 qboolean	is_3dfx = false;
 
-// extern GLint		gl_max_size = 256;
-extern cvar_t gl_max_size;
-
+GLint		gl_max_size = 256;
 static qboolean	have_NPOT = false;
 qboolean	gl_tex_NPOT = false;
 static cvar_t	gl_texture_NPOT = {"gl_texture_NPOT", "0", CVAR_ARCHIVE};
@@ -275,6 +272,16 @@ void VID_HandlePause (qboolean paused)
 			// IN_HideMouse ();
 		}
 	}
+}
+
+qboolean VID_HasMouseOrInputFocus (void)
+{
+	return (SDL_GetAppState() & (SDL_APPMOUSEFOCUS | SDL_APPINPUTFOCUS)) != 0;
+}
+
+qboolean VID_IsMinimized (void)
+{
+	return !(SDL_GetAppState() & SDL_APPACTIVE);
 }
 
 
@@ -606,12 +613,12 @@ static void VID_Init8bitPalette (void)
 
 
 #if !defined(USE_3DFXGAMMA)
-static inline int Init_3dfxGammaCtrl (void)		{ return 0; }
-static inline void Shutdown_3dfxGamma (void)		{ }
-static inline int do3dfxGammaCtrl (float value)			{ return 0; }
-static inline int glGetDeviceGammaRamp3DFX (void *arrays)	{ return 0; }
-static inline int glSetDeviceGammaRamp3DFX (void *arrays)	{ return 0; }
-static inline qboolean VID_Check3dfxGamma (void)	{ return false; }
+static inline int  FUNC_UNUSED Init_3dfxGammaCtrl (void) { return 0; }
+static inline void FUNC_UNUSED Shutdown_3dfxGamma (void) {/*nothing*/}
+static inline int  FUNC_UNUSED do3dfxGammaCtrl (float _f) { return 0; }
+static inline int  FUNC_UNUSED glGetDeviceGammaRamp3DFX (void *_p) { return 0; }
+static inline int  FUNC_UNUSED glSetDeviceGammaRamp3DFX (void *_p) { return 0; }
+static inline qboolean FUNC_UNUSED VID_Check3dfxGamma (void) { return false; }
 #else
 static qboolean VID_Check3dfxGamma (void)
 {
@@ -624,13 +631,6 @@ static qboolean VID_Check3dfxGamma (void)
 	if (!q_strncasecmp(gl_renderer, "Mesa DRI", 8) ||
 	    !q_strncasecmp(gl_renderer, "Mesa Glide - DRI", 16))
 		return false;
-#if 0
-	/* Daniel Borca's SAGE is not necessarily V1/2-only
-	 * on Windows. it is V1/2-only on Linux, because it
-	 * is not a DRI driver.  */
-	if (!q_strncasecmp(gl_renderer, "SAGE Glide", 10))
-		return false;
-#endif
 
 #if USE_3DFX_RAMPS /* not recommended for Voodoo1, currently crashes */
 	ret = glGetDeviceGammaRamp3DFX(orig_ramps);
@@ -660,15 +660,14 @@ static void VID_InitGamma (void)
 	/* Here is an evil hack abusing the exposed Glide symbols: */
 	if (is_3dfx)
 		fx_gamma = VID_Check3dfxGamma();
-	if (!fx_gamma)
-	{
-#if USE_GAMMA_RAMPS
+	if (!fx_gamma) {
+		#if USE_GAMMA_RAMPS
 		gammaworks	= (SDL_GetGammaRamp(orig_ramps[0], orig_ramps[1], orig_ramps[2]) == 0);
 		if (gammaworks)
 		    gammaworks	= (SDL_SetGammaRamp(orig_ramps[0], orig_ramps[1], orig_ramps[2]) == 0);
-#else
+		#else
 		gammaworks	= (SDL_SetGamma(1, 1, 1) == 0);
-#endif
+		#endif
 	}
 
 	if (!gammaworks && !fx_gamma)
@@ -953,12 +952,10 @@ static void GL_Init (void)
 	gl_extensions = (const char *)glGetString_fp (GL_EXTENSIONS);
 	Con_SafeDPrintf ("GL_EXTENSIONS: %s\n", gl_extensions);
 
-	// glGetIntegerv_fp(GL_MAX_TEXTURE_SIZE, &gl_max_size);
-	glGetIntegerv_fp(GL_MAX_TEXTURE_SIZE, &gl_max_size.integer);
-
-	//if (gl_max_size < 256)	// Refuse to work when less than 256
-	//	Sys_Error ("hardware capable of min. 256k opengl texture size needed");
-	Con_SafePrintf("OpenGL max.texture size: %i\n", (int) gl_max_size.integer);
+	glGetIntegerv_fp(GL_MAX_TEXTURE_SIZE, &gl_max_size);
+	if (gl_max_size < 256)	// Refuse to work when less than 256
+		Sys_Error ("hardware capable of min. 256k opengl texture size needed");
+	Con_SafePrintf("OpenGL max.texture size: %i\n", (int) gl_max_size);
 
 	is_3dfx = false;
 	if (!q_strncasecmp(gl_renderer, "3dfx", 4)	  ||
@@ -982,7 +979,7 @@ static void GL_Init (void)
 	CheckNonPowerOfTwoTextures();
 	CheckStencilBuffer();
 
-	glClearColor_fp (1,0,0,0);
+//	glClearColor_fp(1,0,0,0);
 	glCullFace_fp(GL_FRONT);
 	glEnable_fp(GL_TEXTURE_2D);
 
@@ -1200,7 +1197,7 @@ static void VID_InitPalette (const unsigned char *palette)
 
 	// Initialize the palettized textures data
 	mark = Hunk_LowMark ();
-	inverse_pal = (unsigned char *) FS_LoadHunkFile (INVERSE_PALNAME, NULL, NULL);
+	inverse_pal = (unsigned char *) FS_LoadHunkFile (INVERSE_PALNAME, NULL);
 	if (inverse_pal != NULL && fs_filesize != INVERSE_PAL_SIZE)
 	{
 		Hunk_FreeToLowMark (mark);
@@ -1261,9 +1258,8 @@ static void VID_ChangeVideoMode (int newmode)
 	S_ClearBuffer ();
 
 	// Unload all textures and reset texture counts
-	// D_ClearOpenGLTextures(0);
-	TexMgr_DeleteTextureObjects();
-	//memset (lightmap_textures, 0, sizeof(lightmap_textures));
+	D_ClearOpenGLTextures(0);
+	memset (lightmap_textures, 0, sizeof(lightmap_textures));
 
 	// reset all opengl function pointers
 	GL_ResetFunctions();
@@ -1300,22 +1296,13 @@ static void VID_ChangeVideoMode (int newmode)
 	GL_Init();
 	VID_InitGamma();
 	VID_Init8bitPalette();
-	TexMgr_ReloadImages();
-	if (cls.state == ca_active)
-	{
-		for (int j = 0; j < cl.maxclients && j < cl.num_entities + 1; j++)
-		{
-			R_TranslateNewPlayerSkin(j);
-		}
-	}
-
 
 	// Reload pre-map pics, fonts, console, etc
 	Draw_Init();
 	SCR_Init();
 	// R_Init() stuff:
-	//R_InitParticleTexture();
-	//R_InitExtraTextures ();
+	R_InitParticleTexture();
+	R_InitExtraTextures ();
 #if defined(H2W)
 	R_InitNetgraphTexture();
 #endif	/* H2W */
@@ -1328,10 +1315,9 @@ static void VID_ChangeVideoMode (int newmode)
 	BGM_Resume ();
 
 	// Reload model textures and player skins
-	//Mod_ReloadTextures();
-	Fog_SetupState();
+	Mod_ReloadTextures();
 	// rebuild the lightmaps
-	//GL_BuildLightmaps();
+	GL_BuildLightmaps();
 	// finished reloading all images
 	draw_reinit = false;
 	scr_disabled_for_loading = temp;
@@ -1503,7 +1489,7 @@ no_fmodes:
 		// as the highest reported one.
 		Con_SafePrintf ("WARNING: 640x480 not found in fullscreen modes\n"
 				"Using the largest reported dimension as default\n");
-		vid_default = num_fmodes;
+		vid_default = num_fmodes-1;
 	}
 
 	// limit the windowed (standart) modes list to desktop dimensions
@@ -1805,18 +1791,18 @@ void VID_ToggleFullscreen (void)
 {
 	int	is_fullscreen;
 
+	if (!screen) return;
 	if (!fs_toggle_works)
 		return;
 	if (!num_fmodes)
-		return;
-	if (!screen)
 		return;
 
 	S_ClearBuffer ();
 
 	// This doesn't seem to cause any trouble even
 	// with is_3dfx == true and FX_GLX_MESA == f
-	if (SDL_WM_ToggleFullScreen(screen) == 1)
+	fs_toggle_works = (SDL_WM_ToggleFullScreen(screen) == 1);
+	if (fs_toggle_works)
 	{
 		is_fullscreen = (screen->flags & SDL_FULLSCREEN) ? 1 : 0;
 		Cvar_SetValueQuick(&vid_config_fscr, is_fullscreen);
@@ -1841,7 +1827,6 @@ void VID_ToggleFullscreen (void)
 	}
 	else
 	{
-		fs_toggle_works = false;
 		Con_Printf ("SDL_WM_ToggleFullScreen failed\n");
 	}
 }

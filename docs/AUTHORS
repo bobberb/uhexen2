@@ -14,7 +14,7 @@ Original Engine:
 Initial port to Linux (the Anvil of Thyrion engine) :
 -----------------------------------------------------
   Dan Olson <theoddone33@icculus.org>
-  Clément Bourdarias <phneutre@icculus.org>
+  ClÃ©ment Bourdarias <phneutre@icculus.org>
 
 Contributors (coding):
 ----------------------
@@ -22,17 +22,19 @@ Contributors (coding):
   Levent Yavas <leventyavas@gmail.com>
   Thomas Freundt <thf_ebay@yahoo.de>
   Sander van Dijk <a.h.vandijk@gmail.com>
-  Szilárd Biró <col.lawrence@gmail.com>
+  SzilÃ¡rd BirÃ³ <col.lawrence@gmail.com>
   Juraj Styk <jurajstyk@host.sk>
   Siggi <scfinniss@users.sourceforge.net>
   Eric Wasylishen <ewasylishen@gmail.com>
   Michal Wozniak <wozniak_m@interia.pl>
   Keith Rozett <krozett@gmail.com>
   Chris Gransden <chrisg@care4free.net>
-  Jacques Krige - http://www.jacqueskrige.com
+  Jacques Krige - https://www.jacqueskrige.site/
   Julien Langer <bluti@users.sourceforge.net>
   Ricardo Garcia <rg3@users.sourceforge.net>
   Jonathan Bergeron <jonathan.bergeron@hotmail.com>
+  Spike <acceptthis@users.sourceforge.net>
+  Shanjaq Astraljam <shanjaq@users.sourceforge.net>
 
 Credits: Miscellaneous Quake/Hexen II projects and/or
 their authors that we used code from:
@@ -40,7 +42,7 @@ their authors that we used code from:
   QuakeForge - http://sourceforge.net/projects/quake/
   Bill Currie <bill@taniwha.org>
   ioquake3 - http://ioquake3.org/
-  QIP project - http://www.insideqc.com/qip/
+  QIP project - https://www.quake-info-pool.net/
   Matthias Buecher <maddes.b@arcor.de>
   Kevin Shanahan <kmshanah@disenchant.net>
   Forest Hale <lordhavoc@ghdigital.com>
@@ -62,7 +64,7 @@ More contributors (documentation & testing):
   Ronald Eijkman <ronald.eijkman@gmail.com>
   Sean Stach <rhiyo@users.sourceforge.net>
   "VB" <voreball@zoho.com>
-  Burçak Öztürk <rasim4@hotmail.com>
+  BurÃ§ak Ã–ztÃ¼rk <rasim4@hotmail.com>
   Dustin Samko <samko.dustin@gmail.com>
 
 If you think your name is missing and should be mentioned here,

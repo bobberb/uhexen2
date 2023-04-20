@@ -186,22 +186,21 @@ static void load_instrument(MidSong *song, const char *name,
   int i,j;
   static const char *patch_ext[] = PATCH_EXT_LIST;
 
+  TIMI_UNUSED(percussion);
   *out = NULL;
-  if (!name) return;
+  if (!name || !*name) return;
 
   /* Open patch file */
+  i = -1;
   if ((fp=timi_openfile(name)) == NULL)
     {
       /* Try with various extensions */
       for (i=0; patch_ext[i]; i++)
 	{
-	  if (strlen(name)+strlen(patch_ext[i])<sizeof(tmp))
-	    {
-	      strcpy(tmp, name);
-	      strcat(tmp, patch_ext[i]);
-	      if ((fp=timi_openfile(tmp)) != NULL)
+	    size_t l = timi_strxcpy(tmp, name, sizeof(tmp)) - 1;
+	    timi_strxcpy(tmp + l, patch_ext[i], sizeof(tmp) - l);
+	    if ((fp=timi_openfile(tmp)) != NULL)
 		break;
-	    }
 	}
     }
 
@@ -211,7 +210,7 @@ static void load_instrument(MidSong *song, const char *name,
       return;
     }
 
-  DEBUG_MSG("Loading instrument %s\n", tmp);
+  DEBUG_MSG("Loading instrument %s\n", (i < 0)? name : tmp);
 
   /* Read some headers and do cursory sanity checks. There are loads
      of magic offsets. This could be rewritten... */
@@ -238,12 +237,12 @@ static void load_instrument(MidSong *song, const char *name,
       goto badpat;
     }
 
-  *out = (MidInstrument *) timi_calloc(sizeof(MidInstrument));
+  *out = (MidInstrument *) timi_malloc(sizeof(MidInstrument));
   ip = *out;
   if (!ip) goto nomem;
 
   ip->samples = tmp[198];
-  ip->sample = (MidSample *) timi_calloc(sizeof(MidSample) * ip->samples);
+  ip->sample = (MidSample *) timi_calloc(ip->samples, sizeof(MidSample));
   if (!ip->sample) goto nomem;
 
   for (i=0; i<ip->samples; i++)
@@ -253,15 +252,15 @@ static void load_instrument(MidSong *song, const char *name,
       uint16 tmpshort;
       uint8 tmpchar;
 
-#define READ_CHAR(thing)				\
-      if (1 != fread(&tmpchar, 1, 1, fp)) goto badread;	\
-      thing = tmpchar;
-#define READ_SHORT(thing)				\
-      if (1 != fread(&tmpshort, 2, 1, fp)) goto badread;\
-      thing = SWAPLE16(tmpshort);
-#define READ_LONG(thing)				\
-      if (1 != fread(&tmplong, 4, 1, fp)) goto badread;	\
-      thing = SWAPLE32(tmplong);
+#define READ_CHAR(thing)					\
+  if (1 != fread(&tmpchar, 1, 1, fp))  goto badread;		\
+  thing = tmpchar;
+#define READ_SHORT(thing)					\
+  if (1 != fread(&tmpshort, 2, 1, fp)) goto badread;		\
+  thing = SWAPLE16(tmpshort);
+#define READ_LONG(thing)					\
+  if (1 != fread(&tmplong, 4, 1, fp))  goto badread;		\
+  thing = SWAPLE32(tmplong);
 
       fseek(fp, 7, SEEK_CUR); /* Skip the wave name */
 
@@ -397,7 +396,7 @@ static void load_instrument(MidSong *song, const char *name,
 	}
 
       /* Then read the sample data */
-      sp->data = (sample_t *) timi_calloc(sp->data_length+4);
+      sp->data = (sample_t *) timi_malloc(sp->data_length+4);
       if (!sp->data) goto nomem;
 
       if (1 != fread(sp->data, sp->data_length, 1, fp))
@@ -411,7 +410,7 @@ static void load_instrument(MidSong *song, const char *name,
 	  sp->data_length *= 2;
 	  sp->loop_start *= 2;
 	  sp->loop_end *= 2;
-	  tmp16 = new16 = (uint16 *) timi_calloc(sp->data_length+4);
+	  tmp16 = new16 = (uint16 *) timi_malloc(sp->data_length+4);
 	  if (!new16) goto nomem;
 	  while (k--)
 	    *tmp16++ = (uint16)(*cp++) << 8;
@@ -491,9 +490,7 @@ static void load_instrument(MidSong *song, const char *name,
       sp->loop_end /= 2;
 
       /* initialize the 2 extra samples at the end (those +4 bytes) */
-#if 0 /* no need - alloc'ed using timi_calloc() */
       sp->data[sp->data_length] = sp->data[sp->data_length+1] = 0;
-#endif
 
       /* Then fractional samples */
       sp->data_length <<= FRACTION_BITS;
@@ -639,4 +636,3 @@ int set_default_instrument(MidSong *song, const char *name)
   song->default_program = SPECIAL_PROGRAM;
   return 0;
 }
-

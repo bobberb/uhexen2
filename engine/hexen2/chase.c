@@ -1,7 +1,4 @@
-/*
- * chase.c -- chase camera code
- * $Id: chase.c,v 1.9 2007-04-03 06:19:19 sezero Exp $
- *
+/* chase.c -- chase camera code
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -90,7 +87,8 @@ void Chase_Update (void)
 
 // check for walls between player and camera (from quakeforge)
 	TraceLine(r_refdef.vieworg, chase_dest, stop);
-	if (VectorLength(stop) != 0)
+	dist = VectorLengthFast(stop);
+	if (dist <= -((float)DIST_EPSILON) || dist >= ((float)DIST_EPSILON))
 	{
 		chase_dest[0] = stop[0] + forward[0] * 8;
 		chase_dest[1] = stop[1] + forward[1] * 8;
@@ -100,4 +98,3 @@ void Chase_Update (void)
 // move towards destination
 	VectorCopy (chase_dest, r_refdef.vieworg);
 }
-

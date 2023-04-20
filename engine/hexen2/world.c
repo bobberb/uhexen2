@@ -1,6 +1,5 @@
 /*
  * world.c -- world query functions
- * $Id$
  *
  * entities never clip against themselves, or their owner
  * line of sight checks trace->crosscontent, but bullets don't
@@ -214,7 +213,6 @@ ENTITY AREA CHECKING
 */
 
 static	areanode_t	sv_areanodes[AREA_NODES];
-static	int			areanodedepth;
 static	int			sv_numareanodes;
 
 /*
@@ -235,15 +233,14 @@ static areanode_t *SV_CreateAreaNode (int depth, vec3_t mins, vec3_t maxs)
 	ClearLink (&anode->trigger_edicts);
 	ClearLink (&anode->solid_edicts);
 
-	VectorSubtract(maxs, mins, size);
-
-	if (depth == AREA_DEPTH || (size[0] < 512 && size[1] < 512))
+	if (depth == AREA_DEPTH)
 	{
 		anode->axis = -1;
 		anode->children[0] = anode->children[1] = NULL;
 		return anode;
 	}
 
+	VectorSubtract (maxs, mins, size);
 	if (size[0] > size[1])
 		anode->axis = 0;
 	else
@@ -276,7 +273,6 @@ void SV_ClearWorld (void)
 	memset (sv_areanodes, 0, sizeof(sv_areanodes));
 	sv_numareanodes = 0;
 	SV_CreateAreaNode (0, sv.worldmodel->mins, sv.worldmodel->maxs);
-	areanodedepth = 0;
 }
 
 
@@ -301,108 +297,80 @@ void SV_UnlinkEdict (edict_t *ent)
 	ent->area.prev = ent->area.next = NULL;
 }
 
+
 /*
 ====================
-SV_AreaTriggerEdicts
-
-Spike -- just builds a list of entities within the area, rather than walking
-them and risking the list getting corrupt.
+SV_TouchLinks
 ====================
 */
-static void
-SV_AreaTriggerEdicts(edict_t *ent, areanode_t *node, edict_t **list, int *listcount, const int listspace)
+static void SV_TouchLinks (edict_t *ent, areanode_t *node)
 {
-	link_t		*l, *next;
+	link_t		*l, *lnext;
 	edict_t		*touch;
+	int			old_self, old_other;
 
+loc0:
 	// touch linked edicts
-	for (l = node->trigger_edicts.next; l != &node->trigger_edicts; l = next)
+	sv_link_next = &lnext;
+	for (l = node->trigger_edicts.next ; l != &node->trigger_edicts ; l = lnext)
 	{
-		next = l->next;
+		if (!l)
+		{
+		// my area got removed out from under me!
+			Con_Printf ("%s: encountered NULL link!\n", __thisfunc__);
+			break;
+		}
+
+		lnext = l->next;
 		touch = EDICT_FROM_AREA(l);
 		if (touch == ent)
 			continue;
 		if (!touch->v.touch || touch->v.solid != SOLID_TRIGGER)
 			continue;
 		if (ent->v.absmin[0] > touch->v.absmax[0]
-			|| ent->v.absmin[1] > touch->v.absmax[1]
-			|| ent->v.absmin[2] > touch->v.absmax[2]
-			|| ent->v.absmax[0] < touch->v.absmin[0]
-			|| ent->v.absmax[1] < touch->v.absmin[1]
-			|| ent->v.absmax[2] < touch->v.absmin[2])
+				|| ent->v.absmin[1] > touch->v.absmax[1]
+				|| ent->v.absmin[2] > touch->v.absmax[2]
+				|| ent->v.absmax[0] < touch->v.absmin[0]
+				|| ent->v.absmax[1] < touch->v.absmin[1]
+				|| ent->v.absmax[2] < touch->v.absmin[2] )
 			continue;
 
-		if (*listcount == listspace)
-			return; // should never happen
-
-		list[*listcount] = touch;
-		(*listcount)++;
-	}
-
-	// recurse down both sides
-	if (node->axis == -1)
-		return;
-
-	if (ent->v.absmax[node->axis] > node->dist)
-		SV_AreaTriggerEdicts(ent, node->children[0], list, listcount, listspace);
-	if (ent->v.absmin[node->axis] < node->dist)
-		SV_AreaTriggerEdicts(ent, node->children[1], list, listcount, listspace);
-}
-
-/*
-====================
-SV_TouchLinks
-
-ericw -- copy the touching edicts to an array (on the hunk) so we can avoid
-iteating the trigger_edicts linked list while calling PR_ExecuteProgram
-which could potentially corrupt the list while it's being iterated.
-Based on code from Spike.
-====================
-*/
-void SV_TouchLinks(edict_t *ent)
-{
-	edict_t		**list;
-	edict_t		*touch;
-	int		old_self, old_other;
-	int		i, listcount;
-	int		mark;
-
-	mark = Hunk_LowMark();
-	list = (edict_t **)Hunk_Alloc(sv.num_edicts * sizeof(edict_t *));
-
-	listcount = 0;
-	SV_AreaTriggerEdicts(ent, sv_areanodes, list, &listcount, sv.num_edicts);
-
-	for (i = 0; i < listcount; i++)
-	{
-		touch = list[i];
-		// re-validate in case of PR_ExecuteProgram having side effects that make
-		// edicts later in the list no longer touch
-		if (touch == ent)
-			continue;
-		if (!touch->v.touch || touch->v.solid != SOLID_TRIGGER)
-			continue;
-		if (ent->v.absmin[0] > touch->v.absmax[0]
-			|| ent->v.absmin[1] > touch->v.absmax[1]
-			|| ent->v.absmin[2] > touch->v.absmax[2]
-			|| ent->v.absmax[0] < touch->v.absmin[0]
-			|| ent->v.absmax[1] < touch->v.absmin[1]
-			|| ent->v.absmax[2] < touch->v.absmin[2])
-			continue;
 		old_self = *sv_globals.self;
 		old_other = *sv_globals.other;
 
 		*sv_globals.self = EDICT_TO_PROG(touch);
 		*sv_globals.other = EDICT_TO_PROG(ent);
 		*sv_globals.time = sv.time;
-		PR_ExecuteProgram(touch->v.touch, "touch");
+		PR_ExecuteProgram (touch->v.touch);
 
 		*sv_globals.self = old_self;
 		*sv_globals.other = old_other;
 	}
 
-	// free hunk-allocated edicts array
-	Hunk_FreeToLowMark(mark);
+	sv_link_next = NULL;
+
+	// recurse down both sides
+	if (node->axis == -1)
+		return;
+
+	// LordHavoc: optimized recursion
+	//if (ent->v.absmax[node->axis] > node->dist) SV_TouchLinks (ent, node->children[0]);
+	//if (ent->v.absmin[node->axis] < node->dist) SV_TouchLinks (ent, node->children[1]);
+	if (ent->v.absmax[node->axis] > node->dist)
+	{
+		if (ent->v.absmin[node->axis] < node->dist)
+			SV_TouchLinks(ent, node->children[1]); // order reversed to reduce code
+		node = node->children[0];
+		goto loc0;
+	}
+	else
+	{
+		if (ent->v.absmin[node->axis] < node->dist)
+		{
+			node = node->children[1];
+			goto loc0;
+		}
+	}
 }
 
 
@@ -424,7 +392,7 @@ loc0:
 		return;
 
 	// add an efrag if the node is a leaf
-	// statics in walls cause efrag overflow, comment out to show over-culled ents in this case - shan
+
 	if (node->contents < 0)
 	{
 		if (ent->num_leafs == MAX_ENT_LEAFS)
@@ -564,7 +532,7 @@ void SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 
 	// if touch_triggers, touch all entities at this node and decend for more
 	if (touch_triggers)
-		SV_TouchLinks ( ent );
+		SV_TouchLinks ( ent, sv_areanodes );
 }
 
 
@@ -757,7 +725,8 @@ loc0: // optimized recursion
 #endif
 
 // put the crosspoint DIST_EPSILON pixels on the near side
-	if (t1 < 0)
+	side = (t1 < 0);
+	if (side)
 		frac = (t1 + DIST_EPSILON)/(t1-t2);
 	else
 		frac = (t1 - DIST_EPSILON)/(t1-t2);
@@ -770,11 +739,10 @@ loc0: // optimized recursion
 	for (i = 0; i < 3; i++)
 		mid[i] = p1[i] + frac*(p2[i] - p1[i]);
 
-	side = (t1 < 0);
-
 // move up to the node
 	if (!SV_RecursiveHullCheck (hull, node->children[side], p1f, midf, p1, mid, trace) )
 		return false;
+
 #ifdef PARANOID
 	if (SV_HullPointContents (hull, node->children[side], mid) == CONTENTS_SOLID)
 	{
@@ -1038,8 +1006,8 @@ static void SV_MoveBounds (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, v
 {
 #if 0
 	// debug to test against everything
-	boxmins[0] = boxmins[1] = boxmins[2] = -9999;
-	boxmaxs[0] = boxmaxs[1] = boxmaxs[2] = 9999;
+	boxmins[0] = boxmins[1] = boxmins[2] = -9999999;	//FIXME: change to FLT_MAX/-FLT_MAX
+	boxmaxs[0] = boxmaxs[1] = boxmaxs[2] = 9999999;
 #else
 	int		i;
 

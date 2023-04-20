@@ -1,6 +1,5 @@
 /*
  * cvar.h -- dynamic variable tracking
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2008-2010  O.Sezer <sezero@users.sourceforge.net>
@@ -124,6 +123,9 @@ qboolean Cvar_Command (void);
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
 
+void Cvar_MoveToFront (const char *var_name);
+// move variables to the head of the list for faster access
+
 void	Cvar_WriteVariables (FILE *f);
 // Writes lines containing "set variable value" for all variables
 // with the CVAR_ARCHIVE flag set
@@ -136,4 +138,3 @@ void	Cvar_UnlockVar (const char *var_name);
 void	Cvar_UnlockAll (void);
 
 #endif	/* __CVAR_H__ */
-

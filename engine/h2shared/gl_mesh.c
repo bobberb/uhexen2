@@ -1,7 +1,5 @@
 /*
  * gl_mesh.c -- triangle model functions
- * $Id: gl_mesh.c,v 1.24 2010-10-30 11:33:15 sezero Exp $
- *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -330,34 +328,6 @@ void GL_MakeAliasModelDisplayLists (qmodel_t *m, aliashdr_t *hdr)
 	int		i, j;
 	int		*cmds;
 	trivertx_t	*verts;
-	float	hscale, vscale; //johnfitz -- padded skins
-	int		count; //johnfitz -- precompute texcoords for padded skins
-	int		*loadcmds; //johnfitz
-
-	//johnfitz -- padded skins
-	//hscale = (float)(hdr->gltextures[0][0]->source_width) / (float)TexMgr_PadConditional(hdr->gltextures[0][0]->source_width);
-	//vscale = (float)(hdr->gltextures[0][0]->source_height) / (float)TexMgr_PadConditional(hdr->gltextures[0][0]->source_height);
-	//hscale = (float)(hdr->skinwidth) / (float)TexMgr_PadConditional(hdr->skinwidth);
-	//vscale = (float)(hdr->skinheight) / (float)TexMgr_PadConditional(hdr->skinheight);
-	
-	//hscale = (float)(hdr->gltextures[0][0]->source_width) / (float)(hdr->gltextures[0][0]->width);
-	//vscale = (float)(hdr->gltextures[0][0]->source_height) / (float)(hdr->gltextures[0][0]->height);
-	if (isDedicated)
-	{
-		hscale = (float)(hdr->skinwidth) / (float)TexMgr_PadConditional(hdr->skinwidth);
-		vscale = (float)(hdr->skinheight) / (float)TexMgr_PadConditional(hdr->skinheight);
-	}
-	else
-	{
-		hscale = (float)(hdr->gltextures[0][0]->source_width) / (float)TexMgr_PadConditional(hdr->gltextures[0][0]->source_width);
-		vscale = (float)(hdr->gltextures[0][0]->source_height) / (float)TexMgr_PadConditional(hdr->gltextures[0][0]->source_height);
-	}
-
-	//hscale = (float)(hdr->skinwidth) / (float)TexMgr_PadConditional(hdr->skinwidth);
-	//vscale = (float)(hdr->skinheight) / (float)TexMgr_PadConditional(hdr->skinheight);
-	//hscale = 1.0f;
-	//vscale = 1.0f;
-	//johnfitz
 
 	DEBUG_Printf ("meshing %s...\n", m->name);
 	BuildTris ();		// trifans or lists
@@ -366,27 +336,7 @@ void GL_MakeAliasModelDisplayLists (qmodel_t *m, aliashdr_t *hdr)
 
 	cmds = (int *) Hunk_AllocName (numcommands * 4, "cmds");
 	hdr->commands = (byte *)cmds - (byte *)hdr;
-	//memcpy (cmds, commands, numcommands * 4);
-
-	//johnfitz -- precompute texcoords for padded skins
-	loadcmds = commands;
-	while (1)
-	{
-		*cmds++ = count = *loadcmds++;
-
-		if (!count)
-			break;
-
-		if (count < 0)
-			count = -count;
-
-		do
-		{
-			*(float *)cmds++ = hscale * (*(float *)loadcmds++);
-			*(float *)cmds++ = vscale * (*(float *)loadcmds++);
-		} while (--count);
-	}
-	//johnfitz
+	memcpy (cmds, commands, numcommands * 4);
 
 	verts = (trivertx_t *) Hunk_AllocName (hdr->numposes * hdr->poseverts * sizeof(trivertx_t), "verts");
 	hdr->posedata = (byte *)verts - (byte *)hdr;

@@ -1,7 +1,4 @@
-/*
- * sys_amiga.c -- Amiga system interface code
- * $Id$
- *
+/* sys_amiga.c -- Amiga system interface code
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2012  Szilard Biro <col.lawrence@gmail.com>
  *
@@ -38,12 +35,27 @@
 #include "sdl_inc.h"
 #endif
 
+#if defined(__LP64__)
+#define MIN_STACK_SIZE 0x200000 /* 2 MB stack */
+#elif defined(PLATFORM_AMIGAOS3)
+#define MIN_STACK_SIZE 0x40000 /* 256 KB stack */
+#else
 #define MIN_STACK_SIZE 0x100000 /* 1 MB stack */
+#endif
+
 #ifdef __CLIB2__
 int __stack_size = MIN_STACK_SIZE;
 #else
 int __stack = MIN_STACK_SIZE;
+#if defined(PLATFORM_AMIGAOS3) && defined(__libnix__)
+/* this pulls in swapstack.o */
+/* NOTE: swapstack.o was a stray object in old versions
+ *       of libnix, need manually adding to libnix20.a */
+extern void __stkinit(void);
+void * __x = __stkinit;
 #endif
+#endif
+
 #ifdef __AROS__
 #include "incstack.h"
 /* The problem here is that our real main never returns: the exit
@@ -59,12 +71,8 @@ static int my_rc = 0;
 
 #include <SDI/SDI_compiler.h> /* IPTR */
 
-// heapsize: minimum 16mb, standart 32 mb, max is 96 mb.
-// -heapsize argument will abide by these min/max settings
-// unless the -forcemem argument is used
 #define MIN_MEM_ALLOC	0x1000000
 #define STD_MEM_ALLOC	0x2000000
-#define MAX_MEM_ALLOC	0x6000000
 
 cvar_t		sys_nostdout = {"sys_nostdout", "0", CVAR_NONE};
 cvar_t		sys_throttle = {"sys_throttle", "0.02", CVAR_ARCHIVE};
@@ -135,18 +143,19 @@ int Sys_rename (const char *oldp, const char *newp)
 long Sys_filesize (const char *path)
 {
 	long size = -1;
-	BPTR fh = Open((const STRPTR) path, MODE_OLDFILE);
-	if (fh)
+	BPTR lock = Lock((const STRPTR) path, ACCESS_READ);
+	if (lock)
 	{
 		struct FileInfoBlock *fib = (struct FileInfoBlock*)
 					AllocDosObject(DOS_FIB, NULL);
 		if (fib != NULL)
 		{
-			if (ExamineFH(fh, fib))
+			if (Examine(lock, fib)) {
 				size = fib->fib_Size;
+			}
 			FreeDosObject(DOS_FIB, fib);
 		}
-		Close(fh);
+		UnLock(lock);
 	}
 	return size;
 }
@@ -154,22 +163,21 @@ long Sys_filesize (const char *path)
 int Sys_FileType (const char *path)
 {
 	int type = FS_ENT_NONE;
-	BPTR fh = Open((const STRPTR) path, MODE_OLDFILE);
-	if (fh)
+	BPTR lock = Lock((const STRPTR) path, ACCESS_READ);
+	if (lock)
 	{
 		struct FileInfoBlock *fib = (struct FileInfoBlock*)
 					AllocDosObject(DOS_FIB, NULL);
 		if (fib != NULL)
 		{
-			if (ExamineFH(fh, fib))
-			{
+			if (Examine(lock, fib)) {
 				if (fib->fib_DirEntryType >= 0)
 					type = FS_ENT_DIRECTORY;
 				else	type = FS_ENT_FILE;
 			}
 			FreeDosObject(DOS_FIB, fib);
 		}
-		Close(fh);
+		UnLock(lock);
 	}
 	return type;
 }
@@ -254,8 +262,7 @@ filenames only, not a dirent struct. this is
 what we presently need in this engine.
 =================================================
 */
-#define PATH_SIZE 1024
-static struct AnchorPath *apath;
+static struct AnchorPath apath;
 static BPTR oldcurrentdir;
 static STRPTR pattern_str;
 
@@ -299,33 +306,23 @@ const char *Sys_FindFirstFile (const char *path, const char *pattern)
 {
 	BPTR newdir;
 
-	if (apath)
+	if (pattern_str)
 		Sys_Error ("Sys_FindFirst without FindClose");
 
-	apath = (struct AnchorPath *) AllocVec (sizeof(struct AnchorPath) + PATH_SIZE, MEMF_CLEAR);
-	if (!apath)
-		return NULL;
-
-	apath->ap_Strlen = PATH_SIZE;
-	apath->ap_BreakBits = 0;
-	apath->ap_Flags = 0;  /* APF_DOWILD */
+	memset(&apath, 0, sizeof(apath));
 
 	newdir = Lock((const STRPTR) path, SHARED_LOCK);
 	if (newdir)
 		oldcurrentdir = CurrentDir(newdir);
 	else
-	{
-		FreeVec(apath);
-		apath = NULL;
 		return NULL;
-	}
 
 	pattern_str = pattern_helper (pattern);
 
-	if (MatchFirst((const STRPTR) pattern_str, apath) == 0)
+	if (MatchFirst((const STRPTR) pattern_str, &apath) == 0)
 	{
-	    if (apath->ap_Info.fib_DirEntryType < 0)
-		return (const char *) (apath->ap_Info.fib_FileName);
+	    if (apath.ap_Info.fib_DirEntryType < 0)
+		return (const char *) (apath.ap_Info.fib_FileName);
 	}
 
 	return Sys_FindNextFile();
@@ -333,13 +330,13 @@ const char *Sys_FindFirstFile (const char *path, const char *pattern)
 
 const char *Sys_FindNextFile (void)
 {
-	if (!apath)
+	if (!pattern_str)
 		return NULL;
 
-	while (MatchNext(apath) == 0)
+	while (MatchNext(&apath) == 0)
 	{
-	    if (apath->ap_Info.fib_DirEntryType < 0)
-		return (const char *) (apath->ap_Info.fib_FileName);
+	    if (apath.ap_Info.fib_DirEntryType < 0)
+		return (const char *) (apath.ap_Info.fib_FileName);
 	}
 
 	return NULL;
@@ -347,13 +344,11 @@ const char *Sys_FindNextFile (void)
 
 void Sys_FindClose (void)
 {
-	if (!apath)
+	if (!pattern_str)
 		return;
-	MatchEnd(apath);
-	FreeVec(apath);
+	MatchEnd(&apath);
 	UnLock(CurrentDir(oldcurrentdir));
 	oldcurrentdir = 0;
-	apath = NULL;
 	Z_Free(pattern_str);
 	pattern_str = NULL;
 }
@@ -363,9 +358,9 @@ void Sys_FindClose (void)
 qboolean Sys_PathExistsQuiet(const char *name)
 {
 	struct Process *self = (struct Process *) FindTask(NULL);
-	APTR oldwinptr; BPTR lock;
+	APTR oldwinptr = self->pr_WindowPtr;
+	BPTR lock;
 
-	oldwinptr = self->pr_WindowPtr;
 	self->pr_WindowPtr = (APTR) -1;
 	lock = Lock((const STRPTR) name, ACCESS_READ);
 	self->pr_WindowPtr = oldwinptr;
@@ -662,25 +657,24 @@ char *Sys_GetClipboardData (void)
 	LONG readbytes;
 	char *chunk_buffer = NULL;
 
-	if (!IFFParseBase)
+	if (!IFFParseBase) {
 		return NULL;
-
-	if ((IFFHandle = AllocIFF())) {
-	    if ((IFFHandle->iff_Stream = (IPTR) OpenClipboard(0))) {
+	}
+	IFFHandle = AllocIFF();
+	if (IFFHandle) {
+	    IFFHandle->iff_Stream = (IPTR) OpenClipboard(0);
+	    if (IFFHandle->iff_Stream) {
 		InitIFFasClip(IFFHandle);
 		if (!OpenIFF(IFFHandle, IFFF_READ)) {
 		    if (!StopChunk(IFFHandle, ID_FTXT, ID_CHRS)) {
 			if (!ParseIFF(IFFHandle, IFFPARSE_SCAN)) {
 			    cn = CurrentChunk(IFFHandle);
-			    if (cn && (cn->cn_Type == ID_FTXT) &&
-					(cn->cn_ID == ID_CHRS)) {
-				chunk_buffer = (char *)
-					  Z_Malloc(MAX_CLIPBOARDTXT, Z_MAINZONE);
-				readbytes = ReadChunkBytes(IFFHandle,
-							   chunk_buffer,
-							   MAX_CLIPBOARDTXT - 1);
-				if (readbytes < 0)
+			    if (cn && (cn->cn_Type == ID_FTXT) && (cn->cn_ID == ID_CHRS)) {
+				chunk_buffer = (char *) Z_Malloc(MAX_CLIPBOARDTXT, Z_MAINZONE);
+				readbytes = ReadChunkBytes(IFFHandle, chunk_buffer, MAX_CLIPBOARDTXT - 1);
+				if (readbytes < 0) {
 				    readbytes = 0;
+				}
 				chunk_buffer[readbytes] = '\0';
 			    }
 			}
@@ -716,18 +710,7 @@ static void Sys_CheckSDL (void)
 
 	sdl_version = SDL_Linked_Version();
 	Sys_Printf("Found SDL version %i.%i.%i\n",sdl_version->major,sdl_version->minor,sdl_version->patch);
-	if (SDL_VERSIONNUM(sdl_version->major,sdl_version->minor,sdl_version->patch) < SDL_REQUIREDVERSION)
-	{	/*reject running under SDL versions older than what is stated in sdl_inc.h */
-		Sys_Error("You need at least v%d.%d.%d of SDL to run this game.", SDL_MIN_X,SDL_MIN_Y,SDL_MIN_Z);
-	}
-# if defined(SDL_NEW_VERSION_REJECT)
-	if (SDL_VERSIONNUM(sdl_version->major,sdl_version->minor,sdl_version->patch) >= SDL_NEW_VERSION_REJECT)
-	{	/*reject running under SDL versions newer than what is stated in sdl_inc.h */
-		Sys_Error("Your version of SDL library is incompatible with me.\n"
-			  "You need a library version in the line of %d.%d.%d\n", SDL_MIN_X,SDL_MIN_Y,SDL_MIN_Z);
-	}
-# endif /* SDL_NEW_VERSION_REJECT */
-#endif	/* SDLQUAKE */
+#endif
 }
 
 static void PrintVersion (void)
@@ -762,6 +745,9 @@ static const char *help_strings[] = {
 #if HAVE_AHI_SOUND
 	"     [-sndahi]               Use AHI audio system",
 #endif
+#if HAVE_PAULA_SOUND
+	"     [-sndpaula]             Use Paula DMA audio",
+#endif
 #endif	/*  SOUND_NUMDRIVERS */
 #endif	/* _NO_SOUND */
 	"     [-nomouse]              Disable mouse usage",
@@ -792,9 +778,6 @@ MAIN
 */
 static quakeparms_t	parms;
 static char	cwd[MAX_OSPATH];
-#if defined(SDLQUAKE)
-static Uint8		appState;
-#endif
 
 int main (int argc, char **argv)
 {
@@ -850,34 +833,14 @@ int main (int argc, char **argv)
 	Sys_CheckSDL ();
 
 	availMem = AvailMem(MEMF_ANY|MEMF_LARGEST);
-	if (availMem < STD_MEM_ALLOC)
-		parms.memsize = MIN_MEM_ALLOC;
-	else
-		parms.memsize = STD_MEM_ALLOC;
-
+	parms.memsize = (availMem < STD_MEM_ALLOC)? MIN_MEM_ALLOC : STD_MEM_ALLOC;
 	i = COM_CheckParm ("-heapsize");
 	if (i && i < com_argc-1)
-	{
 		parms.memsize = atoi (com_argv[i+1]) * 1024;
 
-		if ((parms.memsize > MAX_MEM_ALLOC) && !(COM_CheckParm ("-forcemem")))
-		{
-			Sys_Printf ("Requested memory (%d Mb) too large, using the default maximum.\n", parms.memsize/(1024*1024));
-			Sys_Printf ("If you are sure, use the -forcemem switch.\n");
-			parms.memsize = MAX_MEM_ALLOC;
-		}
-		else if ((parms.memsize < MIN_MEM_ALLOC) && !(COM_CheckParm ("-forcemem")))
-		{
-			Sys_Printf ("Requested memory (%d Mb) too little, using the default minimum.\n", parms.memsize/(1024*1024));
-			Sys_Printf ("If you are sure, use the -forcemem switch.\n");
-			parms.memsize = MIN_MEM_ALLOC;
-		}
-	}
-
 	parms.membase = malloc (parms.memsize);
-
 	if (!parms.membase)
-		Sys_Error ("Insufficient memory.\n");
+		Sys_Error ("Insufficient memory.");
 
 #ifndef HAVE_AROS_MAIN_WRAPPER
 	atexit (Sys_AtExit);
@@ -896,23 +859,18 @@ int main (int argc, char **argv)
 	while (1)
 	{
 #if defined(SDLQUAKE)
-		appState = SDL_GetAppState();
 		/* If we have no input focus at all, sleep a bit */
-		if ( !(appState & (SDL_APPMOUSEFOCUS | SDL_APPINPUTFOCUS)) || cl.paused)
-		{
+		if (!VID_HasMouseOrInputFocus() || cl.paused) {
 			Sys_Sleep(16);
 		}
 		/* If we're minimised, sleep a bit more */
-		if ( !(appState & SDL_APPACTIVE))
-		{
+		if (VID_IsMinimized()) {
 			scr_skipupdate = 1;
 			Sys_Sleep(32);
-		}
-		else
-		{
+		} else {
 			scr_skipupdate = 0;
 		}
-#endif	/* SDLQUAKE */
+#endif
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 

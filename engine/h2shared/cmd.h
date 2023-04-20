@@ -1,7 +1,4 @@
-/*
- * cmd.h - command buffer and command execution
- * $Id$
- *
+/* cmd.h - command buffer and command execution
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -96,6 +93,9 @@ qboolean Cmd_CheckCommand (const char *partial);
 // attempts to match a given text to known commands, cvars or aliases
 // returns true if there is an exact match, false otherwise
 
+void Cmd_MoveToFront (const char *cmd_name);
+// move commands to the head of the list for faster access
+
 int		Cmd_Argc (void);
 const char	*Cmd_Argv (int arg);
 const char	*Cmd_Args (void);
@@ -132,4 +132,3 @@ int ListAlias (const char *prefix, const char **buf, int pos);
 // maximum number of matches for console tab completion
 
 #endif	/* __HX2_CMD_H */
-

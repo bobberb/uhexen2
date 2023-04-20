@@ -32,6 +32,14 @@
 		48E2EC7E15FB507A00B8D476 /* libogg.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48E2EC7A15FB507A00B8D476 /* libogg.dylib */; };
 		48E2EC7F15FB507A00B8D476 /* libvorbis.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48E2EC7B15FB507A00B8D476 /* libvorbis.dylib */; };
 		48E2EC8015FB507A00B8D476 /* libvorbisfile.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48E2EC7C15FB507A00B8D476 /* libvorbisfile.dylib */; };
+		6314361C2815EC8B00CC0F5A /* hashindex.c in Sources */ = {isa = PBXBuildFile; fileRef = 6314361A2815EC8B00CC0F5A /* hashindex.c */; };
+		6314361D2815EC8B00CC0F5A /* hashindex.h in Headers */ = {isa = PBXBuildFile; fileRef = 6314361B2815EC8B00CC0F5A /* hashindex.h */; };
+		6314361E2815EC8B00CC0F5A /* hashindex.c in Sources */ = {isa = PBXBuildFile; fileRef = 6314361A2815EC8B00CC0F5A /* hashindex.c */; };
+		6314361F2815EC8B00CC0F5A /* hashindex.h in Headers */ = {isa = PBXBuildFile; fileRef = 6314361B2815EC8B00CC0F5A /* hashindex.h */; };
+		631478BF27F1B3530023B20A /* snd_modplug.c in Sources */ = {isa = PBXBuildFile; fileRef = 631478BE27F1B3530023B20A /* snd_modplug.c */; };
+		631478C027F1B3530023B20A /* snd_modplug.c in Sources */ = {isa = PBXBuildFile; fileRef = 631478BE27F1B3530023B20A /* snd_modplug.c */; };
+		6398921823A25377003C5801 /* snd_mp3tag.c in Sources */ = {isa = PBXBuildFile; fileRef = 6398921723A25377003C5801 /* snd_mp3tag.c */; };
+		6398921923A25377003C5801 /* snd_mp3tag.c in Sources */ = {isa = PBXBuildFile; fileRef = 6398921723A25377003C5801 /* snd_mp3tag.c */; };
 		63CA72B31963FA25005A8397 /* SDL.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 707D59200AAA071800313A9F /* SDL.framework */; };
 		63CA72B41963FA3A005A8397 /* libogg.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = 48E2EC7A15FB507A00B8D476 /* libogg.dylib */; };
 		63CA72B51963FA58005A8397 /* libFLAC.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = 48281302179C401D004E1D61 /* libFLAC.dylib */; };
@@ -383,6 +391,11 @@
 		48E2EC7A15FB507A00B8D476 /* libogg.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libogg.dylib; path = ../../../oslibs/macosx/codecs/lib/libogg.dylib; sourceTree = "<group>"; };
 		48E2EC7B15FB507A00B8D476 /* libvorbis.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libvorbis.dylib; path = ../../../oslibs/macosx/codecs/lib/libvorbis.dylib; sourceTree = "<group>"; };
 		48E2EC7C15FB507A00B8D476 /* libvorbisfile.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libvorbisfile.dylib; path = ../../../oslibs/macosx/codecs/lib/libvorbisfile.dylib; sourceTree = "<group>"; };
+		6314361A2815EC8B00CC0F5A /* hashindex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hashindex.c; path = ../../h2shared/hashindex.c; sourceTree = SOURCE_ROOT; };
+		6314361B2815EC8B00CC0F5A /* hashindex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hashindex.h; path = ../../h2shared/hashindex.h; sourceTree = SOURCE_ROOT; };
+		631478BD27F1B2DC0023B20A /* snd_mpg123.c */ = {isa = PBXFileReference; comments = "NOTE: snd_mp3.c and snd_mpg123.c are mutually exclusive - build only one."; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = snd_mpg123.c; path = ../../h2shared/snd_mpg123.c; sourceTree = SOURCE_ROOT; };
+		631478BE27F1B3530023B20A /* snd_modplug.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = snd_modplug.c; path = ../../h2shared/snd_modplug.c; sourceTree = SOURCE_ROOT; };
+		6398921723A25377003C5801 /* snd_mp3tag.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = snd_mp3tag.c; path = ../../h2shared/snd_mp3tag.c; sourceTree = SOURCE_ROOT; };
 		70158B710AAF3B3600F6437C /* d_edge.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = d_edge.c; path = ../../h2shared/d_edge.c; sourceTree = SOURCE_ROOT; };
 		70158B720AAF3B3600F6437C /* d_fill.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = d_fill.c; path = ../../h2shared/d_fill.c; sourceTree = SOURCE_ROOT; };
 		70158B730AAF3B3600F6437C /* d_iface.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = d_iface.h; path = ../../h2shared/d_iface.h; sourceTree = SOURCE_ROOT; };
@@ -399,7 +412,7 @@
 		70158B7E0AAF3B3600F6437C /* d_zpoint.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = d_zpoint.c; path = ../../h2shared/d_zpoint.c; sourceTree = SOURCE_ROOT; };
 		70158B7F0AAF3B3600F6437C /* draw.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = draw.c; path = ../../h2shared/draw.c; sourceTree = SOURCE_ROOT; };
 		70158B800AAF3B3600F6437C /* draw.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = draw.h; path = ../../h2shared/draw.h; sourceTree = SOURCE_ROOT; };
-		70158B810AAF3B3600F6437C /* model.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = model.c; path = ../model.c; sourceTree = SOURCE_ROOT; };
+		70158B810AAF3B3600F6437C /* model.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = model.c; path = ../../h2shared/model.c; sourceTree = SOURCE_ROOT; };
 		70158B820AAF3B3600F6437C /* model.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = model.h; path = ../../h2shared/model.h; sourceTree = SOURCE_ROOT; };
 		70158B830AAF3B3600F6437C /* r_aclip.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = r_aclip.c; path = ../../h2shared/r_aclip.c; sourceTree = SOURCE_ROOT; };
 		70158B840AAF3B3600F6437C /* r_alias.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = r_alias.c; path = ../r_alias.c; sourceTree = SOURCE_ROOT; };
@@ -438,7 +451,7 @@
 		707D57770AA9F6EE00313A9F /* adivtab.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = adivtab.h; path = ../../../common/adivtab.h; sourceTree = SOURCE_ROOT; };
 		707D57790AA9F6EE00313A9F /* anorm_dots.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = anorm_dots.h; path = ../../h2shared/anorm_dots.h; sourceTree = SOURCE_ROOT; };
 		707D577A0AA9F6EE00313A9F /* anorms.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = anorms.h; path = ../../../common/anorms.h; sourceTree = SOURCE_ROOT; };
-		707D577B0AA9F6EE00313A9F /* bspfile.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = bspfile.h; path = ../bspfile.h; sourceTree = SOURCE_ROOT; };
+		707D577B0AA9F6EE00313A9F /* bspfile.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = bspfile.h; path = ../../../common/bspfile.h; sourceTree = SOURCE_ROOT; };
 		707D577C0AA9F6EE00313A9F /* cd_sdl.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = cd_sdl.c; path = ../../h2shared/cd_sdl.c; sourceTree = SOURCE_ROOT; };
 		707D577D0AA9F6EE00313A9F /* cd_unix.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = cd_unix.h; path = ../../h2shared/cd_unix.h; sourceTree = SOURCE_ROOT; };
 		707D577E0AA9F6EE00313A9F /* cdaudio.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = cdaudio.h; path = ../../h2shared/cdaudio.h; sourceTree = SOURCE_ROOT; };
@@ -467,7 +480,7 @@
 		707D57950AA9F6EE00313A9F /* gl_draw.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gl_draw.c; path = ../../h2shared/gl_draw.c; sourceTree = SOURCE_ROOT; };
 		707D57960AA9F6EE00313A9F /* gl_func.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = gl_func.h; path = ../../h2shared/gl_func.h; sourceTree = SOURCE_ROOT; };
 		707D57970AA9F6EE00313A9F /* gl_mesh.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gl_mesh.c; path = ../../h2shared/gl_mesh.c; sourceTree = SOURCE_ROOT; };
-		707D57980AA9F6EE00313A9F /* gl_model.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gl_model.c; path = ../gl_model.c; sourceTree = SOURCE_ROOT; };
+		707D57980AA9F6EE00313A9F /* gl_model.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gl_model.c; path = ../../h2shared/gl_model.c; sourceTree = SOURCE_ROOT; };
 		707D57990AA9F6EE00313A9F /* gl_model.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = gl_model.h; path = ../../h2shared/gl_model.h; sourceTree = SOURCE_ROOT; };
 		707D579A0AA9F6EE00313A9F /* h2config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = h2config.h; path = ../../h2shared/h2config.h; sourceTree = SOURCE_ROOT; };
 		707D579B0AA9F6EE00313A9F /* gl_refrag.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gl_refrag.c; path = ../../h2shared/gl_refrag.c; sourceTree = SOURCE_ROOT; };
@@ -500,10 +513,10 @@
 		707D57B90AA9F6EE00313A9F /* net_udp.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = net_udp.c; path = ../net_udp.c; sourceTree = SOURCE_ROOT; };
 		707D57BA0AA9F6EE00313A9F /* net_udp.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = net_udp.h; path = ../net_udp.h; sourceTree = SOURCE_ROOT; };
 		707D57BD0AA9F6EE00313A9F /* snd_codec.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = snd_codec.c; path = ../../h2shared/snd_codec.c; sourceTree = SOURCE_ROOT; };
-		707D57BE0AA9F6EE00313A9F /* pr_cmds.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pr_cmds.c; path = ../pr_cmds.c; sourceTree = SOURCE_ROOT; };
+		707D57BE0AA9F6EE00313A9F /* pr_cmds.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pr_cmds.c; path = ../../h2shared/pr_cmds.c; sourceTree = SOURCE_ROOT; };
 		707D57BF0AA9F6EE00313A9F /* pr_comp.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pr_comp.h; path = ../../../common/pr_comp.h; sourceTree = SOURCE_ROOT; };
-		707D57C00AA9F6EE00313A9F /* pr_edict.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pr_edict.c; path = ../pr_edict.c; sourceTree = SOURCE_ROOT; };
-		707D57C10AA9F6EE00313A9F /* pr_exec.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pr_exec.c; path = ../pr_exec.c; sourceTree = SOURCE_ROOT; };
+		707D57C00AA9F6EE00313A9F /* pr_edict.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pr_edict.c; path = ../../h2shared/pr_edict.c; sourceTree = SOURCE_ROOT; };
+		707D57C10AA9F6EE00313A9F /* pr_exec.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pr_exec.c; path = ../../h2shared/pr_exec.c; sourceTree = SOURCE_ROOT; };
 		707D57C20AA9F6EE00313A9F /* cl_string.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = cl_string.c; path = ../cl_string.c; sourceTree = SOURCE_ROOT; };
 		707D57C30AA9F6EE00313A9F /* host_string.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = host_string.c; path = ../../h2shared/host_string.c; sourceTree = SOURCE_ROOT; };
 		707D57C40AA9F6EE00313A9F /* progdefs.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = progdefs.h; path = ../progdefs.h; sourceTree = SOURCE_ROOT; };
@@ -557,7 +570,7 @@
 		B0E74B27144E802B0043F808 /* strlcpy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = strlcpy.c; path = ../../../common/strlcpy.c; sourceTree = SOURCE_ROOT; };
 		B0E74B2C144E80540043F808 /* snd_wave.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = snd_wave.c; path = ../../h2shared/snd_wave.c; sourceTree = SOURCE_ROOT; };
 		B0E74B31144E806D0043F808 /* snd_vorbis.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = snd_vorbis.c; path = ../../h2shared/snd_vorbis.c; sourceTree = SOURCE_ROOT; };
-		B0E74B36144E807F0043F808 /* snd_mp3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = snd_mp3.c; path = ../../h2shared/snd_mp3.c; sourceTree = SOURCE_ROOT; };
+		B0E74B36144E807F0043F808 /* snd_mp3.c */ = {isa = PBXFileReference; comments = "NOTE: snd_mp3.c and snd_mpg123.c are mutually exclusive - build only one."; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = snd_mp3.c; path = ../../h2shared/snd_mp3.c; sourceTree = SOURCE_ROOT; };
 		B0E74B3B144E80960043F808 /* snd_opus.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = snd_opus.c; path = ../../h2shared/snd_opus.c; sourceTree = SOURCE_ROOT; };
 		F5F5DE80017CB4370103A810 /* libmikmod.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libmikmod.dylib; path = ../../../oslibs/macosx/codecs/lib/libmikmod.dylib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -615,6 +628,8 @@
 		707D57580AA9F4B100313A9F = {
 			isa = PBXGroup;
 			children = (
+				631478BE27F1B3530023B20A /* snd_modplug.c */,
+				6398921723A25377003C5801 /* snd_mp3tag.c */,
 				48281305179C4055004E1D61 /* snd_flac.c */,
 				48281306179C4055004E1D61 /* snd_flac.h */,
 				48281302179C401D004E1D61 /* libFLAC.dylib */,
@@ -632,6 +647,7 @@
 				483A78640D2EEAF000CB2E4C /* snd_mikmod.c */,
 				4818B0B012D5BA1A006DD66E /* snd_umx.c */,
 				B0E74B36144E807F0043F808 /* snd_mp3.c */,
+				631478BD27F1B2DC0023B20A /* snd_mpg123.c */,
 				B0E74B31144E806D0043F808 /* snd_vorbis.c */,
 				B0E74B2C144E80540043F808 /* snd_wave.c */,
 				B0E74B27144E802B0043F808 /* strlcpy.c */,
@@ -748,6 +764,8 @@
 				707D57A60AA9F6EE00313A9F /* host_cmd.c */,
 				707D57C30AA9F6EE00313A9F /* host_string.c */,
 				707D57A70AA9F6EE00313A9F /* host.c */,
+				6314361A2815EC8B00CC0F5A /* hashindex.c */,
+				6314361B2815EC8B00CC0F5A /* hashindex.h */,
 				707D57A80AA9F6EE00313A9F /* in_sdl.c */,
 				707D57A90AA9F6EE00313A9F /* input.h */,
 				707D57AA0AA9F6EE00313A9F /* keys.c */,
@@ -838,6 +856,7 @@
 				70310B4E0BFDEA0F00CA35D3 /* cfgfile.h in Headers */,
 				48AE54C6179723F7008E11FB /* snd_opus.h in Headers */,
 				4828130A179C4055004E1D61 /* snd_flac.h in Headers */,
+				6314361F2815EC8B00CC0F5A /* hashindex.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -897,6 +916,7 @@
 				70310B4C0BFDEA0F00CA35D3 /* cfgfile.h in Headers */,
 				48AE54C5179723F7008E11FB /* snd_opus.h in Headers */,
 				48281309179C4055004E1D61 /* snd_flac.h in Headers */,
+				6314361D2815EC8B00CC0F5A /* hashindex.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1114,6 +1134,9 @@
 				48281308179C4055004E1D61 /* snd_flac.c in Sources */,
 				32CA4F630368D1EE00C91783 /* snd_umx.c in Sources */,
 				483A78780D2EEAF000CB2E4C /* snd_mikmod.c in Sources */,
+				6398921923A25377003C5801 /* snd_mp3tag.c in Sources */,
+				631478C027F1B3530023B20A /* snd_modplug.c in Sources */,
+				6314361E2815EC8B00CC0F5A /* hashindex.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1202,6 +1225,9 @@
 				48281307179C4055004E1D61 /* snd_flac.c in Sources */,
 				4818B0B612D5BA1A006DD66E /* snd_umx.c in Sources */,
 				48305B530D8AF8EC00A29C24 /* snd_mikmod.c in Sources */,
+				6398921823A25377003C5801 /* snd_mp3tag.c in Sources */,
+				631478BF27F1B3530023B20A /* snd_modplug.c in Sources */,
+				6314361C2815EC8B00CC0F5A /* hashindex.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1273,7 +1299,7 @@
 				"SDKROOT[arch=ppc]" = macosx10.5;
 				"SDKROOT[arch=x86_64]" = macosx10.6;
 				SECTORDER_FLAGS = "";
-				STRIP_INSTALLED_PRODUCT = YES;
+				STRIP_INSTALLED_PRODUCT = NO;
 				WARNING_CFLAGS = (
 					"-Wmost",
 					"-Wno-four-char-constants",
@@ -1291,7 +1317,7 @@
 					i386,
 					ppc,
 				);
-				COPY_PHASE_STRIP = YES;
+				COPY_PHASE_STRIP = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G3;
@@ -1406,7 +1432,7 @@
 					i386,
 					ppc,
 				);
-				COPY_PHASE_STRIP = YES;
+				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					../../../oslibs/macosx,
 					"$(FRAMEWORK_SEARCH_PATHS)",
@@ -1516,7 +1542,7 @@
 				"SDKROOT[arch=ppc]" = macosx10.5;
 				"SDKROOT[arch=x86_64]" = macosx10.6;
 				SECTORDER_FLAGS = "";
-				STRIP_INSTALLED_PRODUCT = YES;
+				STRIP_INSTALLED_PRODUCT = NO;
 				WARNING_CFLAGS = (
 					"-Wmost",
 					"-Wno-four-char-constants",
@@ -1534,7 +1560,7 @@
 					i386,
 					ppc,
 				);
-				COPY_PHASE_STRIP = YES;
+				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					../../../oslibs/macosx,
 					"$(FRAMEWORK_SEARCH_PATHS)",

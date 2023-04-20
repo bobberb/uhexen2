@@ -7,8 +7,6 @@
  * - shouldn't depend on arch_def.h, q_stdinc.h, or
  *   any other headers
  *
- * $Id$
- *
  * Copyright (C) 2007-2011  O.Sezer <sezero@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -64,6 +62,12 @@
 #define FUNC_NORETURN
 #endif
 
+#if defined(__GNUC__)
+#define FUNC_UNUSED	__attribute__((__unused__))
+#else
+#define FUNC_UNUSED
+#endif
+
 #if defined(__GNUC__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 #define FUNC_NOINLINE	__attribute__((__noinline__))
 #elif defined(_MSC_VER) && (_MSC_VER >= 1300)
@@ -99,18 +103,9 @@
 #error	__func__ or __FUNCTION__ compiler token not supported? define one...
 #endif
 
-/* Some compilers, such as OpenWatcom, and possibly other compilers
- * from the DOS universe, define __386__ but not __i386__
- */
-#if defined(__386__) && !defined(__i386__)
-#define __i386__		1
-#endif
-
 /* inline keyword: */
 #if defined(_MSC_VER) && !defined(__cplusplus)
 #define inline __inline
 #endif	/* _MSC_VER */
 
-
 #endif	/* HX2_COMPILER_H */
-

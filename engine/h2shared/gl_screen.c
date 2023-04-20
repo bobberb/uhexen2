@@ -1,6 +1,5 @@
 /*
  * screen.c -- master for refresh, status bar, console, chat, notify, etc
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -141,7 +140,7 @@ static int	scr_erase_lines;
 
 #define	MAXLINES	27
 static int	lines;
-static int	StartC[MAXLINES], EndC[MAXLINES], CorrectionC[MAXLINES];
+static int	StartC[MAXLINES], EndC[MAXLINES];
 
 #if !defined(H2W)
 /* mission pack objectives: */
@@ -190,13 +189,10 @@ static void FindTextBreaks (const char *message, int Width)
 
 	lines = pos = start = 0;
 	lastspace = -1;
-	CorrectionC[lines] = 0;
 
 	while (1)
 	{
-		if (message[pos] == '\\' && (message[pos + 1] == '1' || message[pos + 1] == '2' || message[pos + 1] == '3' || message[pos + 1] == '4')) CorrectionC[lines] -= 2; 
-		
-		if (pos - start + CorrectionC[lines] >= Width || message[pos] == '@' || message[pos] == 0)
+		if (pos-start >= Width || message[pos] == '@' || message[pos] == 0)
 		{
 			oldlast = lastspace;
 			if (message[pos] == '@' || lastspace == -1 || message[pos] == 0)
@@ -205,7 +201,6 @@ static void FindTextBreaks (const char *message, int Width)
 			StartC[lines] = start;
 			EndC[lines] = lastspace;
 			lines++;
-			CorrectionC[lines] = 0;
 			if (lines == MAXLINES)
 				return;
 			if (message[pos] == '@')
@@ -259,7 +254,7 @@ static void SCR_DrawCenterString (void)
 		cnt = EndC[i] - StartC[i];
 		strncpy (temp, &scr_centerstring[StartC[i]], cnt);
 		temp[cnt] = 0;
-		bx = (40-strlen(temp) - CorrectionC[i]) * 8 / 2;
+		bx = (40-strlen(temp)) * 8 / 2;
 		M_Print (bx, by, temp);
 	}
 }
@@ -277,12 +272,9 @@ static void SCR_CheckDrawCenterString (void)
 	if (Key_GetDest() != key_game)
 		return;
 #if !defined(H2W)
-	if (intro_playing || (scr_centerstring[0] == '_')) /* If the intro is running or the first character in the message is an underscore - Inky */
+	if (intro_playing)
 	{
-		if (scr_centerstring[0] == '_')
-			Bottom_Plaque_Draw(scr_centerstring+1);
-		else
-			Bottom_Plaque_Draw(scr_centerstring);
+		Bottom_Plaque_Draw(scr_centerstring);
 		return;
 	}
 #endif	/* H2W */
@@ -544,6 +536,11 @@ static void SCR_DrawFPS (void)
 	static int	oldframecount = 0;
 	double	elapsed_time;
 	int	frames;
+	char	st[16];
+	int	x, y;
+
+	if (!scr_showfps.integer)
+		return;
 
 	elapsed_time = realtime - oldtime;
 	frames = r_framecount - oldframecount;
@@ -562,16 +559,11 @@ static void SCR_DrawFPS (void)
 		oldframecount = r_framecount;
 	}
 
-	if (scr_showfps.integer)
-	{
-		char	st[16];
-		int	x, y;
-		sprintf(st, "%4.0f FPS", lastfps);
-		x = vid.width - strlen(st) * 8 - 8;
-		y = vid.height - sb_lines - 8;
-	//	Draw_TileClear(x, y, strlen(st) * 8, 8);
-		Draw_String(x, y, st);
-	}
+	sprintf(st, "%4.0f FPS", lastfps);
+	x = vid.width - strlen(st) * 8 - 8;
+	y = vid.height - sb_lines - 8;
+//	Draw_TileClear(x, y, strlen(st) * 8, 8);
+	Draw_String(x, y, st);
 }
 
 /*
@@ -992,7 +984,7 @@ static void Plaque_Draw (const char *message, qboolean AlwaysDraw)
 		cnt = EndC[i] - StartC[i];
 		strncpy (temp, &message[StartC[i]], cnt);
 		temp[cnt] = 0;
-		bx = (40-strlen(temp) - CorrectionC[i]) * 8 / 2;
+		bx = (40-strlen(temp)) * 8 / 2;
 		M_Print (bx, by, temp);
 	}
 }
@@ -1026,7 +1018,7 @@ static void Info_Plaque_Draw (const char *message)
 		cnt = EndC[i] - StartC[i];
 		strncpy (temp, &message[StartC[i]], cnt);
 		temp[cnt] = 0;
-		bx = (40-strlen(temp) - CorrectionC[i]) * 8 / 2;
+		bx = (40-strlen(temp)) * 8 / 2;
 		M_Print (bx, by, temp);
 	}
 }
@@ -1041,12 +1033,8 @@ static void Bottom_Plaque_Draw (const char *message)
 		return;
 
 	FindTextBreaks(message, PLAQUE_WIDTH);
-	
-	if (intro_playing || cl.v.cameramode)
-		by = (((vid.height) / 8) - lines - 2) * 8;
-	else
-		by = (((vid.height - 37) / 8) - lines - 2) * 8;
 
+	by = (((vid.height) / 8) - lines - 2) * 8;
 	M_DrawTextBox (32, by - 16, PLAQUE_WIDTH + 4, lines + 2);
 
 	for (i = 0; i < lines; i++, by += 8)
@@ -1054,7 +1042,7 @@ static void Bottom_Plaque_Draw (const char *message)
 		cnt = EndC[i] - StartC[i];
 		strncpy (temp, &message[StartC[i]], cnt);
 		temp[cnt] = 0;
-		bx = (40-strlen(temp) - CorrectionC[i]) * 8 / 2;
+		bx = (40-strlen(temp)) * 8 / 2;
 		M_Print (bx, by, temp);
 	}
 }
@@ -1161,7 +1149,7 @@ static void SB_IntermissionOverlay (void)
 			size = elapsed;
 		temp[size] = 0;
 
-		bx = (40-strlen(temp) - CorrectionC[i]) * 8 / 2;
+		bx = (40-strlen(temp)) * 8 / 2;
 		I_Print (bx, by, temp, cl.intermission_flags);
 
 		elapsed -= size;
@@ -1186,41 +1174,41 @@ SCR_TileClear
 static void SCR_TileClear (void)
 {
     if (vid.conwidth > 320) {
-		if (r_refdef.vrect.x > 0)
-		{
-			// left
-			Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height);
-			// right
-			Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
-				vid.width - r_refdef.vrect.x + r_refdef.vrect.width, vid.height);
-		}
-//		if (r_refdef.vrect.y > 0) // if (r_refdef.vrect.height < vid.height - 44)
-		{
-			// top
-			Draw_TileClear (r_refdef.vrect.x, 0,
-				r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y);
-			// bottom
-			Draw_TileClear (r_refdef.vrect.x, r_refdef.vrect.y + r_refdef.vrect.height,
-				r_refdef.vrect.width, vid.height - (r_refdef.vrect.height + r_refdef.vrect.y));
-		}
-		} else {
-		if (r_refdef.vrect.x > 0)
-		{
-			// left
-			Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - sb_lines);
-			// right
-			Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
-				vid.width - r_refdef.vrect.x + r_refdef.vrect.width, vid.height - sb_lines);
-		}
-		if (r_refdef.vrect.y > 0)
-		{
-			// top
-			Draw_TileClear (r_refdef.vrect.x, 0,
-				r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y);
-			// bottom
-			Draw_TileClear (r_refdef.vrect.x, r_refdef.vrect.y + r_refdef.vrect.height,
-				r_refdef.vrect.width, vid.height - sb_lines - (r_refdef.vrect.height + r_refdef.vrect.y));
-		}
+	if (r_refdef.vrect.x > 0)
+	{
+		// left
+		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height);
+		// right
+		Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
+			vid.width - r_refdef.vrect.x + r_refdef.vrect.width, vid.height);
+	}
+//	if (r_refdef.vrect.y > 0) // if (r_refdef.vrect.height < vid.height - 44)
+	{
+		// top
+		Draw_TileClear (r_refdef.vrect.x, 0,
+			r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y);
+		// bottom
+		Draw_TileClear (r_refdef.vrect.x, r_refdef.vrect.y + r_refdef.vrect.height,
+			r_refdef.vrect.width, vid.height - (r_refdef.vrect.height + r_refdef.vrect.y));
+	}
+    } else {
+	if (r_refdef.vrect.x > 0)
+	{
+		// left
+		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - sb_lines);
+		// right
+		Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
+			vid.width - r_refdef.vrect.x + r_refdef.vrect.width, vid.height - sb_lines);
+	}
+	if (r_refdef.vrect.y > 0)
+	{
+		// top
+		Draw_TileClear (r_refdef.vrect.x, 0,
+			r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y);
+		// bottom
+		Draw_TileClear (r_refdef.vrect.x, r_refdef.vrect.y + r_refdef.vrect.height,
+			r_refdef.vrect.width, vid.height - sb_lines - (r_refdef.vrect.height + r_refdef.vrect.y));
+	}
     }
 }
 
@@ -1336,7 +1324,7 @@ void SCR_UpdateScreen (void)
 #endif	/* H2W */
 	else
 	{
-		if (crosshair.integer && !cls.demoplayback && !cl.intermission && !intro_playing && !cl.v.cameramode)
+		if (crosshair.integer && !cls.demoplayback)
 			Draw_Crosshair();
 
 		SCR_DrawRam();
@@ -1347,13 +1335,7 @@ void SCR_UpdateScreen (void)
 		Sbar_Draw();
 		SCR_DrawFPS();
 
-		if (plaquemessage[0] == '_')
-		{
-			Bottom_Plaque_Draw(plaquemessage+1);
-		}
-		else
-			Plaque_Draw(plaquemessage, false);
-
+		Plaque_Draw(plaquemessage, false);
 		SCR_DrawConsole();
 		M_Draw();
 

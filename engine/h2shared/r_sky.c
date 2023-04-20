@@ -1,6 +1,5 @@
 /*
  * r_sky.c
- * $Id: r_sky.c,v 1.7 2007-09-14 14:10:02 sezero Exp $
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
@@ -37,9 +36,12 @@ int		r_skymade;
 
 // TODO: clean up these routines
 
-static byte	bottomsky[128*131];
-static byte	bottommask[128*131];
-static byte	newsky[128*256];
+// these are global for amiga m68k asm
+ASM_LINKAGE_BEGIN
+byte	bottomsky[128*131];
+byte	bottommask[128*131];
+byte	newsky[128*256];
+ASM_LINKAGE_END
 		// newsky and topsky both pack in here, 128 bytes
 		//  of newsky on the left of each scan, 128 bytes
 		//  of topsky on the right, because the low-level
@@ -89,6 +91,7 @@ void R_InitSky (texture_t *mt)
 }
 
 
+#if !id68k
 /*
 =================
 R_MakeSky
@@ -151,8 +154,10 @@ void R_MakeSky (void)
 
 	r_skymade = 1;
 }
+#endif /* !id68k */
 
 
+#if 0
 /*
 =================
 R_GenSkyTile
@@ -251,6 +256,7 @@ void R_GenSkyTile16 (void *pdest)
 		pnewsky += TILE_SIZE;
 	}
 }
+#endif
 
 
 /*

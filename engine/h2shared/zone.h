@@ -1,6 +1,4 @@
-/*
- * zone.h
- * $Id$
+/* zone.h
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -132,7 +130,7 @@ void *Cache_Check (cache_user_t *c);
 /* returns the cached data, and moves to the head of the LRU list
  * if present, otherwise returns NULL */
 
-void Cache_Free(cache_user_t *c, qboolean freetextures); //johnfitz -- added second argument
+void Cache_Free (cache_user_t *c);
 
 void *Cache_Alloc (cache_user_t *c, int size, const char *name);
 /* Returns NULL if all purgable data was tossed and there still
@@ -142,4 +140,3 @@ void Cache_Report (void);
 #endif	/* SERVERONLY */
 
 #endif	/* ZZONE_H */
-

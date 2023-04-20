@@ -1,6 +1,5 @@
 /*
- * server/host_cmd.c -- console commands
- * $Id$
+ * host_cmd.c -- console commands
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -516,7 +515,7 @@ static void Host_Savegame_f (void)
 	FS_MakePath_VABUF (FS_USERDIR, &error_state, savedest, sizeof(savedest), "%s/info.dat", p);
 	if (error_state)
 	{
-		Host_Error("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
+		Host_Error ("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
 		return;
 	}
 	f = fopen (savedest, "w");
@@ -625,14 +624,14 @@ static void Host_Loadgame_f (void)
 
 	if (q_snprintf(savedest, sizeof(savedest), "%s/info.dat", savename) >= (int)sizeof(savedest))
 	{
-		Host_Error("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
+		Host_Error ("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
 		return;
 	}
 
 	f = fopen (savedest, "r");
 	if (!f)
 	{
-		Con_Printf ("%s: ERROR: couldn't open savefile\n", __thisfunc__);
+		Host_Error ("%s: ERROR: couldn't open savefile", __thisfunc__);
 		return;
 	}
 
@@ -641,7 +640,7 @@ static void Host_Loadgame_f (void)
 	if (version != SAVEGAME_VERSION)
 	{
 		fclose (f);
-		Con_Printf ("Savegame is version %i, not %i\n", version, SAVEGAME_VERSION);
+		Host_Error ("Savegame is version %i, not %i", version, SAVEGAME_VERSION);
 		return;
 	}
 	fscanf (f, "%s\n", str);
@@ -687,7 +686,6 @@ static void Host_Loadgame_f (void)
 
 	tempf = -1;
 	fscanf (f, "%f\n", &tempf);
-		// nothing to do with this tempf (cl_playerclass.value)
 
 	// mission pack, objectives strings
 	fscanf (f, "%u\n", &info_mask);
@@ -738,7 +736,7 @@ int SaveGamestate (qboolean ClientsOnly)
 		FS_MakePath_BUF (FS_USERDIR, &error_state, savename, sizeof(savename), "clients.gip");
 		if (error_state)
 		{
-			Host_Error("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
+			Host_Error ("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
 			return -1;
 		}
 	}
@@ -750,7 +748,7 @@ int SaveGamestate (qboolean ClientsOnly)
 		FS_MakePath_VABUF (FS_USERDIR, &error_state, savename, sizeof(savename), "%s.gip", sv.name);
 		if (error_state)
 		{
-			Host_Error("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
+			Host_Error ("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
 			return -1;
 		}
 	}
@@ -776,7 +774,7 @@ int SaveGamestate (qboolean ClientsOnly)
 		fprintf (f, "%f\n", sv.time);
 
 	// write the light styles
-		for (i = 0; i < (mod_bsp2 ? MAX_LIGHTSTYLES : MAX_LIGHTSTYLES_OLD); i++)
+		for (i = 0; i < MAX_LIGHTSTYLES; i++)
 		{
 			if (sv.lightstyles[i])
 				fprintf (f, "%s\n", sv.lightstyles[i]);
@@ -859,7 +857,7 @@ static void RestoreClients (int ClientsMode)
 			*sv_globals.time = sv.time;
 			*sv_globals.self = EDICT_TO_PROG(ent);
 			G_FLOAT(OFS_PARM0) = time_diff;
-			PR_ExecuteProgram (*sv_globals.ClientReEnter, "ClientReEnter");
+			PR_ExecuteProgram (*sv_globals.ClientReEnter);
 		}
 	}
 
@@ -890,7 +888,7 @@ static int LoadGamestate (const char *level, const char *startspot, int ClientsM
 		FS_MakePath_BUF (FS_USERDIR, &r, savename, sizeof(savename), "clients.gip");
 		if (r)
 		{
-			Host_Error("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
+			Host_Error ("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
 			return -1;
 		}
 	}
@@ -899,7 +897,7 @@ static int LoadGamestate (const char *level, const char *startspot, int ClientsM
 		FS_MakePath_VABUF (FS_USERDIR, &r, savename, sizeof(savename), "%s.gip", level);
 		if (r)
 		{
-			Host_Error("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
+			Host_Error ("%s: %d: string buffer overflow!", __thisfunc__, __LINE__);
 			return -1;
 		}
 
@@ -910,8 +908,8 @@ static int LoadGamestate (const char *level, const char *startspot, int ClientsM
 	f = fopen (savename, "r");
 	if (!f)
 	{
-		if (ClientsMode == 2)
-			Con_Printf ("%s: ERROR: couldn't open savefile\n", __thisfunc__);
+		if (ClientsMode == 2) /* caller: Host_Loadgame_f() */
+			Host_Error ("%s: ERROR: couldn't open savefile", __thisfunc__);
 
 		return -1;
 	}
@@ -921,7 +919,7 @@ static int LoadGamestate (const char *level, const char *startspot, int ClientsM
 	if (version != SAVEGAME_VERSION)
 	{
 		fclose (f);
-		Con_Printf ("Savegame is version %i, not %i\n", version, SAVEGAME_VERSION);
+		Host_Error ("Savegame is version %i, not %i", version, SAVEGAME_VERSION);
 		return -1;
 	}
 
@@ -945,7 +943,7 @@ static int LoadGamestate (const char *level, const char *startspot, int ClientsM
 		}
 
 	// load the light styles
-		for (i = 0; i < (mod_bsp2 ? MAX_LIGHTSTYLES : MAX_LIGHTSTYLES_OLD); i++)
+		for (i = 0; i < MAX_LIGHTSTYLES; i++)
 		{
 			fscanf (f, "%s\n", str);
 			sv.lightstyles[i] = (const char *)Hunk_Strdup (str, "lightstyles");
@@ -1170,7 +1168,7 @@ static void Host_Class_f (void)
 
 	// Change the weapon model used
 	*sv_globals.self = EDICT_TO_PROG(host_client->edict);
-	PR_ExecuteProgram (*sv_globals.ClassChangeWeapon, "ClassChangeWeapon");
+	PR_ExecuteProgram (*sv_globals.ClassChangeWeapon);
 
 // send notification to all clients
 	MSG_WriteByte (&sv.reliable_datagram, svc_updateclass);
@@ -1381,7 +1379,7 @@ static void Host_Kill_f (void)
 
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG(sv_player);
-	PR_ExecuteProgram (*sv_globals.ClientKill, "ClientKill");
+	PR_ExecuteProgram (*sv_globals.ClientKill);
 }
 
 
@@ -1497,12 +1495,12 @@ static void Host_Spawn_f (void)
 			// call the spawn function
 			*sv_globals.time = sv.time;
 			*sv_globals.self = EDICT_TO_PROG(sv_player);
-			PR_ExecuteProgram (*sv_globals.ClientConnect, "ClientConnect");
+			PR_ExecuteProgram (*sv_globals.ClientConnect);
 
 			if ((Sys_DoubleTime() - NET_QSocketGetTime(host_client->netconnection)) <= sv.time)
 				Sys_Printf ("%s entered the game\n", host_client->name);
 
-			PR_ExecuteProgram (*sv_globals.PutClientInServer, "PutClientInServer");
+			PR_ExecuteProgram (*sv_globals.PutClientInServer);
 		}
 	}
 
@@ -1530,7 +1528,7 @@ static void Host_Spawn_f (void)
 	}
 
 // send all current light styles
-	for (i = 0; i < (mod_bsp2 ? MAX_LIGHTSTYLES : MAX_LIGHTSTYLES_OLD); i++)
+	for (i = 0; i < MAX_LIGHTSTYLES; i++)
 	{
 		MSG_WriteByte (&host_client->message, svc_lightstyle);
 		MSG_WriteByte (&host_client->message, (char)i);

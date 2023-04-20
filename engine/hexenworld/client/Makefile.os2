@@ -1,7 +1,7 @@
 # makefile to build hw.exe for OS/2 using Open Watcom:
 #   wmake -f Makefile.os2
 #
-# to build the opengl version:
+# to build opengl version glhw.exe :
 #   wmake -f Makefile.os2 BUILDGL=1
 
 # PATH SETTINGS:
@@ -53,9 +53,10 @@ USE_CODEC_FLAC=no
 USE_CODEC_MP3=yes
 USE_CODEC_VORBIS=yes
 USE_CODEC_OPUS=no
-# either mikmod or xmp
+# either xmp or mikmod (or modplug)
 USE_CODEC_MIKMOD=no
 USE_CODEC_XMP=no
+USE_CODEC_MODPLUG=no
 USE_CODEC_UMX=no
 # either timidity (preferred) or wildmidi (both possible
 # but not needed nor meaningful)
@@ -75,6 +76,8 @@ GL_BINARY=glhwcl.exe
 #############################################################
 
 CFLAGS = -zq -wx -bm -bt=os2 -5s -sg -otexan -fp5 -fpi87 -ei -j -zp8
+# newer OpenWatcom versions enable W303 by default
+CFLAGS+= -wcd=303
 
 # compiler includes
 INCLUDES= -I. -I$(COMMON_HW) -I$(COMMONDIR) -I$(UHEXEN2_SHARED)
@@ -118,6 +121,7 @@ USE_CODEC_TIMIDITY=no
 USE_CODEC_WILDMIDI=no
 USE_CODEC_MIKMOD=no
 USE_CODEC_XMP=no
+USE_CODEC_MODPLUG=no
 USE_CODEC_UMX=no
 USE_CODEC_MP3=no
 USE_CODEC_VORBIS=no
@@ -153,11 +157,11 @@ GL_LINK=opengl.lib
 # Streaming music settings
 #############################################################
 !ifeq MP3LIB mad
-mp3_obj=snd_mp3.obj
+mp3_obj=snd_mp3
 lib_mp3dec=$(CODECLIBS)mad.lib
 !endif
 !ifeq MP3LIB mpg123
-mp3_obj=snd_mpg123.obj
+mp3_obj=snd_mpg123
 lib_mp3dec=$(CODECLIBS)mpg123.lib
 !endif
 !ifeq VORBISLIB vorbis
@@ -198,6 +202,10 @@ LIBS    += $(CODECLIBS)mikmod.lib
 !ifeq USE_CODEC_XMP yes
 CPPFLAGS+= -DUSE_CODEC_XMP
 LIBS    += $(CODECLIBS)libxmp.lib
+!endif
+!ifeq USE_CODEC_MODPLUG yes
+CPPFLAGS+= -DUSE_CODEC_MODPLUG
+LIBS    += $(CODECLIBS)modplug.lib
 !endif
 !ifeq USE_CODEC_UMX yes
 CPPFLAGS+= -DUSE_CODEC_UMX
@@ -301,8 +309,10 @@ MUSIC_OBJS= bgmusic.obj &
 	snd_wave.obj &
 	snd_vorbis.obj &
 	snd_opus.obj &
-	$(mp3_obj) &
+	$(mp3_obj).obj &
+	snd_mp3tag.obj &
 	snd_mikmod.obj &
+	snd_modplug.obj &
 	snd_xmp.obj &
 	snd_umx.obj &
 	snd_timidity.obj &
@@ -429,28 +439,21 @@ COMMONOBJS = &
 	pmove.obj &
 	pmovetst.obj &
 	zone.obj &
+	hashindex.obj &
 	$(SYSOBJ_SYS)
 
 all: $(BUILD_TARGET)
 
 # 1 MB stack size.
 $(SW_BINARY): $(SOFT_ASM) $(SOFTOBJS) $(COMMON_ASM) $(COMMONOBJS)
-	wlink N $@ SYS OS2V2 OPTION STACK=0x100000 LIBR {$(LIBS)} F {$(SOFT_ASM) $(SOFTOBJS) $(COMMON_ASM) $(COMMONOBJS)}
+	wlink N $@ SYS OS2V2 OPTION q OPTION STACK=0x100000 LIBR {$(LIBS)} F {$(SOFT_ASM) $(SOFTOBJS) $(COMMON_ASM) $(COMMONOBJS)}
 
 # 1 MB stack size.
 $(GL_BINARY): $(GLOBJS) $(COMMON_ASM) $(COMMONOBJS)
-	wlink N $@ SYS OS2V2 OPTION STACK=0x100000 LIBR {$(LIBS) $(GL_LIBS)} F {$(GLOBJS) $(COMMON_ASM) $(COMMONOBJS)}
+	wlink N $@ SYS OS2V2 OPTION q OPTION STACK=0x100000 LIBR {$(LIBS) $(GL_LIBS)} F {$(GLOBJS) $(COMMON_ASM) $(COMMONOBJS)}
 
-!ifdef __UNIX__
 clean: .symbolic
-	rm -f *.obj *.res
+	rm -f *.obj *.res *.err
 distclean: clean .symbolic
 	rm -f $(SW_BINARY) $(GL_BINARY)
-!else
-clean: .symbolic
-	@if exist *.obj del *.obj
-	@if exist *.res del *.res
-distclean: clean .symbolic
-	@if exist $(SW_BINARY) del $(SW_BINARY)
-	@if exist $(GL_BINARY) del $(GL_BINARY)
-!endif
+

@@ -1,7 +1,4 @@
-/*
- * r_alias.c -- routines for setting up to draw alias models
- * $Id: r_alias.c,v 1.21 2008-04-22 13:06:10 sezero Exp $
- *
+/* r_alias.c -- routines for setting up to draw alias models
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -84,8 +81,10 @@ static aedge_t	aedges[12] =
 static void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts);
 #endif
 static void R_AliasSetUpTransform (int trivial_accept);
+#if !id68k
 static void R_AliasTransformVector (vec3_t in, vec3_t out);
 static void R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts);
+#endif
 
 
 /*
@@ -265,6 +264,7 @@ qboolean R_AliasCheckBBox (void)
 }
 
 
+#if !id68k
 /*
 ================
 R_AliasTransformVector
@@ -276,6 +276,7 @@ static void R_AliasTransformVector (vec3_t in, vec3_t out)
 	out[1] = DotProduct(in, aliastransform[1]) + aliastransform[1][3];
 	out[2] = DotProduct(in, aliastransform[2]) + aliastransform[2][3];
 }
+#endif
 
 
 /*
@@ -353,13 +354,13 @@ static void R_AliasPreparePoints (void)
 			r_affinetridesc.pfinalverts = pfinalverts;
 			r_affinetridesc.ptriangles = ptri;
 
-			if ((currententity->model->flags & EF_SPECIAL_TRANS))
+			if (currententity->model->flags & EF_SPECIAL_TRANS)
 				D_PolysetDrawT5 ();
 			else if (currententity->drawflags & DRF_TRANSLUCENT)
 				D_PolysetDrawT ();
-			else if ((currententity->model->flags & EF_TRANSPARENT))
+			else if (currententity->model->flags & EF_TRANSPARENT)
 				D_PolysetDrawT2 ();
-			else if ((currententity->model->flags & EF_HOLEY))
+			else if (currententity->model->flags & EF_HOLEY)
 				D_PolysetDrawT3 ();
 			else
 				D_PolysetDraw ();
@@ -397,7 +398,7 @@ static void R_AliasSetUpTransform (int trivial_accept)
 	{
 		VectorSubtract(currententity->origin,r_origin,angles);
 		VectorSubtract(r_origin,currententity->origin,angles);
-		VectorNormalize(angles);
+		VectorNormalizeFast(angles);
 
 		if (angles[1] == 0 && angles[0] == 0)
 		{
@@ -413,7 +414,7 @@ static void R_AliasSetUpTransform (int trivial_accept)
 			if (yaw < 0)
 				yaw += 360;
 
-			forward = sqrt (angles[0]*angles[0] + angles[1]*angles[1]);
+			forward = Q_sqrt (angles[0]*angles[0] + angles[1]*angles[1]);
 			pitch = (int) (atan2(angles[2], forward) * 180 / M_PI);
 			if (pitch < 0)
 				pitch += 360;
@@ -504,7 +505,7 @@ static void R_AliasSetUpTransform (int trivial_accept)
 	if (currententity->model->flags & EF_ROTATE)
 	{
 		// Floating motion
-		tmatrix[2][3] += sin(currententity->origin[0]
+		tmatrix[2][3] += q_sinrad(currententity->origin[0]
 					+ currententity->origin[1]
 					+ (cl.time*3)) * 5.5;
 	}
@@ -554,6 +555,7 @@ static void R_AliasSetUpTransform (int trivial_accept)
 }
 
 
+#if !id68k
 /*
 ================
 R_AliasTransformFinalVert
@@ -585,6 +587,7 @@ static void R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av, trivertx_
 
 	fv->v[4] = temp;
 }
+#endif
 
 
 #if	!id386 && !id68k
@@ -713,7 +716,7 @@ void R_AliasPrepareUnclippedPoints (void)
 
 		if (r_affinetridesc.drawtype)
 		{
-			if ((currententity->model->flags & EF_SPECIAL_TRANS))
+			if (currententity->model->flags & EF_SPECIAL_TRANS)
 			{
 				D_PolysetDrawFinalVertsT5 (pfv[0],pfv[1],pfv[2]);
 				D_PolysetDrawT5 ();
@@ -723,12 +726,12 @@ void R_AliasPrepareUnclippedPoints (void)
 				D_PolysetDrawFinalVertsT (pfv[0],pfv[1],pfv[2]);
 				D_PolysetDrawT ();
 			}
-			else if ((currententity->model->flags & EF_TRANSPARENT))
+			else if (currententity->model->flags & EF_TRANSPARENT)
 			{
 				D_PolysetDrawFinalVertsT2 (pfv[0],pfv[1],pfv[2]);
 				D_PolysetDrawT2 ();
 			}
-			else if ((currententity->model->flags & EF_HOLEY))
+			else if (currententity->model->flags & EF_HOLEY)
 			{
 				D_PolysetDrawFinalVertsT3 (pfv[0],pfv[1],pfv[2]);
 				D_PolysetDrawT3 ();
@@ -741,13 +744,13 @@ void R_AliasPrepareUnclippedPoints (void)
 		}
 		else
 		{
-			if ((currententity->model->flags & EF_SPECIAL_TRANS))
+			if (currententity->model->flags & EF_SPECIAL_TRANS)
 				D_PolysetDrawT5 ();
 			else if (currententity->drawflags & DRF_TRANSLUCENT)
 				D_PolysetDrawT ();
-			else if ((currententity->model->flags & EF_TRANSPARENT))
+			else if (currententity->model->flags & EF_TRANSPARENT)
 				D_PolysetDrawT2 ();
-			else if ((currententity->model->flags & EF_HOLEY))
+			else if (currententity->model->flags & EF_HOLEY)
 				D_PolysetDrawT3 ();
 			else
 				D_PolysetDraw ();
@@ -968,7 +971,7 @@ void R_AliasDrawModel (alight_t *plighting)
 	{
 		plighting->ambientlight =
 		plighting->shadelight =
-			60 + 34 + sin(currententity->origin[0] + currententity->origin[1] + (cl.time*3.8))*34;
+			60 + 34 + q_sinrad(currententity->origin[0] + currententity->origin[1] + (cl.time*3.8))*34;
 		R_AliasSetupLighting (plighting);
 		r_plightvec[0] = r_plightvec[1] = r_plightvec[2] = 0;
 	}

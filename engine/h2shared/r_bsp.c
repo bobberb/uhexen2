@@ -1,6 +1,5 @@
 /*
  * r_bsp.c
- * $Id: r_bsp.c,v 1.7 2008-04-22 13:06:06 sezero Exp $
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -85,7 +84,7 @@ R_RotateBmodel
 */
 void R_RotateBmodel (void)
 {
-	float	angle, s, c, temp1[3][3], temp2[3][3], temp3[3][3];
+	float	s, c, temp1[3][3], temp2[3][3], temp3[3][3];
 
 // TODO: should use a look-up table
 // TODO: should really be stored with the entity instead of being reconstructed
@@ -93,10 +92,7 @@ void R_RotateBmodel (void)
 // TODO: share work with R_SetUpAliasTransform
 
 // yaw
-	angle = currententity->angles[YAW];
-	angle = angle * M_PI*2 / 360;
-	s = sin(angle);
-	c = cos(angle);
+	q_sincosdeg(currententity->angles[YAW], &s, &c);
 
 	temp1[0][0] = c;
 	temp1[0][1] = s;
@@ -109,10 +105,7 @@ void R_RotateBmodel (void)
 	temp1[2][2] = 1;
 
 // pitch
-	angle = currententity->angles[PITCH];
-	angle = angle * M_PI*2 / 360;
-	s = sin(angle);
-	c = cos(angle);
+	q_sincosdeg(currententity->angles[PITCH], &s, &c);
 
 	temp2[0][0] = c;
 	temp2[0][1] = 0;
@@ -127,10 +120,7 @@ void R_RotateBmodel (void)
 	R_ConcatRotations (temp2, temp1, temp3);
 
 // roll
-	angle = currententity->angles[ROLL];
-	angle = angle * M_PI*2 / 360;
-	s = sin(angle);
-	c = cos(angle);
+	q_sincosdeg(currententity->angles[ROLL], &s, &c);
 
 	temp1[0][0] = 1;
 	temp1[0][1] = 0;
@@ -575,6 +565,7 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 					if ((surf->flags & SURF_PLANEBACK) &&
 						(surf->visframe == r_framecount))
 					{
+#if 0
 						if (r_drawpolys)
 						{
 							if (r_worldpolysbacktofront)
@@ -592,6 +583,7 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 							}
 						}
 						else
+#endif
 						{
 							R_RenderFace (surf, clipflags);
 						}
@@ -607,6 +599,7 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 					if (!(surf->flags & SURF_PLANEBACK) &&
 						(surf->visframe == r_framecount))
 					{
+#if 0
 						if (r_drawpolys)
 						{
 							if (r_worldpolysbacktofront)
@@ -624,6 +617,7 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 							}
 						}
 						else
+#endif
 						{
 							R_RenderFace (surf, clipflags);
 						}
@@ -650,7 +644,6 @@ R_RenderWorld
 */
 void R_RenderWorld (void)
 {
-	int			i;
 	qmodel_t	*clmodel;
 	btofpoly_t	btofpolys[MAX_BTOFPOLYS];
 
@@ -663,14 +656,17 @@ void R_RenderWorld (void)
 
 	R_RecursiveWorldNode (clmodel->nodes, 15);
 
+#if 0
 // if the driver wants the polygons back to front,
 // play the visible ones back in that order
 	if (r_worldpolysbacktofront)
 	{
+		int	i;
 		for (i = numbtofpolys-1 ; i >= 0 ; i--)
 		{
 			R_RenderPoly (btofpolys[i].psurf, btofpolys[i].clipflags);
 		}
 	}
+#endif
 }
 

@@ -3,8 +3,6 @@
  * - depends on arch_def.h
  * - may depend on q_stdinc.h
  *
- * $Id$
- *
  * Copyright (C) 2007-2012  O.Sezer <sezero@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -59,6 +57,7 @@
 #include <sys/filio.h>
 #include <sys/sockio.h>
 #endif	/* __sunos__ */
+#include <sys/time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -99,6 +98,7 @@ COMPILE_TIME_ASSERT(sockaddr, offsetof(struct sockaddr, sa_family) == SA_FAM_OFF
 #endif
 #include <sys/param.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -143,9 +143,20 @@ COMPILE_TIME_ASSERT(sockaddr, offsetof(struct sockaddr, sa_family) == SA_FAM_OFF
 /* amiga includes and compatibility macros */
 #if defined(PLATFORM_AMIGA) /* Amiga bsdsocket.library */
 
+#ifndef PLATFORM_AMIGAOS3
 #include <sys/param.h>
+#else
+#define __NO_NET_API
+#endif
 #include <sys/ioctl.h>
+#ifdef PLATFORM_AMIGAOS3
+#include <devices/timer.h> /* struct timeval */
+#else
+#include <sys/time.h>
+#endif
+#ifndef PLATFORM_AMIGAOS3
 #include <unistd.h>
+#endif
 #include <proto/exec.h>
 #include <proto/socket.h>
 #include <sys/socket.h>
@@ -157,10 +168,26 @@ typedef int	sys_socket_t;
 #define	INVALID_SOCKET	(-1)
 #define	SOCKET_ERROR	(-1)
 
-#if !(defined(__AROS__) || defined(__amigaos4__))
+#if defined(__AROS__) || defined(__amigaos4__)
+# define HAVE_SOCKLEN_T
+#elif defined(PLATFORM_AMIGAOS3) && defined(_SYS_NETINCLUDE_TYPES_H)
+/* Roadshow-SDK:  identified by sys/netinclude_types.h header guard */
+# define HAVE_SOCKLEN_T
+#endif
+
+#if defined(__amigaos4__)
+# define HAVE_IN_ADDR_T
+#elif defined(__AROS__) && defined(INET_ADDRSTRLEN)  /* AROS ABI_V2 */
+# define HAVE_IN_ADDR_T
+#elif defined(PLATFORM_AMIGAOS3) && defined(_SYS_NETINCLUDE_TYPES_H)
+/* Roadshow-SDK:  identified by sys/netinclude_types.h header guard */
+# define HAVE_IN_ADDR_T
+#endif
+
+#if !defined(HAVE_SOCKLEN_T)
 typedef LONG	socklen_t;	/* int32_t */
 #endif
-#if !defined(__amigaos4__)
+#if !defined(HAVE_IN_ADDR_T)
 #if (LONG_MAX <= 2147483647L)
 typedef unsigned long	in_addr_t;	/* u_int32_t */
 #else
@@ -240,13 +267,22 @@ COMPILE_TIME_ASSERT(sockaddr, offsetof(struct sockaddr, sa_family) == SA_FAM_OFF
  * It still doesn't define socklen_t or in_addr_t types. */
 #include <sys/param.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <tcp.h>		/* for select_s(), sock_init() & friends. */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* For controlling whether to terminate the app if a PKT-DRVR is not found: */
 extern int	_watt_do_exit;	/* in sock_ini.h, but not in public headers. */
+#ifdef __cplusplus
+}
+#endif
 
 #define	selectsocket	select_s
 #define	IOCTLARG_P(x)	(char *)x
@@ -266,7 +302,6 @@ typedef int	sys_socket_t;
 COMPILE_TIME_ASSERT(sockaddr, offsetof(struct sockaddr, sa_family) == SA_FAM_OFFSET);
 
 #else /* local headers: */
-#include "dos/dos_inet.h"
 #include "dos/dos_sock.h"
 
 #endif	/* USE_WATT32 */
@@ -294,4 +329,3 @@ COMPILE_TIME_ASSERT(sockaddr, offsetof(struct sockaddr, sa_family) == SA_FAM_OFF
 
 
 #endif	/* __NET_SYS_H__ */
-

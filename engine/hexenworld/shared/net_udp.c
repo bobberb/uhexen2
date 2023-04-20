@@ -1,6 +1,4 @@
-/*
- * net_udp.c -- network UDP driver
- * $Id$
+/* net_udp.c -- network UDP driver
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -24,13 +22,6 @@
 
 #include "q_stdinc.h"
 #include "arch_def.h"
-#if defined(PLATFORM_UNIX) ||		\
-    defined(PLATFORM_OS2) ||		\
-    defined(PLATFORM_AMIGA) ||		\
-    defined(__DJGPP__) ||		\
-    defined(PLATFORM_RISCOS)
-#include <sys/time.h>	/* struct timeval */
-#endif
 #include "net_sys.h"
 #include "quakedef.h"
 #include "huffman.h"

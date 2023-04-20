@@ -1,6 +1,5 @@
 /*
  * cvar.c -- dynamic variable tracking
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2008-2010  O.Sezer <sezero@users.sourceforge.net>
@@ -355,6 +354,30 @@ qboolean	Cvar_Command (void)
 
 	Cvar_Set (v->name, Cmd_Argv(1));
 	return true;
+}
+
+/*
+============
+Cvar_MoveToFront
+============
+*/
+void Cvar_MoveToFront (const char *name)
+{
+	cvar_t	*var, *next;
+
+	for (var = cvar_vars; var; var = var->next)
+	{
+		next = var->next;
+		if (next && !strcmp(name, next->name))
+		{
+			// remove from the list
+			var->next = next->next;
+			// move to the front
+			next->next = cvar_vars;
+			cvar_vars = next;
+			break;
+		}
+	}
 }
 
 

@@ -1,6 +1,5 @@
 /*
  * host.c -- coordinates spawning and killing of local servers
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -396,7 +395,7 @@ void SV_DropClient (qboolean crash)
 		// this will set the body to a dead frame, among other things
 			saveSelf = *sv_globals.self;
 			*sv_globals.self = EDICT_TO_PROG(host_client->edict);
-			PR_ExecuteProgram (*sv_globals.ClientDisconnect, "ClientDisconnect");
+			PR_ExecuteProgram (*sv_globals.ClientDisconnect);
 			*sv_globals.self = saveSelf;
 		}
 

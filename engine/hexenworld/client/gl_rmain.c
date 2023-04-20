@@ -1,7 +1,4 @@
-/*
- * gl_main.c
- * $Id$
- *
+/* gl_main.c
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -82,20 +79,21 @@ cvar_t	r_speeds = {"r_speeds", "0", CVAR_NONE};
 cvar_t	r_waterwarp = {"r_waterwarp", "0", CVAR_ARCHIVE};
 cvar_t	r_fullbright = {"r_fullbright", "0", CVAR_NONE};
 cvar_t	r_lightmap = {"r_lightmap", "0", CVAR_NONE};
-cvar_t	r_shadows = {"r_shadows", "0", CVAR_ARCHIVE};
+cvar_t	r_shadows = {"r_shadows", "0", CVAR_NONE};
 cvar_t	r_mirroralpha = {"r_mirroralpha", "1", CVAR_NONE};
 cvar_t	r_wateralpha = {"r_wateralpha", "0.33", CVAR_ARCHIVE};
 cvar_t	r_skyalpha = {"r_skyalpha", "0.67", CVAR_ARCHIVE};
 cvar_t	r_dynamic = {"r_dynamic", "1", CVAR_NONE};
 cvar_t	r_novis = {"r_novis", "0", CVAR_NONE};
 cvar_t	r_wholeframe = {"r_wholeframe", "1", CVAR_ARCHIVE};
+cvar_t	r_clearcolor = {"r_clearcolor", "0", CVAR_ARCHIVE};
 cvar_t	r_texture_external = {"r_texture_external", "0", CVAR_ARCHIVE};
 
 cvar_t	r_entdistance = {"r_entdistance", "0", CVAR_ARCHIVE};
 cvar_t	r_netgraph = {"r_netgraph", "0", CVAR_NONE};
 cvar_t	r_teamcolor = {"r_teamcolor", "187", CVAR_ARCHIVE};
 
-cvar_t	gl_clear = {"gl_clear", "0", CVAR_NONE};
+cvar_t	gl_clear = {"gl_clear", "1", CVAR_NONE};
 cvar_t	gl_cull = {"gl_cull", "1", CVAR_NONE};
 cvar_t	gl_ztrick = {"gl_ztrick", "0", CVAR_ARCHIVE};
 cvar_t	gl_zfix = {"gl_zfix", "1", CVAR_ARCHIVE};
@@ -835,7 +833,7 @@ static void R_DrawAliasModel (entity_t *e)
 			if (cl_dlights[lnum].die >= cl.time)
 			{
 				VectorSubtract (e->origin, cl_dlights[lnum].origin, dist);
-				add = cl_dlights[lnum].radius - VectorLength(dist);
+				add = cl_dlights[lnum].radius - VectorLengthFast(dist);
 				if (add > 0)
 				{
 					ambientlight += add;
@@ -940,14 +938,19 @@ static void R_DrawAliasModel (entity_t *e)
 		tmatrix[2][3] += sin(e->origin[0] + e->origin[1] + (cl.time*3)) * 5.5;
 	}
 
-// [0][3] [1][3] [2][3]
-//	glTranslatef_fp (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-	glTranslatef_fp (tmatrix[0][3],tmatrix[1][3],tmatrix[2][3]);
-// [0][0] [1][1] [2][2]
-//	glScalef_fp (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
-	glScalef_fp (tmatrix[0][0],tmatrix[1][1],tmatrix[2][2]);
+	if (e == &cl.viewent && scr_fov.integer > 90) /* compensate viewmodel distortion at fov>90 */
+	{
+		float fovscale = tan(scr_fov.value * (0.5 * M_PI / 180));
+		glTranslatef_fp (tmatrix[0][3], tmatrix[1][3] * fovscale, tmatrix[2][3] * fovscale);	// paliashdr->scale_origin[0..2]
+		glScalef_fp (tmatrix[0][0], tmatrix[1][1] * fovscale, tmatrix[2][2] * fovscale);	// paliashdr->scale[0..2]
+	}
+	else
+	{
+		glTranslatef_fp (tmatrix[0][3], tmatrix[1][3], tmatrix[2][3]);	// paliashdr->scale_origin[0..2]
+		glScalef_fp (tmatrix[0][0], tmatrix[1][1], tmatrix[2][2]);	// paliashdr->scale[0..2]
+	}
 
-	if ((e->model->flags & EF_SPECIAL_TRANS))
+	if (e->model->flags & EF_SPECIAL_TRANS)
 	{
 		glEnable_fp (GL_BLEND);
 		glBlendFunc_fp (GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
@@ -961,13 +964,13 @@ static void R_DrawAliasModel (entity_t *e)
 	//	glColor4f_fp (1,1,1,r_wateralpha.value);
 		model_constant_alpha = r_wateralpha.value;
 	}
-	else if ((e->model->flags & EF_TRANSPARENT))
+	else if (e->model->flags & EF_TRANSPARENT)
 	{
 		glEnable_fp (GL_BLEND);
 	//	glColor3f_fp (1,1,1);
 		model_constant_alpha = 1.0f;
 	}
-	else if ((e->model->flags & EF_HOLEY))
+	else if (e->model->flags & EF_HOLEY)
 	{
 		glEnable_fp (GL_BLEND);
 	//	glColor3f_fp (1,1,1);
@@ -1057,7 +1060,7 @@ static void R_DrawAliasModel (entity_t *e)
 		glDisable_fp (GL_BLEND);
 	}
 
-	if ((e->model->flags & EF_SPECIAL_TRANS))
+	if (e->model->flags & EF_SPECIAL_TRANS)
 	{
 		glBlendFunc_fp (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable_fp (GL_CULL_FACE);
@@ -1152,7 +1155,7 @@ static void R_DrawEntitiesOnList (void)
 			break;
 
 		case mod_brush:
-			item_trans = ((e->drawflags & DRF_TRANSLUCENT)) != 0;
+			item_trans = (e->drawflags & DRF_TRANSLUCENT) != 0;
 			if (!item_trans)
 				R_DrawBrushModel (e,false);
 			break;
@@ -1299,11 +1302,11 @@ static void R_DrawGlow (entity_t *e)
 		VectorSubtract(lightorigin, r_origin, vp2);
 
 		// See if view is outside the light.
-		distance = VectorLength(vp2);
+		distance = VectorLengthFast(vp2);
 
 		if (distance > radius)
 		{
-			VectorNormalize(vp2);
+			VectorNormalizeFast(vp2);
 			glPushMatrix_fp();
 
 			// Translate the glow to coincide with the flame. KH
@@ -1336,8 +1339,7 @@ static void R_DrawGlow (entity_t *e)
 			if (clmodel->ex_flags & XF_TORCH_GLOW)
 			{
 				i = (int)(cl.time*10);
-				if (!cl_lightstyle[TORCH_STYLE].length)
-				{
+				if (!cl_lightstyle[TORCH_STYLE].length) {
 					j = 256;
 				}
 				else
@@ -1350,8 +1352,7 @@ static void R_DrawGlow (entity_t *e)
 			else if (clmodel->ex_flags & XF_MISSILE_GLOW)
 			{
 				i = (int)(cl.time*10);
-				if (!cl_lightstyle[MISSILE_STYLE].length)
-				{
+				if (!cl_lightstyle[MISSILE_STYLE].length) {
 					j = 256;
 				}
 				else
@@ -1364,8 +1365,7 @@ static void R_DrawGlow (entity_t *e)
 			else if (clmodel->ex_flags & XF_GLOW)
 			{
 				i = (int)(cl.time*10);
-				if (!cl_lightstyle[PULSE_STYLE].length)
-				{
+				if (!cl_lightstyle[PULSE_STYLE].length) {
 					j = 256;
 				}
 				else
@@ -1412,6 +1412,9 @@ static void R_DrawAllGlows (void)
 	int		i;
 	entity_t	*e;
 
+	if (!gl_glows.integer && !gl_missile_glows.integer && !gl_other_glows.integer)
+		return;
+
 	if (!r_drawentities.integer)
 		return;
 
@@ -1425,14 +1428,8 @@ static void R_DrawAllGlows (void)
 	{
 		e = &cl_visedicts[i];
 
-		switch (e->model->type)
-		{
-		case mod_alias:
+		if (e->model->type == mod_alias)
 			R_DrawGlow (e);
-			break;
-		default:
-			break;
-		}
 	}
 
 	glDisable_fp (GL_BLEND);
@@ -1495,7 +1492,7 @@ static void R_DrawViewModel (void)
 			continue;
 
 		VectorSubtract (e->origin, dl->origin, dist);
-		add = dl->radius - VectorLength(dist);
+		add = dl->radius - VectorLengthFast(dist);
 		if (add > 0)
 		{
 			if (gl_lightmap_format == GL_RGBA)

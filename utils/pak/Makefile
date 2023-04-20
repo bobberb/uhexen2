@@ -1,5 +1,4 @@
 # GNU Makefile for hexen2 pak tools using GCC.
-# $Id$
 #
 # To cross-compile for Win32 on Unix: either pass the W32BUILD=1
 # argument to make, or export it.  Also see build_cross_win32.sh.
@@ -79,15 +78,20 @@ CFLAGS  += -m64
 LDFLAGS += -m64 -mconsole
 endif
 ifeq ($(TARGET_OS),aros)
-# nothing extra is needed
+CFLAGS += -fno-common
 endif
 ifeq ($(TARGET_OS),morphos)
 CFLAGS  += -noixemul
 LDFLAGS += -noixemul
 endif
 ifeq ($(TARGET_OS),amigaos)
+# use Bebbo's GCC6 toolchain
+BEBBO_TOOLCHAIN=yes
 # crt: libnix or clib2:
 USE_CLIB2=yes
+ifeq ($(BEBBO_TOOLCHAIN),yes)
+USE_CLIB2=no
+endif
 ifeq ($(USE_CLIB2),yes)
 CRT_FLAGS=-mcrt=clib2
 else

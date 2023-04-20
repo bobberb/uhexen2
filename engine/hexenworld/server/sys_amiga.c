@@ -1,7 +1,4 @@
-/*
- * sys_amiga.c -- Amiga system interface code
- * $Id$
- *
+/* sys_amiga.c -- Amiga system interface code
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2012  Szilard Biro <col.lawrence@gmail.com>
  *
@@ -29,11 +26,25 @@
 #include <proto/timer.h>
 #include <time.h>
 
+#if defined(__LP64__)
+#define MIN_STACK_SIZE 0x200000 /* 2 MB stack */
+#elif defined(PLATFORM_AMIGAOS3)
+#define MIN_STACK_SIZE 0x40000 /* 256 KB stack */
+#else
 #define MIN_STACK_SIZE 0x100000 /* 1 MB stack */
+#endif
+
 #ifdef __CLIB2__
 int __stack_size = MIN_STACK_SIZE;
 #else
 int __stack = MIN_STACK_SIZE;
+#if defined(PLATFORM_AMIGAOS3) && defined(__libnix__)
+/* this pulls in swapstack.o */
+/* NOTE: swapstack.o was a stray object in old versions
+ *       of libnix, need manually adding to libnix20.a */
+extern void __stkinit(void);
+void * __x = __stkinit;
+#endif
 #endif
 #ifdef __AROS__
 #include "incstack.h"
@@ -48,12 +59,8 @@ static int my_rc = 0;
 #define HAVE_AROS_MAIN_WRAPPER
 #endif
 
-// heapsize: minimum 8 mb, standart 16 mb, max is 32 mb.
-// -heapsize argument will abide by these min/max settings
-// unless the -forcemem argument is used
 #define MIN_MEM_ALLOC	0x0800000
 #define STD_MEM_ALLOC	0x1000000
-#define MAX_MEM_ALLOC	0x2000000
 
 cvar_t		sys_nostdout = {"sys_nostdout", "0", CVAR_NONE};
 int		devlog;	/* log the Con_DPrintf and Sys_DPrintf content when !developer.integer */
@@ -124,18 +131,19 @@ int Sys_rename (const char *oldp, const char *newp)
 long Sys_filesize (const char *path)
 {
 	long size = -1;
-	BPTR fh = Open((const STRPTR) path, MODE_OLDFILE);
-	if (fh)
+	BPTR lock = Lock((const STRPTR) path, ACCESS_READ);
+	if (lock)
 	{
 		struct FileInfoBlock *fib = (struct FileInfoBlock*)
 					AllocDosObject(DOS_FIB, NULL);
 		if (fib != NULL)
 		{
-			if (ExamineFH(fh, fib))
+			if (Examine(lock, fib)) {
 				size = fib->fib_Size;
+			}
 			FreeDosObject(DOS_FIB, fib);
 		}
-		Close(fh);
+		UnLock(lock);
 	}
 	return size;
 }
@@ -143,22 +151,21 @@ long Sys_filesize (const char *path)
 int Sys_FileType (const char *path)
 {
 	int type = FS_ENT_NONE;
-	BPTR fh = Open((const STRPTR) path, MODE_OLDFILE);
-	if (fh)
+	BPTR lock = Lock((const STRPTR) path, ACCESS_READ);
+	if (lock)
 	{
 		struct FileInfoBlock *fib = (struct FileInfoBlock*)
 					AllocDosObject(DOS_FIB, NULL);
 		if (fib != NULL)
 		{
-			if (ExamineFH(fh, fib))
-			{
+			if (Examine(lock, fib)) {
 				if (fib->fib_DirEntryType >= 0)
 					type = FS_ENT_DIRECTORY;
 				else	type = FS_ENT_FILE;
 			}
 			FreeDosObject(DOS_FIB, fib);
 		}
-		Close(fh);
+		UnLock(lock);
 	}
 	return type;
 }
@@ -243,8 +250,7 @@ filenames only, not a dirent struct. this is
 what we presently need in this engine.
 =================================================
 */
-#define PATH_SIZE 1024
-static struct AnchorPath *apath;
+static struct AnchorPath apath;
 static BPTR oldcurrentdir;
 static STRPTR pattern_str;
 
@@ -288,33 +294,23 @@ const char *Sys_FindFirstFile (const char *path, const char *pattern)
 {
 	BPTR newdir;
 
-	if (apath)
+	if (pattern_str)
 		Sys_Error ("Sys_FindFirst without FindClose");
 
-	apath = (struct AnchorPath *) AllocVec (sizeof(struct AnchorPath) + PATH_SIZE, MEMF_CLEAR);
-	if (!apath)
-		return NULL;
-
-	apath->ap_Strlen = PATH_SIZE;
-	apath->ap_BreakBits = 0;
-	apath->ap_Flags = 0;  /* APF_DOWILD */
+	memset(&apath, 0, sizeof(apath));
 
 	newdir = Lock((const STRPTR) path, SHARED_LOCK);
 	if (newdir)
 		oldcurrentdir = CurrentDir(newdir);
 	else
-	{
-		FreeVec(apath);
-		apath = NULL;
 		return NULL;
-	}
 
 	pattern_str = pattern_helper (pattern);
 
-	if (MatchFirst((const STRPTR) pattern_str, apath) == 0)
+	if (MatchFirst((const STRPTR) pattern_str, &apath) == 0)
 	{
-	    if (apath->ap_Info.fib_DirEntryType < 0)
-		return (const char *) (apath->ap_Info.fib_FileName);
+	    if (apath.ap_Info.fib_DirEntryType < 0)
+		return (const char *) (apath.ap_Info.fib_FileName);
 	}
 
 	return Sys_FindNextFile();
@@ -322,13 +318,13 @@ const char *Sys_FindFirstFile (const char *path, const char *pattern)
 
 const char *Sys_FindNextFile (void)
 {
-	if (!apath)
+	if (!pattern_str)
 		return NULL;
 
-	while (MatchNext(apath) == 0)
+	while (MatchNext(&apath) == 0)
 	{
-	    if (apath->ap_Info.fib_DirEntryType < 0)
-		return (const char *) (apath->ap_Info.fib_FileName);
+	    if (apath.ap_Info.fib_DirEntryType < 0)
+		return (const char *) (apath.ap_Info.fib_FileName);
 	}
 
 	return NULL;
@@ -336,13 +332,11 @@ const char *Sys_FindNextFile (void)
 
 void Sys_FindClose (void)
 {
-	if (!apath)
+	if (!pattern_str)
 		return;
-	MatchEnd(apath);
-	FreeVec(apath);
+	MatchEnd(&apath);
 	UnLock(CurrentDir(oldcurrentdir));
 	oldcurrentdir = 0;
-	apath = NULL;
 	Z_Free(pattern_str);
 	pattern_str = NULL;
 }
@@ -685,34 +679,14 @@ int main (int argc, char **argv)
 	COM_ValidateByteorder ();
 
 	availMem = AvailMem(MEMF_ANY|MEMF_LARGEST);
-	if (availMem < STD_MEM_ALLOC)
-		parms.memsize = MIN_MEM_ALLOC;
-	else
-		parms.memsize = STD_MEM_ALLOC;
-
+	parms.memsize = (availMem < STD_MEM_ALLOC)? MIN_MEM_ALLOC : STD_MEM_ALLOC;
 	i = COM_CheckParm ("-heapsize");
 	if (i && i < com_argc-1)
-	{
 		parms.memsize = atoi (com_argv[i+1]) * 1024;
 
-		if ((parms.memsize > MAX_MEM_ALLOC) && !(COM_CheckParm ("-forcemem")))
-		{
-			Sys_Printf ("Requested memory (%d Mb) too large, using the default maximum.\n", parms.memsize/(1024*1024));
-			Sys_Printf ("If you are sure, use the -forcemem switch.\n");
-			parms.memsize = MAX_MEM_ALLOC;
-		}
-		else if ((parms.memsize < MIN_MEM_ALLOC) && !(COM_CheckParm ("-forcemem")))
-		{
-			Sys_Printf ("Requested memory (%d Mb) too little, using the default minimum.\n", parms.memsize/(1024*1024));
-			Sys_Printf ("If you are sure, use the -forcemem switch.\n");
-			parms.memsize = MIN_MEM_ALLOC;
-		}
-	}
-
 	parms.membase = malloc (parms.memsize);
-
 	if (!parms.membase)
-		Sys_Error ("Insufficient memory.\n");
+		Sys_Error ("Insufficient memory.");
 
 #ifndef HAVE_AROS_MAIN_WRAPPER
 	atexit (Sys_AtExit);
@@ -724,6 +698,9 @@ int main (int argc, char **argv)
 // report the filesystem to the user
 	Sys_Printf("gamedir is: %s\n", FS_GetGamedir());
 	Sys_Printf("userdir is: %s\n", FS_GetUserdir());
+
+// run one frame immediately for first heartbeat
+	SV_Frame (HX_FRAME_TIME);
 
 //
 // main loop

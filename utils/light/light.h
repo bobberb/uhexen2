@@ -1,7 +1,4 @@
-/*
- * light.h
- * $Id: light.h,v 1.5 2007-03-14 21:04:40 sezero Exp $
- *
+/* light.h
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -21,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __H2UTILS_LIGHT_H
-#define __H2UTILS_LIGHT_H
+#ifndef H2LIGHT_H
+#define H2LIGHT_H
 
 // structure of the light lump
 
@@ -41,16 +38,11 @@ extern	float		minlights[MAX_MAP_FACES];
 
 extern	qboolean	extrasamples;
 
-//void	TransformSample (vec3_t in, vec3_t out);
-//void	RotateSample (vec3_t in, vec3_t out);
-//void	LoadNodes (char *file);
-
 byte	*GetFileSpace (int size);
 
 qboolean TestLine (const vec3_t start, const vec3_t stop);
 void	LightFace (int surfnum);
-void	LightLeaf (dleaf_t *leaf);
+void	LightFace2 (int surfnum);
 void	MakeTnodes (dmodel_t *bm);
 
-#endif	/* __H2UTILS_LIGHT_H */
-
+#endif	/* H2LIGHT_H */

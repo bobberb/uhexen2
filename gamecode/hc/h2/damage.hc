@@ -1,7 +1,3 @@
-/*
- * $Header: /cvsroot/uhexen2/gamecode/hc/h2/damage.hc,v 1.3 2007-02-07 16:57:00 sezero Exp $
- */
-
 void() T_MissileTouch;
 void() info_player_start;
 void necromancer_sphere(entity ent);
@@ -847,7 +843,8 @@ void(entity inflictor, entity attacker, float dam, entity ignore) T_RadiusDamage
 		{
 			if (head.takedamage)
 			{
-				if (pointcontents(head.origin) == CONTENT_WATER || pointcontents(head.origin) == CONTENT_SLIME) //  visible(inflictor)?
+				points=pointcontents(head.origin);
+				if (points == CONTENT_WATER || points == CONTENT_SLIME) //  visible(inflictor)?
 				{
 					if (head.classname == "player" && head != attacker)
 						head.enemy = attacker;

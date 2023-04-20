@@ -1,6 +1,4 @@
-/*
- * sys_unix.c -- Unix system interface code
- * $Id$
+/* sys_unix.c -- Unix system interface code
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2001 contributors of the Anvil of Thyrion project
@@ -48,15 +46,11 @@
 #include <utime.h>
 #if defined(SDLQUAKE)
 #include "sdl_inc.h"
-#endif	/* SDLQUAKE */
+#endif
 
 
-// heapsize: minimum 16mb, standart 32 mb, max is 96 mb.
-// -heapsize argument will abide by these min/max settings
-// unless the -forcemem argument is used
-#define MIN_MEM_ALLOC	0x4000000
-#define STD_MEM_ALLOC	0xc000000
-#define MAX_MEM_ALLOC	0x28000000	//640mb ought to be enough for everyone... yay virtual memory, its not really a huge problem.
+#define MIN_MEM_ALLOC	0x1000000
+#define STD_MEM_ALLOC	0x2000000
 
 cvar_t		sys_nostdout = {"sys_nostdout", "0", CVAR_NONE};
 cvar_t		sys_throttle = {"sys_throttle", "0.02", CVAR_ARCHIVE};
@@ -579,18 +573,7 @@ static void Sys_CheckSDL (void)
 
 	sdl_version = SDL_Linked_Version();
 	Sys_Printf("Found SDL version %i.%i.%i\n",sdl_version->major,sdl_version->minor,sdl_version->patch);
-	if (SDL_VERSIONNUM(sdl_version->major,sdl_version->minor,sdl_version->patch) < SDL_REQUIREDVERSION)
-	{	/*reject running under SDL versions older than what is stated in sdl_inc.h */
-		Sys_Error("You need at least v%d.%d.%d of SDL to run this game.", SDL_MIN_X,SDL_MIN_Y,SDL_MIN_Z);
-	}
-# if defined(SDL_NEW_VERSION_REJECT)
-	if (SDL_VERSIONNUM(sdl_version->major,sdl_version->minor,sdl_version->patch) >= SDL_NEW_VERSION_REJECT)
-	{	/*reject running under SDL versions newer than what is stated in sdl_inc.h */
-		Sys_Error("Your version of SDL library is incompatible with me.\n"
-			  "You need a library version in the line of %d.%d.%d\n", SDL_MIN_X,SDL_MIN_Y,SDL_MIN_Z);
-	}
-# endif /* SDL_NEW_VERSION_REJECT */
-#endif	/* SDLQUAKE */
+#endif
 }
 
 static void PrintVersion (void)
@@ -674,9 +657,6 @@ static char	cwd[MAX_OSPATH];
 #if DO_USERDIRS
 static char	userdir[MAX_OSPATH];
 #endif
-#if defined(SDLQUAKE)
-static Uint8		appState;
-#endif
 
 int main (int argc, char **argv)
 {
@@ -735,34 +715,14 @@ int main (int argc, char **argv)
 
 	Sys_CheckSDL ();
 
-	if (isDedicated)
-		parms.memsize = MIN_MEM_ALLOC;
-	else
-		parms.memsize = STD_MEM_ALLOC;
-
+	parms.memsize = (isDedicated)? MIN_MEM_ALLOC : STD_MEM_ALLOC;
 	i = COM_CheckParm ("-heapsize");
 	if (i && i < com_argc-1)
-	{
 		parms.memsize = atoi (com_argv[i+1]) * 1024;
 
-		if ((parms.memsize > MAX_MEM_ALLOC) && !(COM_CheckParm ("-forcemem")))
-		{
-			Sys_Printf ("Requested memory (%d Mb) too large, using the default maximum.\n", parms.memsize/(1024*1024));
-			Sys_Printf ("If you are sure, use the -forcemem switch.\n");
-			parms.memsize = MAX_MEM_ALLOC;
-		}
-		else if ((parms.memsize < MIN_MEM_ALLOC) && !(COM_CheckParm ("-forcemem")))
-		{
-			Sys_Printf ("Requested memory (%d Mb) too little, using the default minimum.\n", parms.memsize/(1024*1024));
-			Sys_Printf ("If you are sure, use the -forcemem switch.\n");
-			parms.memsize = MIN_MEM_ALLOC;
-		}
-	}
-
 	parms.membase = malloc (parms.memsize);
-
 	if (!parms.membase)
-		Sys_Error ("Insufficient memory.\n");
+		Sys_Error ("Insufficient memory.");
 
 	Sys_Init ();
 	atexit (Sys_AtExit);
@@ -792,23 +752,18 @@ int main (int argc, char **argv)
 	    else
 	    {
 #if defined(SDLQUAKE)
-		appState = SDL_GetAppState();
 		/* If we have no input focus at all, sleep a bit */
-		if ( !(appState & (SDL_APPMOUSEFOCUS | SDL_APPINPUTFOCUS)) || cl.paused)
-		{
+		if (!VID_HasMouseOrInputFocus() || cl.paused) {
 			usleep (16000);
 		}
 		/* If we're minimised, sleep a bit more */
-		if ( !(appState & SDL_APPACTIVE))
-		{
+		if (VID_IsMinimized()) {
 			scr_skipupdate = 1;
 			usleep (32000);
-		}
-		else
-		{
+		} else {
 			scr_skipupdate = 0;
 		}
-#endif	/* SDLQUAKE */
+#endif
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 
@@ -823,4 +778,3 @@ int main (int argc, char **argv)
 
 	return 0;
 }
-

@@ -4,8 +4,6 @@
  *
  * Copyright (C) 2010-2012 O.Sezer <sezero@users.sourceforge.net>
  *
- * $Id$
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
@@ -198,6 +196,7 @@ snd_codec_t vorbis_codec =
 	S_VORBIS_CodecOpenStream,
 	S_VORBIS_CodecReadStream,
 	S_VORBIS_CodecRewindStream,
+	NULL, /* jump */
 	S_VORBIS_CodecCloseStream,
 	NULL
 };

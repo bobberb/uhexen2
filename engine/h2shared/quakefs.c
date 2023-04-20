@@ -1,6 +1,5 @@
 /*
  * quakefs.c -- Hexen II filesystem
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2005-2012  O.Sezer <sezero@users.sourceforge.net>
@@ -23,12 +22,12 @@
 
 #include "quakedef.h"
 #include "pakfile.h"
-#include "gl_model.h"
 #include <errno.h>
 #ifdef PLATFORM_WINDOWS
 #include <io.h>
 #endif
 #include "filenames.h"
+#include "hashindex.h"
 
 typedef struct
 {
@@ -42,6 +41,7 @@ typedef struct pack_s
 	FILE	*handle;
 	int	numfiles;
 	pakfiles_t	*files;
+	hashindex_t	hash;
 } pack_t;
 
 typedef struct searchpath_s
@@ -61,21 +61,11 @@ static const char	*fs_basedir;
 static char	fs_gamedir[MAX_OSPATH];
 static char	fs_userdir[MAX_OSPATH];
 char	fs_gamedir_nopath[MAX_QPATH];
-char	fs_gamedir_list[MAX_QPATH];
-cvar_t	sv_gamedir = { "*gamedir", "", CVAR_NOTIFY | CVAR_SERVERINFO };
-static char gamedirs[MAX_QPATH];
 
 unsigned int	gameflags;
 
 cvar_t	oem = {"oem", "0", CVAR_ROM};
 cvar_t	registered = {"registered", "0", CVAR_ROM};
-qboolean		mod_bsp2;		// bsp version used
-
-#define	MAX_HANDLES		32	/* johnfitz -- was 10 */
-static FILE		*sys_handles[MAX_HANDLES];
-
-void Mod_ResetAll(void);
-void TexMgr_NewGame(void);
 
 typedef struct
 {
@@ -269,7 +259,7 @@ Takes a path to a pak file.  Loads the header and directory.
 static pack_t *FS_LoadPackFile (const char *packfile, int paknum, qboolean base_fs)
 {
 	dpackheader_t	header;
-	int	i, numpackfiles;
+	int	i, numpackfiles, key;
 	pakfiles_t	*newfiles;
 	pack_t		*pack;
 	FILE		*packhandle;
@@ -325,15 +315,25 @@ static pack_t *FS_LoadPackFile (const char *packfile, int paknum, qboolean base_
 		gameflags |= check_known_paks (paknum, numpackfiles, crc);
 	else	gameflags |= GAME_MODIFIED;
 
+	pack = (pack_t *) Z_Malloc (sizeof(pack_t), Z_MAINZONE);
+	/* get the hash table size from the number of files in the pak */
+	for (i = 1; i < MAX_FILES_IN_PACK; i <<= 1)
+	{
+		if (i > numpackfiles)
+			break;
+	}
+	Hash_Allocate(&pack->hash, i);
+
 	/* parse the directory */
 	for (i = 0; i < numpackfiles; i++)
 	{
 		qerr_strlcpy(__thisfunc__, __LINE__, newfiles[i].name, info[i].name, MAX_QPATH);
 		newfiles[i].filepos = LittleLong(info[i].filepos);
 		newfiles[i].filelen = LittleLong(info[i].filelen);
+		key = Hash_GenerateKeyString (&pack->hash, newfiles[i].name, true);
+		Hash_Add (&pack->hash, key, i);
 	}
 
-	pack = (pack_t *) Z_Malloc (sizeof(pack_t), Z_MAINZONE);
 	qerr_strlcpy(__thisfunc__, __LINE__, pack->filename, packfile, MAX_OSPATH);
 	pack->handle = packhandle;
 	pack->numfiles = numpackfiles;
@@ -458,47 +458,19 @@ static inline void set_hw_dir (void) { /* helper for FS_Gamedir () */
 
 void FS_Gamedir (const char *dir)
 {
-	int argc;
 	searchpath_t	*next;
 
-	if (!*dir || !strcmp(dir, ".") || strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\") || strstr(dir, ":") || strstr(dir, "<") || strstr(dir, ">"))
+	if (!*dir || !strcmp(dir, ".") || strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\") || strstr(dir, ":"))
 	{
 		if (!host_initialized)
-			Sys_Error ("gamedir should be a directory name list, not a path\n");
+			Sys_Error ("gamedir should be a single directory name, not a path\n");
 		else {
-			Con_Printf("gamedir should be a directory name list, not a path\n");
+			Con_Printf("gamedir should be a single directory name, not a path\n");
 			return;
 		}
 	}
 
-	char	*argv[MAX_NUM_ARGVS];
-	char* tmp;
-
-	tmp = va("%s", dir);
-
-	argc = 0;
-	while (*tmp && (argc < MAX_NUM_ARGVS))
-	{
-		while (*tmp && ((*tmp <= 32) || (*tmp > 126)))
-			tmp++;
-
-		if (*tmp)
-		{
-			argv[argc] = tmp;
-			argc++;
-
-			while (*tmp && ((*tmp > 32) && (*tmp <= 126)))
-				tmp++;
-
-			if (*tmp)
-			{
-				*tmp = 0;
-				tmp++;
-			}
-		}
-	}
-
-	if (!q_strcasecmp(fs_gamedir_list, dir))
+	if (!q_strcasecmp(fs_gamedir_nopath, dir))
 		return;		/* still the same */
 
 /* free up any current game dir info: our top searchpath dir will be hw
@@ -510,74 +482,67 @@ void FS_Gamedir (const char *dir)
 	{
 		if (fs_searchpaths->pack)
 		{
-			fclose(fs_searchpaths->pack->handle);
-			Z_Free(fs_searchpaths->pack->files);
-			Z_Free(fs_searchpaths->pack);
+			fclose (fs_searchpaths->pack->handle);
+			Z_Free (fs_searchpaths->pack->files);
+			Hash_Free(&fs_searchpaths->pack->hash);
+			Z_Free (fs_searchpaths->pack);
 		}
 		next = fs_searchpaths->next;
-		Z_Free(fs_searchpaths);
+		Z_Free (fs_searchpaths);
 		fs_searchpaths = next;
 	}
+
 /* flush all data, so it will be forced to reload */
 #if !defined(SERVERONLY)
 	Cache_Flush ();
-#endif	/* SERVERONLY */
+#endif
 
-
-	for (int i = 0; i < argc; i++)
-	{
-		//Something(argv[i]);
 /* check for reserved gamedirs */
-		if (!q_strcasecmp(argv[i], "hw"))
-		{
+	if (!q_strcasecmp(dir, "hw"))
+	{
 #if defined(H2W)
-			/* that we reached here means the hw server decided to abandon
-			 * whatever the previous mod it was running and went back to
-			 * pure hw. weird.. do as he wishes anyway and adjust our variables. */
-			set_hw_dir();
+	/* that we reached here means the hw server decided to abandon
+	 * whatever the previous mod it was running and went back to
+	 * pure hw. weird.. do as he wishes anyway and adjust our variables. */
+		set_hw_dir ();
 #else	/* hexen2 case: */
-			/* hw is reserved for hexenworld only. hexen2 shouldn't use it */
-			Con_Printf("WARNING: Gamedir not set to hw :\n"
-				"It is reserved for HexenWorld.\n");
+	/* hw is reserved for hexenworld only. hexen2 shouldn't use it */
+		Con_Printf ("WARNING: Gamedir not set to hw :\n"
+			    "It is reserved for HexenWorld.\n");
 #endif	/* H2W */
-			break;
+		return;
 	}
 
-		if (!q_strcasecmp(argv[i], "portals"))
-		{
-			/* no hw server is supposed to set gamedir to portals
-			 * and hw must be above portals in hierarchy. this is
-			 * actually a hypothetical case.
-			 * as for hexen2, it cannot reach here.  */
+	if (!q_strcasecmp(dir, "portals"))
+	{
+	/* no hw server is supposed to set gamedir to portals
+	 * and hw must be above portals in hierarchy. this is
+	 * actually a hypothetical case.
+	 * as for hexen2, it cannot reach here.  */
 #ifdef H2W
-			set_hw_dir();
+		set_hw_dir ();
 #endif
-			break;
-		}
-
-		if (!q_strcasecmp(argv[i], "data1"))
-		{
-			/* another hypothetical case: no hw mod is supposed to
-			 * do this and hw must stay above data1 in hierarchy.
-			 * as for hexen2, it can only reach here by a silly
-			 * command line argument like -game data1, ignore it. */
-#ifdef H2W
-			set_hw_dir();
-#endif
-			break;
-		}
-
-		/* a new gamedir: let's set it here. */
-		FS_AddGameDirectory(argv[i], false);
+		return;
 	}
 
-	q_snprintf(fs_gamedir_list, sizeof(fs_gamedir_list), "%s", dir);
-//#if defined(SERVERONLY)
+	if (!q_strcasecmp(dir, "data1"))
+	{
+	/* another hypothetical case: no hw mod is supposed to
+	 * do this and hw must stay above data1 in hierarchy.
+	 * as for hexen2, it can only reach here by a silly
+	 * command line argument like -game data1, ignore it. */
+#ifdef H2W
+		set_hw_dir ();
+#endif
+		return;
+	}
+
+/* a new gamedir: let's set it here. */
+	FS_AddGameDirectory(dir, false);
+#if defined(H2W) && defined(SERVERONLY)
 /* change the *gamedir serverinfo properly */
-	q_snprintf(gamedirs, sizeof(gamedirs), "%s", dir);
-	Cvar_SetQuick(&sv_gamedir, dir);
-	Info_SetValueForStarKey (svs.info, "*gamedir", gamedirs, MAX_SERVERINFO_STRING);
-//#endif
+	Info_SetValueForStarKey (svs.info, "*gamedir", dir, MAX_SERVERINFO_STRING);
+#endif
 }
 
 
@@ -589,7 +554,7 @@ FILE I/O within QFS
 ==============================================================================
 */
 
-size_t		fs_filesize;	/* size of the last file opened through QFS */
+long		fs_filesize;	/* size of the last file opened through QFS */
 int		file_from_pak;	/* ZOID: global indicating that file came from a pak */
 
 
@@ -623,45 +588,6 @@ int FS_CopyFile (const char *frompath, const char *topath)
 
 	err = Sys_CopyFile (frompath, topath);
 	return err;
-}
-
-static int findhandle2(void)
-{
-	int i;
-
-	for (i = 1; i < MAX_HANDLES; i++)
-	{
-		if (!sys_handles[i])
-			return i;
-	}
-	Sys_Error("out of handles");
-	return -1;
-}
-
-int FS_FileOpenWrite(const char *path)
-{
-	FILE	*f;
-	int		i;
-
-	i = findhandle2();
-	f = fopen(path, "wb");
-
-	if (!f)
-		Sys_Error("Error opening %s: %s", path, strerror(errno));
-
-	sys_handles[i] = f;
-	return i;
-}
-
-void Sys_FileClose(int handle)
-{
-	fclose(sys_handles[handle]);
-	sys_handles[handle] = NULL;
-}
-
-int FS_FileWrite(int handle, const void *data, int count)
-{
-	return fwrite(data, 1, count, sys_handles[handle]);
 }
 
 #define	COPY_READ_BUFSIZE		8192	/* BUFSIZ */
@@ -834,12 +760,12 @@ FS_OpenFile
 Finds the file in the search path, returns fs_filesize.
 ===========
 */
-size_t FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id, unsigned int *dir_path_id)
+long FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id)
 {
 	searchpath_t	*search;
 	pack_t		*pak;
 	char	ospath[MAX_OSPATH];
-	int	i;
+	int	i, key;
 
 	file_from_pak = 0;
 
@@ -849,16 +775,13 @@ size_t FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id, un
 		if (search->pack)	/* look through all the pak file elements */
 		{
 			pak = search->pack;
-			for (i = 0; i < pak->numfiles; i++)
+			key = Hash_GenerateKeyString (&pak->hash, filename, true);
+			for (i = Hash_First(&pak->hash, key); i != -1; i = Hash_Next(&pak->hash, i))
 			{
 				if (strcmp(pak->files[i].name, filename) != 0)
 					continue;
-
-				if ((dir_path_id) && (search->path_id != *dir_path_id))
-					continue;
-
 				/* found it! */
-				fs_filesize = (size_t) pak->files[i].filelen;
+				fs_filesize = pak->files[i].filelen;
 				file_from_pak = 1;
 				if (path_id)
 					*path_id = search->path_id;
@@ -875,13 +798,9 @@ size_t FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id, un
 		else	/* check a file in the directory tree */
 		{
 			q_snprintf (ospath, sizeof(ospath), "%s/%s",search->filename, filename);
-			fs_filesize = (size_t) Sys_filesize (ospath);
-			if (fs_filesize == (size_t)-1)
+			fs_filesize = Sys_filesize (ospath);
+			if (fs_filesize < 0)
 				continue;
-
-			if ((dir_path_id) && (search->path_id != *dir_path_id))
-				continue;
-
 			if (path_id)
 				*path_id = search->path_id;
 			if (!file) /* for FS_FileExists() */
@@ -896,7 +815,7 @@ size_t FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id, un
 	Sys_DPrintf ("%s: can't find %s\n", __thisfunc__, filename);
 
 	if (file) *file = NULL;
-	fs_filesize = (size_t)-1;
+	fs_filesize = -1;
 	return fs_filesize;
 }
 
@@ -909,8 +828,8 @@ Returns whether the file is found in the hexen2 filesystem.
 */
 qboolean FS_FileExists (const char *filename, unsigned int *path_id)
 {
-	size_t ret = FS_OpenFile (filename, NULL, path_id, NULL);
-	return (ret == (size_t)-1) ? false : true;
+	long ret = FS_OpenFile(filename, NULL, path_id);
+	return (ret < 0) ? false : true;
 }
 
 /*
@@ -935,63 +854,6 @@ qboolean FS_FileInGamedir (const char *filename)
 	return false;
 }
 
-
-/*
-===========
-FS_GetPathId
-
-Finds the file in the search path, returns path_id.
-===========
-*/
-unsigned int *FS_GetPathId(const char *filename, unsigned int *dir_path_id)
-{
-	searchpath_t	*search;
-	pack_t		*pak;
-	char	ospath[MAX_OSPATH];
-	int	i;
-	unsigned int *path_id;
-
-	file_from_pak = 0;
-
-	/* search through the path, one element at a time */
-	for (search = fs_searchpaths; search; search = search->next)
-	{
-		if (search->pack)	/* look through all the pak file elements */
-		{
-			pak = search->pack;
-			for (i = 0; i < pak->numfiles; i++)
-			{
-				if (strcmp(pak->files[i].name, filename) != 0)
-					continue;
-				/* found it! */
-
-				file_from_pak = 1;
-				return &search->path_id;
-			}
-		}
-		else	/* check a file in the directory tree */
-		{
-			q_snprintf(ospath, sizeof(ospath), "%s/%s", search->filename, filename);
-			fs_filesize = (size_t)Sys_filesize(ospath);
-
-			if (dir_path_id)
-				*dir_path_id = search->path_id;
-
-			if (fs_filesize == (size_t)-1)
-				continue;
-
-			return &search->path_id;
-		}
-	}
-
-	Sys_DPrintf("%s: can't find %s\n", __thisfunc__, filename);
-
-	dir_path_id = NULL;
-
-	return NULL;
-}
-
-
 /*
 ============
 FS_LoadFile
@@ -1010,25 +872,25 @@ Allways appends a 0 byte to the loaded data.
 static byte	*loadbuf;
 #if !defined(SERVERONLY)
 static cache_user_t *loadcache;
-#endif	/* SERVERONLY */
-static size_t		loadsize;
+#endif
+static long		loadsize;
 static int		zone_num;
 
 #if defined (SERVERONLY)
 #define Draw_BeginDisc()
 #define Draw_EndDisc()
-#endif	/* SERVERONLY */
+#endif
 
-static byte *FS_LoadFile (const char *path, int usehunk, unsigned int *path_id, unsigned int *dir_path_id)
+static byte *FS_LoadFile (const char *path, int usehunk, unsigned int *path_id)
 {
 	FILE	*h;
 	byte	*buf;
 	char	base[32];
-	size_t	len;
+	long	len;
 
 /* look for it in the filesystem or pack files */
-	len = FS_OpenFile (path, &h, path_id, dir_path_id);
-	if (!h)
+	len = FS_OpenFile (path, &h, path_id);
+	if (len < 0)
 		return NULL;
 
 /* extract the file's base name for hunk tag */
@@ -1050,7 +912,7 @@ static byte *FS_LoadFile (const char *path, int usehunk, unsigned int *path_id, 
 	case LOADFILE_CACHE:
 		buf = (byte *) Cache_Alloc (loadcache, len+1, base);
 		break;
-#endif	/* SERVERONLY */
+#endif
 	case LOADFILE_STACK:
 		if (len < loadsize)
 			buf = loadbuf;
@@ -1070,53 +932,53 @@ static byte *FS_LoadFile (const char *path, int usehunk, unsigned int *path_id, 
 	((byte *)buf)[len] = 0;
 
 	Draw_BeginDisc ();
-	fread (buf, 1, len, h);
+	fread (buf, 1, (size_t)len, h);
 	fclose (h);
 	Draw_EndDisc ();
 
 	return buf;
 }
 
-byte *FS_LoadHunkFile (const char *path, unsigned int *path_id, unsigned int *dir_path_id)
+byte *FS_LoadHunkFile (const char *path, unsigned int *path_id)
 {
-	return FS_LoadFile (path, LOADFILE_HUNK, path_id, dir_path_id);
+	return FS_LoadFile (path, LOADFILE_HUNK, path_id);
 }
 
-byte *FS_LoadZoneFile (const char *path, int zone_id, unsigned int *path_id, unsigned int *dir_path_id)
+byte *FS_LoadZoneFile (const char *path, int zone_id, unsigned int *path_id)
 {
 	zone_num = zone_id;
-	return FS_LoadFile (path, LOADFILE_ZONE, path_id, dir_path_id);
+	return FS_LoadFile (path, LOADFILE_ZONE, path_id);
 }
 
-byte *FS_LoadTempFile (const char *path, unsigned int *path_id, unsigned int *dir_path_id)
+byte *FS_LoadTempFile (const char *path, unsigned int *path_id)
 {
-	return FS_LoadFile (path, LOADFILE_TEMPHUNK, path_id, dir_path_id);
+	return FS_LoadFile (path, LOADFILE_TEMPHUNK, path_id);
 }
 
 #if !defined(SERVERONLY)
-void FS_LoadCacheFile (const char *path, struct cache_user_s *cu, unsigned int *path_id, unsigned int *dir_path_id)
+void FS_LoadCacheFile (const char *path, struct cache_user_s *cu, unsigned int *path_id)
 {
 	loadcache = cu;
-	FS_LoadFile (path, LOADFILE_CACHE, path_id, dir_path_id);
+	FS_LoadFile (path, LOADFILE_CACHE, path_id);
 }
-#endif	/* SERVERONLY */
+#endif
 
 /* uses temp hunk if larger than bufsize */
-byte *FS_LoadStackFile (const char *path, void *buffer, size_t bufsize, unsigned int *path_id, unsigned int *dir_path_id)
+byte *FS_LoadStackFile (const char *path, void *buffer, long bufsize, unsigned int *path_id)
 {
 	byte	*buf;
 
 	loadbuf = (byte *)buffer;
 	loadsize = bufsize;
-	buf = FS_LoadFile (path, LOADFILE_STACK, path_id, dir_path_id);
+	buf = FS_LoadFile (path, LOADFILE_STACK, path_id);
 
 	return buf;
 }
 
 /* returns malloc'd memory */
-byte *FS_LoadMallocFile (const char *path, unsigned int *path_id, unsigned int *dir_path_id)
+byte *FS_LoadMallocFile (const char *path, unsigned int *path_id)
 {
-	return FS_LoadFile (path, LOADFILE_MALLOC, path_id, dir_path_id);
+	return FS_LoadFile (path, LOADFILE_MALLOC, path_id);
 }
 
 
@@ -1295,7 +1157,7 @@ static int CheckRegistered (void)
 	unsigned short	check[128];
 	int	i;
 
-	FS_OpenFile("gfx/pop.lmp", &h, NULL, NULL);
+	FS_OpenFile("gfx/pop.lmp", &h, NULL);
 	if (!h)
 		return -1;
 
@@ -1330,7 +1192,7 @@ void FS_Init (void)
 	Cmd_AddCommand ("path", FS_Path_f);
 #if !defined(SERVERONLY)
 	Cmd_AddCommand ("maplist", FS_Maplist_f);
-#endif	/* SERVERONLY */
+#endif
 
 /* -basedir <path> overrides the system supplied base directory */
 	i = COM_CheckParm ("-basedir");
@@ -1434,28 +1296,33 @@ void FS_Init (void)
 		Sys_Error ("Portal of Praevus requires registered version of Hexen II");
 #endif
 #if !defined(H2W)
-	if ((sv_protocol == PROTOCOL_RAVEN_111) && check_portals)
+	if (sv_protocol == PROTOCOL_RAVEN_111 && check_portals)
 		Sys_Error ("Old protocol request not compatible with the Mission Pack");
 #endif
 
 	if (check_portals)
 	{
+#if defined(H2W)
 		searchpath_t	*mark = fs_searchpaths;
+#endif
 		FS_AddGameDirectory ("portals", true);
 		if (! (gameflags & GAME_PORTALS))
 		{
+#if !defined(H2W)
+			Sys_Error ("Missing or invalid mission pack installation\n");
+#else
 			/* back out searchpaths from invalid mission pack
 			 * installations because the portals directory is
 			 * reserved for the mission pack */
 			searchpath_t	*next;
 			Sys_Printf ("Missing or invalid mission pack installation\n");
-			Con_Printf("Missing or invalid mission pack installation\n");
 			while (fs_searchpaths != mark)
 			{
 				if (fs_searchpaths->pack)
 				{
 					fclose (fs_searchpaths->pack->handle);
 					Z_Free (fs_searchpaths->pack->files);
+					Hash_Free(&fs_searchpaths->pack->hash);
 					Z_Free (fs_searchpaths->pack);
 					Sys_Printf ("Removed packfile %s\n", fs_searchpaths->pack->filename);
 				}
@@ -1471,6 +1338,7 @@ void FS_Init (void)
 			/* back to data1 */
 			FS_MakePath_BUF (FS_BASEDIR, NULL, fs_gamedir, sizeof(fs_gamedir), "data1");
 			FS_MakePath_BUF (FS_USERBASE,NULL, fs_userdir, sizeof(fs_userdir), "data1");
+#endif	/* H2W */
 		}
 	}
 
@@ -1496,27 +1364,8 @@ void FS_Init (void)
 		if (! (gameflags & (GAME_REGISTERED|GAME_REGISTERED_OLD)))
 			Sys_Error ("You must have the full version of Hexen II to play modified games");
 		/* add basedir/gamedir as an override game */
-		char *tmp;
 		if (i < com_argc - 1)
-		{
-			for (int j = 1; j < (com_argc - i); j++)
-			{
-				if ((com_argv[i + j][0] != '-') && (com_argv[i + j][0] != '+'))
-				{
-					if (j > 1)
-						tmp = va("%s %s", tmp, com_argv[i + j]);
-					else
-						tmp = va("%s", com_argv[i + j]);
-				}
-				else
-					break;
-			}
-			FS_Gamedir(tmp);
-#ifdef GLQUAKE
-			Mod_ResetAll();
-			TexMgr_NewGame();
-#endif
-		}
+			FS_Gamedir (com_argv[i+1]);
 	}
 }
 

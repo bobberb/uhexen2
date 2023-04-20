@@ -1,6 +1,4 @@
-/*
- * snd_mix.c -- portable code to mix sounds for snd_dma.c.
- * $Id$
+/* snd_mix.c -- portable code to mix sounds for snd_dma.c.
  *
  * Copyright (C) 1996-2001 Id Software, Inc.
  * Copyright (C) 2010-2011 O. Sezer <sezero@users.sourceforge.net>
@@ -100,6 +98,14 @@ static void S_TransferPaintBuffer (int endtime)
 		S_TransferStereo16 (endtime);
 		return;
 	}
+
+#if id68k
+	if (shm->channels == 2 && ((shm->samplebits == 8 && (shm->signed8 & 2)) || shm->samplebits == 16))
+	{
+		S_TransferStereoAmiga (endtime);
+		return;
+	}
+#endif
 
 	p = (int *) paintbuffer;
 	count = (endtime - paintedtime) * shm->channels;
@@ -349,4 +355,3 @@ static void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 
 	ch->pos += count;
 }
-

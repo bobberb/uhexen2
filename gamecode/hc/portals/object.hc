@@ -1,8 +1,3 @@
-/*
- * $Header: /cvsroot/uhexen2/gamecode/hc/portals/object.hc,v 1.3 2007-02-07 16:59:34 sezero Exp $
- */
-
-
 float SPAWNFLAG_BALLISTA_TRACK = 1;
 
 /*
@@ -156,6 +151,7 @@ void obj_push()
 {//MG
 vector pushdir,pushangle;
 float ontop,pushed,inertia,force,walkforce;
+float content;
 
 	if(other.solid==SOLID_PHASE||other.movetype==MOVETYPE_FLYMISSILE||other.movetype==MOVETYPE_BOUNCEMISSILE)
 		return;
@@ -225,7 +221,8 @@ float ontop,pushed,inertia,force,walkforce;
 	else
 		force=vlen(other.velocity);
 
-	if(pointcontents(self.origin)==CONTENT_WATER||pointcontents(self.origin)==CONTENT_SLIME||pointcontents(self.origin)==CONTENT_LAVA)
+	content=pointcontents(self.origin);
+	if(content==CONTENT_WATER||content==CONTENT_SLIME||content==CONTENT_LAVA)
 		force/=3;
 
 //FIXME: mass should determine how fast the object can be pushed
@@ -791,7 +788,7 @@ void() ballista_fire = [++ 1 .. 30 ]
 void ballista_think()
 {
 	entity targ;
-	float pitchmod,checklooped,bestdist,lastdist;
+	float pitchmod,bestdist,lastdist;
 	vector my_pitch, ideal_pitch;
 
 	if(!self.enemy||!visible(self.enemy)||!self.enemy.flags2&FL_ALIVE&&!self.enemy.artifact_active&ART_INVISIBILITY&&!self.enemy.artifact_active&ART_INVINCIBILITY)
@@ -799,9 +796,11 @@ void ballista_think()
 //		dprint("looking\n");
 		self.enemy=targ = world;
 		bestdist=9999;
-		while(!checklooped)
+		loop
 		{	
 			targ = find (targ, classname, "player");
+			if(targ==world)
+				break;
 			if(visible(targ)&&targ.flags2&FL_ALIVE&&!targ.artifact_active&ART_INVISIBILITY&&!targ.artifact_active&ART_INVINCIBILITY)
 			{
 				lastdist=vlen(targ.origin-self.origin);
@@ -812,8 +811,6 @@ void ballista_think()
 					self.enemy=targ;
 				}
 			}
-			if(targ==world)
-				checklooped=TRUE;
 		}
 	}
 
@@ -941,8 +938,7 @@ void bell_attack(float anim)
 
 		if (!trace_ent.movetype == MOVETYPE_NONE)
 		{
-			if(trace_ent.flags&FL_ONGROUND)
-				trace_ent.flags = trace_ent.flags - FL_ONGROUND;
+			trace_ent.flags (-) FL_ONGROUND;
 			trace_ent.velocity =  trace_ent.origin - self.origin;
 			trace_ent.velocity_z = 280;
 		}
@@ -1065,8 +1061,7 @@ void() obj_statue_mummy_head =
 
 	self.touch	= obj_push;
 	self.flags	(+) FL_PUSH;
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
-
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 };
 
 /*QUAKED obj_statue_mummy (0.3 0.1 0.6) (-16 -16 0) (16 16 160)
@@ -1100,14 +1095,13 @@ void() obj_statue_mummy =
 	precache_model2 ("models/mumstatu.mdl");
 	CreateEntityNew(self,ENT_STATUE_MUMMY_BODY,"models/mumstatu.mdl",statue_death);
 
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 
 	precache_model2 ("models/mhdstatu.mdl");
 	CreateEntityNew(head,ENT_STATUE_MUMMY_HEAD,"models/mhdstatu.mdl",statue_death);
 
 	head.health = self.health;	
-	head.drawflags += SCALE_ORIGIN_BOTTOM;
-
+	head.drawflags (+) SCALE_ORIGIN_BOTTOM;
 };
 
 
@@ -1137,7 +1131,7 @@ void obj_pot1 (void)
 
 	self.touch	= obj_push;
 	self.flags	(+) FL_PUSH;
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 
 	if(self.targetname)
 		self.use=chunk_death;
@@ -1169,7 +1163,7 @@ void obj_pot2 (void)
 
 	self.touch	= obj_push;
 	self.flags	(+) FL_PUSH;
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 
 	if(self.targetname)
 		self.use=chunk_death;
@@ -1200,7 +1194,7 @@ void obj_pot3 (void)
 
 	self.touch	= obj_push;
 	self.flags	(+) FL_PUSH;
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 
 	if(self.targetname)
 		self.use=chunk_death;
@@ -1222,7 +1216,7 @@ void obj_statue_tut (void)
 
 	self.touch	= obj_push;
 	self.flags	(+) FL_PUSH;
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 }
 
 /*QUAKED obj_flag (0.3 0.1 0.6) (-16 -16 0) (16 16 160)
@@ -1423,8 +1417,7 @@ void webs_touch ()
 	if(!other.movetype||other.movetype==MOVETYPE_PUSHPULL||other.classname==self.classname)
 		return;
 
-	if(!other.flags&FL_ONGROUND)
-		other.flags+=FL_ONGROUND;
+	other.flags(+)FL_ONGROUND;
 }
 
 void webs_death (void)
@@ -1602,11 +1595,10 @@ void obj_cauldron (void)
 
 	self.touch	= obj_push;
 	self.flags	(+) FL_PUSH;
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 	
 	self.think = cauldron_run;
 	self.nextthink = time + random(0.5,1.5);
-
 }
 
 /*QUAKED obj_skullstick (0.3 0.1 0.6) (-16 -16 0) (16 16 40)
@@ -1691,13 +1683,13 @@ void obj_ice (void)
 
 	self.use = chunk_death;
 
-	self.drawflags+=MLS_ABSLIGHT;
+	self.drawflags(+)MLS_ABSLIGHT;
 
 	if(!self.abslight)
 		self.abslight = 0.75;
 
 	if(!self.spawnflags&1)
-		self.drawflags+=DRF_TRANSLUCENT;
+		self.drawflags(+)DRF_TRANSLUCENT;
 
 	if(!self.health)
 		self.health = 20;
@@ -1747,8 +1739,7 @@ void obj_statue_lion(void)
 	precache_model2("models/lion.mdl");
 	CreateEntityNew(self,ENT_STATUE_LION,"models/lion.mdl",chunk_death);
 
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
-
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 }
 
 
@@ -1776,7 +1767,7 @@ void obj_statue_dragon_lion(void)
 	precache_sound4("fx/draglion.wav");
 	CreateEntityNew(self,ENT_DRAGLION,"models/draglion.mdl",draglion_use);
 
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 	self.use=draglion_use;
 }
 
@@ -1792,8 +1783,7 @@ void obj_statue_athena (void)
 	precache_model2("models/athena.mdl");
 	CreateEntityNew(self,ENT_STATUE_ATHENA,"models/athena.mdl",chunk_death);
 
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
-
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 }
 
 
@@ -1809,8 +1799,7 @@ void obj_statue_neptune (void)
 	precache_model2("models/neptune.mdl");
 	CreateEntityNew(self,ENT_STATUE_NEPTUNE,"models/neptune.mdl",chunk_death);
 
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
-
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 }
 
 /*QUAKED obj_bonepile(0.3 0.1 0.6) (-10 -10 0) (10 10 10)
@@ -1826,7 +1815,7 @@ void obj_bonepile (void)
 
 	self.use = chunk_death;
 
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 }
 
 /*QUAKED obj_statue_caesar(0.3 0.1 0.6) (-24 -24 0) (24 24 90)
@@ -1840,8 +1829,7 @@ void obj_statue_caesar (void)
 	precache_model2("models/caesar.mdl");
 	CreateEntityNew(self,ENT_STATUE_CAESAR,"models/caesar.mdl",chunk_death);
 
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
-
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 }
 
 /*QUAKED obj_statue_snake_coil (0.3 0.1 0.6) (-44 -44 0) (44 44 90)
@@ -1856,8 +1844,7 @@ void obj_statue_snake_coil (void)
 	CreateEntityNew(self,ENT_STATUE_SNAKE_COIL,"models/snake.mdl",chunk_death);
 
 	self.scale = .5;
-	self.drawflags += SCALE_ORIGIN_BOTTOM;
-
+	self.drawflags (+) SCALE_ORIGIN_BOTTOM;
 }
 
 /*QUAKED obj_skull (0.3 0.1 0.6) (-8 -8 0) (8 8 16)

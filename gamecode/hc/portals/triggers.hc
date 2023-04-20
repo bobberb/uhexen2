@@ -1,7 +1,3 @@
-/*
- * portals/triggers.hc
- */
-
 void() button_return;
 void() multi_touch;
 
@@ -106,14 +102,21 @@ void() multi_killed =
 
 float client_has_piece(entity client, string piece)
 {
-	if (client.puzzle_inv1 == piece ||
-		client.puzzle_inv2 == piece ||
-		client.puzzle_inv3 == piece ||
-		client.puzzle_inv4 == piece ||
-		client.puzzle_inv5 == piece ||
-		client.puzzle_inv6 == piece ||
-		client.puzzle_inv7 == piece ||
-		client.puzzle_inv8 == piece)
+	if (client.puzzle_inv1 == piece)
+		return 1;
+	if (client.puzzle_inv2 == piece)
+		return 1;
+	if (client.puzzle_inv3 == piece)
+		return 1;
+	if (client.puzzle_inv4 == piece)
+		return 1;
+	if (client.puzzle_inv5 == piece)
+		return 1;
+	if (client.puzzle_inv6 == piece)
+		return 1;
+	if (client.puzzle_inv7 == piece)
+		return 1;
+	if (client.puzzle_inv8 == piece)
 		return 1;
 
 	if (client.puzzles_cheat) // Did they cheat to get through
@@ -177,7 +180,7 @@ float check_puzzle_pieces(entity client, float remove_pieces, float inverse)
 
 	if (!inverse && required != has)
 		return 0;
-	else if (inverse && required == has)
+	if (inverse && required == has)
 		return 0;
 
 	if (remove_pieces)
@@ -1277,12 +1280,6 @@ float poof_speed;
 			other.fixangle = 1;		// turn this way immediately
 			if(other.classname!="player"&&other.velocity!='0 0 0')
 				poof_speed = vlen(other.velocity);
-			/* commented out my old ugly hack and using Thomas'
-			 * modified entities file for the Cathedral level, instead */
-			/*
-			else if(mapname=="cath" && !deathmatch)
-				poof_speed = 225; // otherwise cant reach the balcony
-			*/
 			else
 				poof_speed = 300;
 			other.velocity = v_forward * poof_speed;
@@ -1659,7 +1656,7 @@ void() trigger_magicfield_touch =
 	{
 		if (other.artifact_active & ART_TOMEOFPOWER)
 			return;
-		else other.velocity = self.speed * self.movedir * 10;
+		other.velocity = self.speed * self.movedir * 10;
 
 		if (other.classname == "player" && !deathmatch)
 		{
@@ -1757,14 +1754,49 @@ Once this trigger is touched/used, any trigger_crosslevel_target with the same t
 */
 void() trigger_crosslevel =
 {
-	if (((self.spawnflags & 1) && (serverflags & SFL_CROSS_TRIGGER_1)) ||
-		((self.spawnflags & 2) && (serverflags & SFL_CROSS_TRIGGER_2)) ||
-		((self.spawnflags & 4) && (serverflags & SFL_CROSS_TRIGGER_3)) ||
-		((self.spawnflags & 8) && (serverflags & SFL_CROSS_TRIGGER_4)) ||
-		((self.spawnflags & 16) && (serverflags & SFL_CROSS_TRIGGER_5)) ||
-		((self.spawnflags & 32) && (serverflags & SFL_CROSS_TRIGGER_6)) ||
-		((self.spawnflags & 64) && (serverflags & SFL_CROSS_TRIGGER_7)) ||
-		((self.spawnflags & 128) && (serverflags & SFL_CROSS_TRIGGER_8)))
+	if ((self.spawnflags & 1) && (serverflags & SFL_CROSS_TRIGGER_1))
+	{
+		self.solid = SOLID_NOT;
+		self.flags(+)FL_ARCHIVE_OVERRIDE;
+		return;
+	}
+	if ((self.spawnflags & 2) && (serverflags & SFL_CROSS_TRIGGER_2))
+	{
+		self.solid = SOLID_NOT;
+		self.flags(+)FL_ARCHIVE_OVERRIDE;
+		return;
+	}
+	if ((self.spawnflags & 4) && (serverflags & SFL_CROSS_TRIGGER_3))
+	{
+		self.solid = SOLID_NOT;
+		self.flags(+)FL_ARCHIVE_OVERRIDE;
+		return;
+	}
+	if ((self.spawnflags & 8) && (serverflags & SFL_CROSS_TRIGGER_4))
+	{
+		self.solid = SOLID_NOT;
+		self.flags(+)FL_ARCHIVE_OVERRIDE;
+		return;
+	}
+	if ((self.spawnflags & 16) && (serverflags & SFL_CROSS_TRIGGER_5))
+	{
+		self.solid = SOLID_NOT;
+		self.flags(+)FL_ARCHIVE_OVERRIDE;
+		return;
+	}
+	if ((self.spawnflags & 32) && (serverflags & SFL_CROSS_TRIGGER_6))
+	{
+		self.solid = SOLID_NOT;
+		self.flags(+)FL_ARCHIVE_OVERRIDE;
+		return;
+	}
+	if ((self.spawnflags & 64) && (serverflags & SFL_CROSS_TRIGGER_7))
+	{
+		self.solid = SOLID_NOT;
+		self.flags(+)FL_ARCHIVE_OVERRIDE;
+		return;
+	}
+	if ((self.spawnflags & 128) && (serverflags & SFL_CROSS_TRIGGER_8))
 	{
 		self.solid = SOLID_NOT;
 		self.flags(+)FL_ARCHIVE_OVERRIDE;
@@ -1788,14 +1820,49 @@ entity found;
 //		bprint("Postponing check\n");
 		thinktime self : 3;
 	}
-	else if (((self.spawnflags & 1) && (serverflags & SFL_CROSS_TRIGGER_1)) ||
-		((self.spawnflags & 2) && (serverflags & SFL_CROSS_TRIGGER_2)) ||
-		((self.spawnflags & 4) && (serverflags & SFL_CROSS_TRIGGER_3)) ||
-		((self.spawnflags & 8) && (serverflags & SFL_CROSS_TRIGGER_4)) ||
-		((self.spawnflags & 16) && (serverflags & SFL_CROSS_TRIGGER_5)) ||
-		((self.spawnflags & 32) && (serverflags & SFL_CROSS_TRIGGER_6)) ||
-		((self.spawnflags & 64) && (serverflags & SFL_CROSS_TRIGGER_7)) ||
-		((self.spawnflags & 128) && (serverflags & SFL_CROSS_TRIGGER_8)))
+	else if ((self.spawnflags & 1) && (serverflags & SFL_CROSS_TRIGGER_1))
+	{
+		activator = world;
+		self.check_ok=TRUE;
+		SUB_UseTargets();
+	}
+	else if ((self.spawnflags & 2) && (serverflags & SFL_CROSS_TRIGGER_2))
+	{
+		activator = world;
+		self.check_ok=TRUE;
+		SUB_UseTargets();
+	}
+	else if ((self.spawnflags & 4) && (serverflags & SFL_CROSS_TRIGGER_3))
+	{
+		activator = world;
+		self.check_ok=TRUE;
+		SUB_UseTargets();
+	}
+	else if ((self.spawnflags & 8) && (serverflags & SFL_CROSS_TRIGGER_4))
+	{
+		activator = world;
+		self.check_ok=TRUE;
+		SUB_UseTargets();
+	}
+	else if ((self.spawnflags & 16) && (serverflags & SFL_CROSS_TRIGGER_5))
+	{
+		activator = world;
+		self.check_ok=TRUE;
+		SUB_UseTargets();
+	}
+	else if ((self.spawnflags & 32) && (serverflags & SFL_CROSS_TRIGGER_6))
+	{
+		activator = world;
+		self.check_ok=TRUE;
+		SUB_UseTargets();
+	}
+	else if ((self.spawnflags & 64) && (serverflags & SFL_CROSS_TRIGGER_7))
+	{
+		activator = world;
+		self.check_ok=TRUE;
+		SUB_UseTargets();
+	}
+	else if ((self.spawnflags & 128) && (serverflags & SFL_CROSS_TRIGGER_8))
 	{
 		activator = world;
 		self.check_ok=TRUE;
@@ -2534,7 +2601,7 @@ entity found;
 	else if(self.wait>0)
 		thinktime self : self.wait;
 	else
-		thinktime self : 999999999999;
+		thinktime self : 99999999;
 }
 
 void trigger_stop_touch ()
@@ -2570,14 +2637,7 @@ void hub_intermission_use(void)
 	intermission_exittime = time + 2;
 
 	//Remove cross-level trigger server flags for next hub
-	serverflags(-)(SFL_CROSS_TRIGGER_1|
-				SFL_CROSS_TRIGGER_2|
-				SFL_CROSS_TRIGGER_3|
-				SFL_CROSS_TRIGGER_4|
-				SFL_CROSS_TRIGGER_5|
-				SFL_CROSS_TRIGGER_6|
-				SFL_CROSS_TRIGGER_7|
-				SFL_CROSS_TRIGGER_8);
+	serverflags (-) SFL_CROSS_TRIGGERS;
 
 	search=find(world,classname,"player");
 	while(search)

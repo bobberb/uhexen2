@@ -1,6 +1,6 @@
 
-Hexen II: Hammer of Thyrion (uHexen2) - v1.5.9
-----------------------------------------------
+Hexen II: Hammer of Thyrion (uHexen2) - v1.5.10
+-----------------------------------------------
 
 
 1. Installation
@@ -57,7 +57,7 @@ mission pack cdrom.  To install the Matrox m3D bundled (oem) version of
 the game (also known as "Continent of Blackmarsh"), you need your M3D_2
 cdrom.
 
-Download the base binary tarball (e.g., hexen2-1.5.9.i586.tgz) and
+Download the base binary tarball (e.g., hexen2-1.5.10.i586.tgz) and
 extract it. Copy the two files pak0.pak and pak1.pak from your cdrom
 into the "data1" directory in your own installation.  The pak file
 names should be lower-cased, if not already.  To fix the permissions:
@@ -79,7 +79,7 @@ pak3.pak, just in case:
    77ae298dd0dcd16ab12f4a68067ff2c3  portals/pak3.pak
 
 If you want to install HexenWorld, download the HexenWorld binary
-package (e.g., hexenworld-1.5.9.i586.tgz) and extract it in the
+package (e.g., hexenworld-1.5.10.i586.tgz) and extract it in the
 same directory you extracted the base uhexen2 tarball. HexenWorld
 data doesn't need patching.
 
@@ -689,7 +689,7 @@ glide.  For some more detailed info, consult the document README.3dfx.
 ----------
 
 Thanks to ID Software, Raven Games and Activision for a great game and
-for supporting open source software, to Dan Olson and Clément Bourdarias
+for supporting open source software, to Dan Olson and ClÃ©ment Bourdarias
 for the initial Linux port, and to sourceforge.net for hosting us.  Many
 thanks to all of our contributors: see the AUTHORS file for a complete
 list of them.
@@ -701,9 +701,9 @@ list of them.
 3.5.1  Hammer of Thyrion pages:
 -------------------------------
 
-Home page		: http://uhexen2.sourceforge.net/
-Project page		: http://sourceforge.net/projects/uhexen2/
-SVN Repository		: http://sourceforge.net/p/uhexen2/code/
+Home page	: http://uhexen2.sourceforge.net/
+Project page	: https://sourceforge.net/projects/uhexen2/
+Git Repository	: https://sourceforge.net/p/uhexen2/uhexen2/
 
 3.5.2  Hammer of Thyrion ports:
 -------------------------------
@@ -743,7 +743,7 @@ http://sourceforge.net/projects/vquake/
 FTEQW, a Q1/QW engine with H2 support:
 http://sourceforge.net/projects/fteqw/
 
-Korax's UQE Hexen II: http://www.jacqueskrige.com/
+Korax's UQE Hexen II: https://www.jacqueskrige.site/
 
 3.5.5  Older, currently inactive Hexen II ports:
 ------------------------------------------------

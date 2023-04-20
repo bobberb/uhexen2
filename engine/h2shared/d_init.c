@@ -1,6 +1,4 @@
-/*
- * d_init.c -- rasterization driver initialization
- * $Id: d_init.c,v 1.9 2007-08-09 06:12:45 sezero Exp $
+/* d_init.c -- rasterization driver initialization
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -51,8 +49,10 @@ void D_Init (void)
 	Cvar_RegisterVariable (&d_mipcap);
 	Cvar_RegisterVariable (&d_mipscale);
 
+#if 0
 	r_drawpolys = false;
 	r_worldpolysbacktofront = false;
+#endif
 	r_recursiveaffinetriangles = true;
 	r_pixbytes = 1;
 	r_aliasuvscale = 1.0;
@@ -135,7 +135,7 @@ void D_SetupFrame (void)
 	for (i = 0; i < (NUM_MIPS-1); i++)
 		d_scalemip[i] = basemip[i] * d_mipscale.value;
 
-#if	id386
+#if	id386 || id68k
 	if (d_subdiv16.integer)
 		d_drawspans = D_DrawSpans16;
 	else

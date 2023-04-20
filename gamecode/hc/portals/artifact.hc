@@ -1,11 +1,4 @@
 /*
- * $Header: /cvsroot/uhexen2/gamecode/hc/portals/artifact.hc,v 1.2 2007-02-07 16:59:29 sezero Exp $
- */
-
-
-
-
-/*
  * artifact_touch() -- Called when an artifact is being touched.
  *                     Awards players random amounts of whatever they represent.
  */
@@ -37,59 +30,51 @@ void artifact_touch()
 	{
 		if ((other.cnt_torch + 1)  > 15)
 			return;	
-		else
-			other.cnt_torch += 1;		
+		other.cnt_torch += 1;		
 	}
 	else if(self.netname == STR_HEALTHBOOST)   // 25 limit
 	{
 		if ((other.cnt_h_boost + 1)  > 30||(other.playerclass!=CLASS_CRUSADER&&other.cnt_h_boost + 1  > 15))
 			return;	
-		else
-			other.cnt_h_boost += 1; 
+		other.cnt_h_boost += 1; 
 	}
 	else if(self.netname == STR_SUPERHEALTHBOOST) // 5 limit
 	{
 		if (deathmatch&&(other.cnt_sh_boost + 1) > 2)
 			return;	
-		else if ((other.cnt_sh_boost + 1) > 5)
+		if ((other.cnt_sh_boost + 1) > 5)
 			return;	
-		else
-			other.cnt_sh_boost += 1; 
+		other.cnt_sh_boost += 1; 
 	}
 	else if(self.netname == STR_MANABOOST)
 	{
 		if ((other.cnt_mana_boost + 1) > 15)
 			return;	
-		else
-			other.cnt_mana_boost += 1; 
+		other.cnt_mana_boost += 1; 
 	}
 	else if(self.netname == STR_TELEPORT)
 	{
 		if ((other.cnt_teleport + 1) > 15)
 			return;	
-		else
-			other.cnt_teleport += 1;
+		other.cnt_teleport += 1;
 	}
 	else if(self.netname == STR_TOME)
 	{
 		if ((other.cnt_tome + 1)  > 15)
 			return;	
-		else
-			other.cnt_tome += 1;
+		other.cnt_tome += 1;
 	}
 	else if(self.netname == STR_SUMMON)
 	{
 		if ((other.cnt_summon + 1) > 15)
 			return;	
-		else
-			other.cnt_summon += 1;
+		other.cnt_summon += 1;
 	}
 	else if(self.netname == STR_INVISIBILITY)
 	{
 		if ((other.cnt_invisibility + 1) > 15)
 			return;	
-		else
-			other.cnt_invisibility += 1;
+		other.cnt_invisibility += 1;
 	}
 	else if(self.netname == STR_GLYPH)
 	{
@@ -97,58 +82,50 @@ void artifact_touch()
 		{
 			if ((other.cnt_glyph + 5) > 50)
 				return;	
-			else	
-				other.cnt_glyph += 5;
+			other.cnt_glyph += 5;
 		}
 		else
 		{
 			if ((other.cnt_glyph + 1) > 15)
 				return;	
-			else	
-				other.cnt_glyph += 1;
+			other.cnt_glyph += 1;
 		}
 	}
 	else if(self.netname == STR_HASTE)
 	{
 		if ((other.cnt_haste + 1)  > 15)
 			return;	
-		else
-			other.cnt_haste += 1;
+		other.cnt_haste += 1;
 	}
 	else if(self.netname == STR_BLAST)
 	{
 		if ((other.cnt_blast + 1)  > 15)
 			return;	
-		else
-			other.cnt_blast += 1;
+		other.cnt_blast += 1;
 	}
 	else if(self.netname == STR_POLYMORPH)
 	{
 		if ((other.cnt_polymorph + 1)  > 15)
 			return;	
-		else
-			other.cnt_polymorph += 1;
+		other.cnt_polymorph += 1;
 	}
 	else if(self.netname == STR_FLIGHT)
 	{
 		if ((other.cnt_flight + 1)  > 15)
 			return;	
-		else
-			other.cnt_flight += 1;
+		other.cnt_flight += 1;
 	}
 	else if(self.netname == STR_CUBEOFFORCE)
 	{
 		if ((other.cnt_cubeofforce + 1)  > 15)
 			return;	
-		else
-			other.cnt_cubeofforce += 1;
+		other.cnt_cubeofforce += 1;
 	}
 	else if(self.netname == STR_INVINCIBILITY)
 	{
 		if ((other.cnt_invincibility + 1)  > 15)
 			return;	
-		else
-			other.cnt_invincibility += 1;
+		other.cnt_invincibility += 1;
 	}
 	else if(self.classname == "art_sword_and_crown"&&other.team==2)
 	{
@@ -331,7 +308,6 @@ void DecrementSuperHealth()
 	}
 	else  // All done, get rid of it
 		self.artifact_flags (-) AFL_SUPERHEALTH;  
-
 }
 
 
@@ -372,7 +348,6 @@ void art_SuperHBoost()
 
 
 
-
 /*
 ====================================================================================================
 
@@ -389,9 +364,9 @@ void use_healthboost()
 	}
 	self.cnt_h_boost -= 1;
 	self.health += 25;
-  	if(self.health > self.max_health)
+	if(self.health > self.max_health)
 	{
-  		self.health = self.max_health;
+		self.health = self.max_health;
 	}
 	if(self.flags2&FL2_POISONED)
 	{
@@ -411,7 +386,6 @@ void art_HealthBoost()
 {
 	spawn_artifact(ARTIFACT_HP_BOOST,RESPAWN);
 }
-
 
 
 
@@ -454,6 +428,7 @@ void DouseTorch()//Never called?!
 	KillTorch();
 }
 */
+
 void DimTorch()
 {
 	sound (self, CHAN_BODY, "raven/kiltorch.wav", 1, ATTN_IDLE);

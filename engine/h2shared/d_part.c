@@ -1,6 +1,5 @@
 /*
  * d_part.c -- software driver module for drawing particles.
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -48,7 +47,7 @@ void D_StartParticles (void)
 }
 
 
-#if	!id386
+#if	!id386 && !id68k
 
 /*
 ==============

@@ -1,6 +1,5 @@
 /*
  * cl_tent.c -- Client side temporary entity effects.
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -55,7 +54,6 @@
 #define TE_STREAM_GAZE			31
 #define TE_STREAM_FAMINE		32
 #define TE_STREAM_LIGHTNING_SMALL	24
-#define TE_LIGHT_PULSE		33
 
 // TYPES -------------------------------------------------------------------
 
@@ -145,10 +143,8 @@ void CL_ClearTEnts(void)
 
 void CL_ParseTEnt(void)
 {
-	int type, entnum;
+	int type;
 	vec3_t pos;
-	entity_t	*ent;
-
 #ifdef QUAKE2
 	vec3_t endpos;
 #endif
@@ -280,24 +276,6 @@ void CL_ParseTEnt(void)
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
 		R_TeleportSplash (pos);
-		break;
-	case TE_LIGHT_PULSE:	// colored light pulse
-		entnum = MSG_ReadShort();
-		ent = CL_EntityNum(entnum);
-		dl = CL_AllocDlight(0);
-		VectorCopy(ent->origin, dl->origin);
-		dl->radius = 250;
-		dl->die = cl.time + 0.5;
-		dl->decay = 300;
-#	ifdef GLQUAKE
-		if ((gl_colored_dynamic_lights.integer) && (ent->model))
-		{
-			dl->color[0] = ent->model->glow_settings[COLOR_R];
-			dl->color[1] = ent->model->glow_settings[COLOR_G];
-			dl->color[2] = ent->model->glow_settings[COLOR_B];
-			dl->color[3] = ent->model->glow_settings[COLOR_A];
-		}
-#	endif
 		break;
 	default:
 		Sys_Error ("%s: bad type", __thisfunc__);
@@ -475,14 +453,14 @@ void CL_UpdateTEnts(void)
 			yaw = (int)(atan2(dist[1], dist[0])*180/M_PI);
 			if (yaw < 0)
 				yaw += 360;
-			forward = sqrt(dist[0]*dist[0]+dist[1]*dist[1]);
+			forward = Q_sqrt(dist[0]*dist[0]+dist[1]*dist[1]);
 			pitch = (int)(atan2(dist[2], forward)*180/M_PI);
 			if (pitch < 0)
 				pitch += 360;
 		}
 
 		VectorCopy(stream->source, org);
-		d = VectorNormalize(dist);
+		d = VectorNormalizeFast(dist);
 
 		if (stream->type == TE_STREAM_ICECHUNKS)
 		{

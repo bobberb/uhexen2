@@ -1,7 +1,4 @@
-/*
- * bsp5.h
- * $Id: bsp5.h,v 1.9 2010-01-11 18:48:20 sezero Exp $
- *
+/* bsp5.h
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -21,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __BSP5_H__
-#define __BSP5_H__
+#ifndef BSP5_H_
+#define BSP5_H_
 
 
 typedef struct
@@ -288,6 +285,7 @@ extern	qboolean	oldhullsize;	// if true, use original H2 sizes for hulls #5 and 
 extern	brushset_t	*brushset;
 
 extern	int		valid;
+extern	int		usebsp2;
 
 extern	char	portfilename[1024];
 extern	char	bspfilename[1024];
@@ -322,5 +320,5 @@ struct brush_s	*AllocBrush (void);
 
 //=============================================================================
 
-#endif	/* __BSP5_H__	*/
+#endif	/* BSP5_H_ */
 

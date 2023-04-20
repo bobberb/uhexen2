@@ -1,7 +1,5 @@
-/*
- * host_string.h --
+/* host_string.h -
  * internationalized string resource shared between client and server
- * $Id$
  *
  * Copyright (C) 1997-1998 Raven Software Corp.
  *
@@ -26,8 +24,7 @@
 
 extern	int		host_string_count;
 
-void Host_LoadStrings (unsigned int *path_id);
+void Host_LoadStrings (void);
 const char *Host_GetString (int idx);
 
 #endif	/* HOST_STRING_H */
-

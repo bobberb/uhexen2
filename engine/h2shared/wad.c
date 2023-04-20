@@ -1,6 +1,5 @@
 /*
  * wad.c -- wad file loading
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
@@ -74,17 +73,18 @@ void W_LoadWadFile (const char *filename)
 
 	if (wad_base)
 		Z_Free (wad_base);
-	wad_base = FS_LoadZoneFile (filename, Z_SECZONE, NULL, NULL);
+	wad_base = FS_LoadZoneFile (filename, Z_SECZONE, NULL);
 	if (!wad_base)
 		Sys_Error ("%s: couldn't load %s", __thisfunc__, filename);
 
 	header = (wadinfo_t *)wad_base;
 
-	if (header->identification[0] != 'W'
-			|| header->identification[1] != 'A'
-			|| header->identification[2] != 'D'
-			|| header->identification[3] != '2')
-		Sys_Error ("Wad file %s doesn't have WAD2 id\n",filename);
+	if (header->identification[0] != 'W' ||
+	    header->identification[1] != 'A' ||
+	    header->identification[2] != 'D' ||
+	    header->identification[3] != '2') {
+		Sys_Error ("Wad file %s doesn't have WAD2 id\n", filename);
+	}
 
 	wad_numlumps = LittleLong(header->numlumps);
 	infotableofs = LittleLong(header->infotableofs);
@@ -106,7 +106,7 @@ void W_LoadWadFile (const char *filename)
 W_GetLumpinfo
 =============
 */
-static lumpinfo_t *W_GetLumpinfo (const char *name)
+lumpinfo_t *W_GetLumpinfo (const char *name)
 {
 	int		i;
 	lumpinfo_t	*lump_p;
@@ -160,4 +160,3 @@ void SwapPic (qpic_t *pic)
 	pic->width = LittleLong(pic->width);
 	pic->height = LittleLong(pic->height);
 }
-

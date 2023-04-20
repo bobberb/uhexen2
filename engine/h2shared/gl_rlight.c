@@ -1,8 +1,6 @@
 /*
  * r_light.c
  *
- * $Id: gl_rlight.c,v 1.17 2007-09-14 14:10:01 sezero Exp $
- *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -41,7 +39,7 @@ void R_AnimateLight (void)
 	defaultLocus = locusHz[0] = (int)(cl.time*10);
 	locusHz[1] = (int)(cl.time*20);
 	locusHz[2] = (int)(cl.time*30);
-	for (i = 0; i < (mod_bsp2 ? MAX_LIGHTSTYLES : MAX_LIGHTSTYLES_OLD); i++)
+	for (i = 0; i < MAX_LIGHTSTYLES; i++)
 	{
 		if (!cl_lightstyle[i].length)
 		{ // No style def
@@ -122,7 +120,7 @@ static void R_RenderDlight (dlight_t *light)
 	rad = light->radius * 0.35;
 
 	VectorSubtract (light->origin, r_origin, v);
-	if (VectorLength (v) < rad)
+	if (VectorLengthFast (v) < rad)
 	{	// view is inside the dlight
 		AddLightBlend (1, 0.5, 0, light->radius * 0.0003);
 		return;
@@ -596,10 +594,10 @@ float R_LightPointColor (vec3_t p)
 
 	end[0] = p[0];
 	end[1] = p[1];
-	end[2] = p[2] - 8192; //johnfitz -- was 2048
+	end[2] = p[2] - 2048;
 
 	lightcolor[0] = lightcolor[1] = lightcolor[2] = 0;
 	RecursiveLightPointColor (lightcolor, cl.worldmodel->nodes, p, end);
-	return ((lightcolor[0] + lightcolor[1] + lightcolor[2]) * (1.0f / 3.0f));
+	return (lightcolor[0] + lightcolor[1] + lightcolor[2]) / 3.0;
 }
 

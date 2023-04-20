@@ -1,8 +1,5 @@
-/*
- * d_polyset.c - routines for drawing sets of polygons sharing the same
+/* d_polyset.c - routines for drawing sets of polygons sharing the same
  * texture (used for Alias models.)
- *
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -35,11 +32,9 @@ byte		*d_pcolormap;
 
 int		d_aflatcolor;
 int		d_xdenom;
-ASM_LINKAGE_END
 
-static edgetable_t	*pedgetable;
-
-static edgetable_t	edgetables[12] =
+edgetable_t	*pedgetable;
+edgetable_t	edgetables[12] =
 {
 	{ 0, 1, r_p0, r_p2, NULL, 2, r_p0, r_p1, r_p2 },
 	{ 0, 2, r_p1, r_p0, r_p2, 1, r_p1, r_p2, NULL },
@@ -55,7 +50,6 @@ static edgetable_t	edgetables[12] =
 	{ 0, 1, r_p0, r_p2, NULL, 1, r_p0, r_p1, NULL }
 };
 
-ASM_LINKAGE_BEGIN
 // FIXME: some of these can become statics
 int		a_sstepxfrac, a_tstepxfrac, r_lstepx, a_ststepxwhole;
 int		r_sstepx, r_tstepx, r_lstepy, r_sstepy, r_tstepy;
@@ -79,28 +73,38 @@ ASM_LINKAGE_END
 int		skinwidth;
 byte	*skinstart;
 
+#if !id68k
 static int	ystart;
+#endif
 
 typedef struct {
 	int		quotient;
 	int		remainder;
 } adivtab_t;
 
-static adivtab_t	adivtab[32*32] =
+ASM_LINKAGE_BEGIN
+adivtab_t	adivtab[32*32] =
 {
 #include "adivtab.h"
 };
+ASM_LINKAGE_END
 
 #if !id386
 static spanpackage_t	spans[DPS_MAXSPANS + 1 + ((CACHE_SIZE - 1) / sizeof(spanpackage_t)) + 1];
 						/* one extra because of cache line pretouching */
 #if !id68k
 static void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage);
-#endif
 static void D_PolysetDrawSpans8T (spanpackage_t *pspanpackage);
 static void D_PolysetDrawSpans8T2 (spanpackage_t *pspanpackage);
 static void D_PolysetDrawSpans8T3 (spanpackage_t *pspanpackage);
 static void D_PolysetDrawSpans8T5 (spanpackage_t *pspanpackage);
+#endif
+#endif
+
+#if id68k
+ASM_LINKAGE_BEGIN
+void	(*d_polysetdrawspans) (spanpackage_t *pspanpackage);
+ASM_LINKAGE_END
 #endif
 
 
@@ -134,13 +138,11 @@ static inline void do_PolysetDrawFinalVerts (finalvert_t *pv)
 		}
 	}
 }
-#endif /* !id68k */
 
 static inline void do_PolysetDrawFinalVertsT (finalvert_t *pv)
 {
 	int		z;
 	short		*zbuf;
-	unsigned int	color_map_idx;
 
 	// valid triangle coordinates for filling can include the bottom and
 	// right clip edges, due to the fill rule; these shouldn't be drawn
@@ -150,7 +152,7 @@ static inline void do_PolysetDrawFinalVertsT (finalvert_t *pv)
 		zbuf = zspantable[pv->v[1]] + pv->v[0];
 		if (z >= *zbuf)
 		{
-			color_map_idx = skintable[pv->v[3]>>16][pv->v[2]>>16];
+			const byte color_map_idx = skintable[pv->v[3]>>16][pv->v[2]>>16];
 
 			if (color_map_idx != 0)
 			{
@@ -170,7 +172,6 @@ static inline void do_PolysetDrawFinalVertsT2 (finalvert_t *pv)
 {
 	int		z;
 	short		*zbuf;
-	unsigned int	color_map_idx;
 
 	// valid triangle coordinates for filling can include the bottom and
 	// right clip edges, due to the fill rule; these shouldn't be drawn
@@ -180,7 +181,7 @@ static inline void do_PolysetDrawFinalVertsT2 (finalvert_t *pv)
 		zbuf = zspantable[pv->v[1]] + pv->v[0];
 		if (z >= *zbuf)
 		{
-			color_map_idx = skintable[pv->v[3]>>16][pv->v[2]>>16];
+			const byte color_map_idx = skintable[pv->v[3]>>16][pv->v[2]>>16];
 
 			if (color_map_idx != 0)
 			{
@@ -188,7 +189,7 @@ static inline void do_PolysetDrawFinalVertsT2 (finalvert_t *pv)
 
 				*zbuf = z;
 				pix = ((byte *)acolormap)[color_map_idx + (pv->v[4] & 0xFF00)];
-				if (color_map_idx % 2 == 0)
+				if (!(color_map_idx & 0x1))
 				{
 					d_viewbuffer[d_scantable[pv->v[1]] + pv->v[0]] = pix;
 				}
@@ -207,7 +208,6 @@ static inline void do_PolysetDrawFinalVertsT3 (finalvert_t *pv)
 {
 	int		z;
 	short		*zbuf;
-	unsigned int	color_map_idx;
 
 	// valid triangle coordinates for filling can include the bottom and
 	// right clip edges, due to the fill rule; these shouldn't be drawn
@@ -217,7 +217,7 @@ static inline void do_PolysetDrawFinalVertsT3 (finalvert_t *pv)
 		zbuf = zspantable[pv->v[1]] + pv->v[0];
 		if (z >= *zbuf)
 		{
-			color_map_idx = skintable[pv->v[3]>>16][pv->v[2]>>16];
+			const byte color_map_idx = skintable[pv->v[3]>>16][pv->v[2]>>16];
 
 			if (color_map_idx != 0)
 			{
@@ -235,7 +235,6 @@ static inline void do_PolysetDrawFinalVertsT5 (finalvert_t *pv)
 {
 	int		z;
 	short		*zbuf;
-	unsigned int	color_map_idx;
 
 	// valid triangle coordinates for filling can include the bottom and
 	// right clip edges, due to the fill rule; these shouldn't be drawn
@@ -245,30 +244,27 @@ static inline void do_PolysetDrawFinalVertsT5 (finalvert_t *pv)
 		zbuf = zspantable[pv->v[1]] + pv->v[0];
 		if (z >= *zbuf)
 		{
-			color_map_idx = skintable[pv->v[3]>>16][pv->v[2]>>16];
+			const byte color_map_idx = skintable[pv->v[3]>>16][pv->v[2]>>16];
 
 			if (color_map_idx != 0)
 			{
 				unsigned int	pix, pix2;
 
 				*zbuf = z;
-				pix = color_map_idx;
 				pix2 = d_viewbuffer[d_scantable[pv->v[1]] + pv->v[0]];
-				pix = transTable[(pix<<8) + pix2];
+				pix = transTable[(color_map_idx<<8) + pix2];
 				d_viewbuffer[d_scantable[pv->v[1]] + pv->v[0]] = pix;
 			}
 		}
 	}
 }
 
-#if !id68k
 void D_PolysetDrawFinalVerts (finalvert_t *pv1, finalvert_t *pv2, finalvert_t *pv3)
 {
 	do_PolysetDrawFinalVerts (pv1);
 	do_PolysetDrawFinalVerts (pv2);
 	do_PolysetDrawFinalVerts (pv3);
 }
-#endif
 
 void D_PolysetDrawFinalVertsT (finalvert_t *pv1, finalvert_t *pv2, finalvert_t *pv3)
 {
@@ -297,6 +293,7 @@ void D_PolysetDrawFinalVertsT5 (finalvert_t *pv1, finalvert_t *pv2, finalvert_t 
 	do_PolysetDrawFinalVertsT5 (pv2);
 	do_PolysetDrawFinalVertsT5 (pv3);
 }
+#endif
 
 
 /*
@@ -380,7 +377,6 @@ nodraw:
 	D_PolysetRecursiveTriangle (lp3, lp1, new_p);
 	D_PolysetRecursiveTriangle (lp3, new_p, lp2);
 }
-#endif /* !id68k */
 
 static void D_PolysetRecursiveTriangleT (int *lp1, int *lp2, int *lp3)
 {
@@ -389,7 +385,6 @@ static void D_PolysetRecursiveTriangleT (int *lp1, int *lp2, int *lp3)
 	int		new_p[6];
 	int		z;
 	short		*zbuf;
-	unsigned int	color_map_idx;
 
 	d = lp2[0] - lp1[0];
 	if (d < -1 || d > 1)
@@ -446,7 +441,7 @@ split:
 	zbuf = zspantable[new_p[1]] + new_p[0];
 	if (z >= *zbuf)
 	{
-		color_map_idx = skintable[new_p[3]>>16][new_p[2]>>16];
+		const byte color_map_idx = skintable[new_p[3]>>16][new_p[2]>>16];
 
 		if (color_map_idx != 0)
 		{
@@ -473,7 +468,6 @@ static void D_PolysetRecursiveTriangleT2 (int *lp1, int *lp2, int *lp3)
 	int		new_p[6];
 	int		z;
 	short		*zbuf;
-	unsigned int	color_map_idx;
 
 	d = lp2[0] - lp1[0];
 	if (d < -1 || d > 1)
@@ -530,7 +524,7 @@ split:
 	zbuf = zspantable[new_p[1]] + new_p[0];
 	if (z >= *zbuf)
 	{
-		color_map_idx = skintable[new_p[3]>>16][new_p[2]>>16];
+		const byte color_map_idx = skintable[new_p[3]>>16][new_p[2]>>16];
 
 		if (color_map_idx != 0)
 		{
@@ -539,7 +533,7 @@ split:
 			*zbuf = z;
 			pix = d_pcolormap[color_map_idx];
 
-			if (color_map_idx % 2 == 0)
+			if (!(color_map_idx & 0x1))
 			{
 				d_viewbuffer[d_scantable[new_p[1]] + new_p[0]] = pix;
 			}
@@ -565,7 +559,6 @@ static void D_PolysetRecursiveTriangleT3 (int *lp1, int *lp2, int *lp3)
 	int		new_p[6];
 	int		z;
 	short		*zbuf;
-	unsigned int	color_map_idx;
 
 	d = lp2[0] - lp1[0];
 	if (d < -1 || d > 1)
@@ -622,7 +615,7 @@ split:
 	zbuf = zspantable[new_p[1]] + new_p[0];
 	if (z >= *zbuf)
 	{
-		color_map_idx = skintable[new_p[3]>>16][new_p[2]>>16];
+		const byte color_map_idx = skintable[new_p[3]>>16][new_p[2]>>16];
 
 		if (color_map_idx != 0)
 		{
@@ -647,7 +640,6 @@ static void D_PolysetRecursiveTriangleT5 (int *lp1, int *lp2, int *lp3)
 	int		new_p[6];
 	int		z;
 	short		*zbuf;
-	unsigned int	color_map_idx;
 
 	d = lp2[0] - lp1[0];
 	if (d < -1 || d > 1)
@@ -704,16 +696,15 @@ split:
 	zbuf = zspantable[new_p[1]] + new_p[0];
 	if (z >= *zbuf)
 	{
-		color_map_idx = skintable[new_p[3]>>16][new_p[2]>>16];
+		const byte color_map_idx = skintable[new_p[3]>>16][new_p[2]>>16];
 
 		if (color_map_idx != 0)
 		{
 			unsigned int	pix, pix2;
 
 			*zbuf = z;
-			pix = color_map_idx;
 			pix2 = d_viewbuffer[d_scantable[new_p[1]] + new_p[0]];
-			pix = transTable[(pix<<8) + pix2];
+			pix = transTable[(color_map_idx<<8) + pix2];
 			d_viewbuffer[d_scantable[new_p[1]] + new_p[0]] = pix;
 		}
 	}
@@ -723,6 +714,7 @@ nodraw:
 	D_PolysetRecursiveTriangleT5 (lp3, lp1, new_p);
 	D_PolysetRecursiveTriangleT5 (lp3, new_p, lp2);
 }
+#endif /* !id68k */
 
 /*
 ================
@@ -988,6 +980,7 @@ static void D_DrawSubdivT5 (void)
 }
 
 
+#if !id68k
 /*
 ================
 D_DrawNonSubdiv
@@ -1052,6 +1045,7 @@ static void D_DrawNonSubdiv (void)
 		D_RasterizeAliasPolySmooth ();
 	}
 }
+#endif /* !id68k */
 
 
 /*
@@ -1070,6 +1064,9 @@ void D_PolysetDraw (void)
 	}
 	else
 	{
+		#if id68k
+		d_polysetdrawspans = D_PolysetDrawSpans8;
+		#endif
 		D_DrawNonSubdiv ();
 	}
 }
@@ -1085,6 +1082,9 @@ void D_PolysetDrawT (void)
 	}
 	else
 	{
+		#if id68k
+		d_polysetdrawspans = D_PolysetDrawSpans8T;
+		#endif
 		D_DrawNonSubdiv ();
 	}
 }
@@ -1100,6 +1100,9 @@ void D_PolysetDrawT2 (void)
 	}
 	else
 	{
+		#if id68k
+		d_polysetdrawspans = D_PolysetDrawSpans8T2;
+		#endif
 		D_DrawNonSubdiv ();
 	}
 }
@@ -1115,6 +1118,9 @@ void D_PolysetDrawT3 (void)
 	}
 	else
 	{
+		#if id68k
+		d_polysetdrawspans = D_PolysetDrawSpans8T3;
+		#endif
 		D_DrawNonSubdiv ();
 	}
 }
@@ -1130,6 +1136,9 @@ void D_PolysetDrawT5 (void)
 	}
 	else
 	{
+		#if id68k
+		d_polysetdrawspans = D_PolysetDrawSpans8T5;
+		#endif
 		D_DrawNonSubdiv ();
 	}
 }
@@ -1165,6 +1174,7 @@ void D_PolysetUpdateTables (void)
 #define D_PolysetScanLeftEdgeT2		D_PolysetScanLeftEdge
 #define D_PolysetScanLeftEdgeT3		D_PolysetScanLeftEdge
 #define D_PolysetScanLeftEdgeT5		D_PolysetScanLeftEdge
+#if !id68k
 /*
 ===================
 D_PolysetScanLeftEdge
@@ -1229,10 +1239,12 @@ static void D_PolysetScanLeftEdge (int height)
 		}
 	} while (--height);
 }
+#endif  /* !id68k */
 
 #endif	/* !id386 */
 
 
+#if !id68k
 /*
 ===================
 D_PolysetSetUpForLineScan
@@ -1270,14 +1282,16 @@ static void D_PolysetSetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
 		erroradjustdown = dn;
 	}
 }
+#endif  /* !id68k */
 
 
-#if	!id386 && !id68k
+#if	!id386
 
 #define D_PolysetCalcGradientsT		D_PolysetCalcGradients
 #define D_PolysetCalcGradientsT2	D_PolysetCalcGradients
 #define D_PolysetCalcGradientsT3	D_PolysetCalcGradients
 #define D_PolysetCalcGradientsT5	D_PolysetCalcGradients
+#if !id68k
 /*
 ================
 D_PolysetCalcGradients
@@ -1327,6 +1341,7 @@ static void D_PolysetCalcGradients (int skin_width)
 
 	a_ststepxwhole = skin_width * (r_tstepx >> 16) + (r_sstepx >> 16);
 }
+#endif	/* !id68k */
 
 #endif	/* !id386 */
 
@@ -1348,14 +1363,13 @@ void InitGel (byte *palette)
 #endif
 
 
-#if	!id386
+#if	!id386 && !id68k
 
 /*
 ================
 D_PolysetDrawSpans8
 ================
 */
-#if !id68k
 static void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage)
 {
 	int		lcount;
@@ -1420,7 +1434,6 @@ static void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage)
 		pspanpackage++;
 	} while (pspanpackage->count != -999999);
 }
-#endif /* !id68k */
 
 static void D_PolysetDrawSpans8T (spanpackage_t *pspanpackage)
 {
@@ -1431,7 +1444,7 @@ static void D_PolysetDrawSpans8T (spanpackage_t *pspanpackage)
 	int		llight;
 	int		lzi;
 	short		*lpz;
-	unsigned int	btemp, color_map_idx;
+	byte		btemp;
 
 	do
 	{
@@ -1460,12 +1473,12 @@ static void D_PolysetDrawSpans8T (spanpackage_t *pspanpackage)
 
 			do
 			{
-				color_map_idx = lptex[0];
+				const byte color_map_idx = lptex[0];
 				if (color_map_idx != 0)
 				{
 					if ((lzi >> 16) >= *lpz)
 					{
-						btemp = ((byte *) acolormap)[*lptex + (llight & 0xFF00)];
+						btemp = ((byte *) acolormap)[color_map_idx + (llight & 0xFF00)];
 						*lpdest = mainTransTable[(btemp<<8) + (*lpdest)];
 						*lpz = lzi >> 16;
 					}
@@ -1500,7 +1513,7 @@ static void D_PolysetDrawSpans8T2 (spanpackage_t *pspanpackage)
 	int		llight;
 	int		lzi;
 	short		*lpz;
-	unsigned int	btemp, color_map_idx;
+	byte		btemp;
 
 	do
 	{
@@ -1529,23 +1542,14 @@ static void D_PolysetDrawSpans8T2 (spanpackage_t *pspanpackage)
 
 			do
 			{
-				color_map_idx = lptex[0];
+				const byte color_map_idx = lptex[0];
 				if (color_map_idx != 0)
 				{
 					if ((lzi >> 16) >= *lpz)
 					{
-						if (color_map_idx % 2 == 0)
-						{
-							btemp = ((byte *) acolormap)[*lptex + (llight & 0xFF00)];
-							*lpdest = (byte) btemp;
-							*lpz = lzi >> 16;
-						}
-						else
-						{
-							btemp = ((byte *) acolormap)[*lptex + (llight & 0xFF00)];
-							*lpdest = mainTransTable[(btemp<<8) + (*lpdest)];
-							*lpz = lzi >> 16;
-						}
+						btemp = ((byte *) acolormap)[color_map_idx + (llight & 0xFF00)];
+						*lpdest = (color_map_idx & 0x1) ? mainTransTable[(btemp<<8) + (*lpdest)] : btemp;
+						*lpz = lzi >> 16;
 					}
 				}
 				lpdest++;
@@ -1578,7 +1582,6 @@ static void D_PolysetDrawSpans8T3 (spanpackage_t *pspanpackage)
 	int		llight;
 	int		lzi;
 	short		*lpz;
-	unsigned int	color_map_idx;
 
 	do
 	{
@@ -1607,12 +1610,12 @@ static void D_PolysetDrawSpans8T3 (spanpackage_t *pspanpackage)
 
 			do
 			{
-				color_map_idx = lptex[0];
+				const byte color_map_idx = lptex[0];
 				if (color_map_idx != 0)
 				{
 					if ((lzi >> 16) >= *lpz)
 					{
-						*lpdest = ((byte *) acolormap)[*lptex + (llight & 0xFF00)];
+						*lpdest = ((byte *) acolormap)[color_map_idx + (llight & 0xFF00)];
 						*lpz = lzi >> 16;
 					}
 				}
@@ -1645,7 +1648,6 @@ static void D_PolysetDrawSpans8T5 (spanpackage_t *pspanpackage)
 	int		lsfrac, ltfrac;
 	int		lzi;
 	short		*lpz;
-	unsigned int	color_map_idx;
 
 	do
 	{
@@ -1673,7 +1675,7 @@ static void D_PolysetDrawSpans8T5 (spanpackage_t *pspanpackage)
 
 			do
 			{
-				color_map_idx = lptex[0];
+				const byte color_map_idx = lptex[0];
 				if (color_map_idx != 0)
 				{
 					if ((lzi >> 16) >= *lpz)
@@ -1702,7 +1704,7 @@ static void D_PolysetDrawSpans8T5 (spanpackage_t *pspanpackage)
 	} while (pspanpackage->count != -999999);
 }
 
-#endif	/* !id386 */
+#endif	/* !id386 && !id68k */
 
 
 /*
@@ -1742,6 +1744,7 @@ void D_PolysetFillSpans8 (spanpackage_t *pspanpackage)
 	}
 }
 
+#if !id68k
 /*
 ================
 D_RasterizeAliasPolySmooth
@@ -1766,13 +1769,13 @@ void D_RasterizeAliasPolySmooth (void)
 // set the s, t, and light gradients, which are consistent across the triangle
 // because being a triangle, things are affine
 //
-	if ((currententity->model->flags & EF_SPECIAL_TRANS))
+	if (currententity->model->flags & EF_SPECIAL_TRANS)
 		D_PolysetCalcGradientsT5 (r_affinetridesc.skinwidth);
 	else if (currententity->drawflags & DRF_TRANSLUCENT)
 		D_PolysetCalcGradientsT (r_affinetridesc.skinwidth);
-	else if ((currententity->model->flags & EF_TRANSPARENT))
+	else if (currententity->model->flags & EF_TRANSPARENT)
 		D_PolysetCalcGradientsT2 (r_affinetridesc.skinwidth);
-	else if ((currententity->model->flags & EF_HOLEY))
+	else if (currententity->model->flags & EF_HOLEY)
 		D_PolysetCalcGradientsT3 (r_affinetridesc.skinwidth);
 	else
 		D_PolysetCalcGradients (r_affinetridesc.skinwidth);
@@ -1870,13 +1873,13 @@ void D_RasterizeAliasPolySmooth (void)
 		d_lightextrastep = d_lightbasestep + working_lstepx;
 		d_ziextrastep = d_zibasestep + r_zistepx;
 
-		if ((currententity->model->flags & EF_SPECIAL_TRANS))
+		if (currententity->model->flags & EF_SPECIAL_TRANS)
 			D_PolysetScanLeftEdgeT5 (initialleftheight);
 		else if (currententity->drawflags & DRF_TRANSLUCENT)
 			D_PolysetScanLeftEdgeT (initialleftheight);
-		else if ((currententity->model->flags & EF_TRANSPARENT))
+		else if (currententity->model->flags & EF_TRANSPARENT)
 			D_PolysetScanLeftEdgeT2 (initialleftheight);
-		else if ((currententity->model->flags & EF_HOLEY))
+		else if (currententity->model->flags & EF_HOLEY)
 			D_PolysetScanLeftEdgeT3 (initialleftheight);
 		else
 			D_PolysetScanLeftEdge (initialleftheight);
@@ -1969,13 +1972,13 @@ void D_RasterizeAliasPolySmooth (void)
 			d_lightextrastep = d_lightbasestep + working_lstepx;
 			d_ziextrastep = d_zibasestep + r_zistepx;
 
-			if ((currententity->model->flags & EF_SPECIAL_TRANS))
+			if (currententity->model->flags & EF_SPECIAL_TRANS)
 				D_PolysetScanLeftEdgeT5 (height);
 			else if (currententity->drawflags & DRF_TRANSLUCENT)
 				D_PolysetScanLeftEdgeT (height);
-			else if ((currententity->model->flags & EF_TRANSPARENT))
+			else if (currententity->model->flags & EF_TRANSPARENT)
 				D_PolysetScanLeftEdgeT2 (height);
-			else if ((currententity->model->flags & EF_HOLEY))
+			else if (currententity->model->flags & EF_HOLEY)
 				D_PolysetScanLeftEdgeT3 (height);
 			else
 				D_PolysetScanLeftEdge (height);
@@ -1992,13 +1995,13 @@ void D_RasterizeAliasPolySmooth (void)
 	originalcount = a_spans[initialrightheight].count;
 	a_spans[initialrightheight].count = -999999; // mark end of the spanpackages
 
-	if ((currententity->model->flags & EF_SPECIAL_TRANS))
+	if (currententity->model->flags & EF_SPECIAL_TRANS)
 		D_PolysetDrawSpans8T5 (a_spans);
 	else if (currententity->drawflags & DRF_TRANSLUCENT)
 		D_PolysetDrawSpans8T (a_spans);
-	else if ((currententity->model->flags & EF_TRANSPARENT))
+	else if (currententity->model->flags & EF_TRANSPARENT)
 		D_PolysetDrawSpans8T2 (a_spans);
-	else if ((currententity->model->flags & EF_HOLEY))
+	else if (currententity->model->flags & EF_HOLEY)
 		D_PolysetDrawSpans8T3 (a_spans);
 	else
 		D_PolysetDrawSpans8 (a_spans);
@@ -2024,20 +2027,22 @@ void D_RasterizeAliasPolySmooth (void)
 		d_countextrastep = ubasestep + 1;
 		a_spans[initialrightheight + height].count = -999999;
 											// mark end of the spanpackages
-		if ((currententity->model->flags & EF_SPECIAL_TRANS))
+		if (currententity->model->flags & EF_SPECIAL_TRANS)
 			D_PolysetDrawSpans8T5 (pstart);
 		else if (currententity->drawflags & DRF_TRANSLUCENT)
 			D_PolysetDrawSpans8T (pstart);
-		else if ((currententity->model->flags & EF_TRANSPARENT))
+		else if (currententity->model->flags & EF_TRANSPARENT)
 			D_PolysetDrawSpans8T2 (pstart);
-		else if ((currententity->model->flags & EF_HOLEY))
+		else if (currententity->model->flags & EF_HOLEY)
 			D_PolysetDrawSpans8T3 (pstart);
 		else
 			D_PolysetDrawSpans8 (pstart);
 	}
 }
+#endif /* !id68k */
 
 
+#if !id68k
 /*
 ================
 D_PolysetSetEdgeTable
@@ -2098,6 +2103,7 @@ void D_PolysetSetEdgeTable (void)
 
 	pedgetable = &edgetables[edgetableindex];
 }
+#endif /* !id68k */
 
 
 #if 0

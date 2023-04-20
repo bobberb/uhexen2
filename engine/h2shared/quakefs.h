@@ -1,6 +1,4 @@
-/*
- * quakefs.h -- Hexen II filesystem
- * $Id$
+/* quakefs.h - Hexen II filesystem
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2005-2012  O.Sezer <sezero@users.sourceforge.net>
@@ -48,7 +46,6 @@
 #define	GAME_MODIFIED		(1 << 16)
 
 extern	char	fs_gamedir_nopath[MAX_QPATH];
-extern	char	fs_gamedir_list[MAX_QPATH];
 
 const char *FS_GetBasedir (void);
 const char *FS_GetUserbase (void);
@@ -66,7 +63,7 @@ void FS_Gamedir (const char *dir);
 
 
 /* file i/o within qfs */
-extern	size_t	fs_filesize;	/* size of the last file opened through QFS api */
+extern	long	fs_filesize;	/* size of the last file opened through QFS api */
 
 extern	int	file_from_pak;	/* global indicating that file came from a pak. */
 
@@ -91,10 +88,10 @@ int FS_CreatePath (char *path);
 	 * be created, it must have the trailing path seperator. Returns 0 on success,
 	 * non-zero on error. */
 
-size_t FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id, unsigned int *dir_path_id);
+long FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id);
 	/* Opens a file (a standalone file or a file in pak) in the hexen2 filesystem,
-	 * returns fs_filesize on success or (size_t)-1 on failure.  if path_id is not
-	 * NULL, the id number of the opened file's gamedir is stored in path_id.  */
+	 * returns fs_filesize on success or (-1) on failure.  If path_id is not NULL,
+	 * the id number of the opened file's gamedir is stored in path_id.  */
 
 qboolean FS_FileExists (const char *filename, unsigned int *path_id);
 	/* Returns whether the file is found in the hexen2 filesystem.  if path_id is
@@ -104,31 +101,26 @@ qboolean FS_FileInGamedir (const char *filename);
 	/* Reports the existance of a file with read permissions in
 	 * fs_gamedir or fs_userdir. *NOT* for files in pakfiles!  */
 
-unsigned int *FS_GetPathId(const char *filename, unsigned int *dir_path_id);
-/* Reports the search path_id of a file with read permissions in
- * fs_gamedir or fs_userdir. */
-
-
 /* these procedures open a file using FS_OpenFile and loads it into a proper
  * buffer. the buffer is allocated with a total size of fs_filesize + 1. the
  * procedures differ by their buffer allocation method.  */
-byte *FS_LoadZoneFile (const char *path, int zone_id, unsigned int *path_id, unsigned int *dir_path_id);
+byte *FS_LoadZoneFile (const char *path, int zone_id, unsigned int *path_id);
 	/* allocates the buffer on the zone. zone_id: which zone to use.  */
-byte *FS_LoadTempFile (const char *path, unsigned int *path_id, unsigned int *dir_path_id);
+byte *FS_LoadTempFile (const char *path, unsigned int *path_id);
 	/* allocates the buffer on the temp hunk.  */
-byte *FS_LoadHunkFile (const char *path, unsigned int *path_id, unsigned int *dir_path_id);
+byte *FS_LoadHunkFile (const char *path, unsigned int *path_id);
 	/* allocates the buffer on the hunk.  */
-byte *FS_LoadMallocFile (const char *path, unsigned int *path_id, unsigned int *dir_path_id);
+byte *FS_LoadMallocFile (const char *path, unsigned int *path_id);
 	/* allocates the buffer on the system mem (malloc).  */
-byte *FS_LoadStackFile (const char *path, void *buffer, size_t bufsize,
-							unsigned int *path_id, unsigned int *dir_path_id);
+byte *FS_LoadStackFile (const char *path, void *buffer, long bufsize,
+							unsigned int *path_id);
 	/* uses the specified stack stack buffer with the specified size
 	 * of bufsize. if bufsize is too short, uses temp hunk. the bufsize
 	 * must include the +1  */
 
 struct cache_user_s;
 void  FS_LoadCacheFile (const char *path, struct cache_user_s *cu,
-							unsigned int *path_id, unsigned int *dir_path_id);
+							unsigned int *path_id);
 	/* uses cache mem for allocating the buffer.  */
 
 #define	FS_BASEDIR	0	/* host_parms->basedir (i.e.:  fs_basedir) */
@@ -171,4 +163,3 @@ char *FS_fgets(char *s, int size, fshandle_t *fh);
 long FS_filelength (fshandle_t *fh);
 
 #endif	/* __QUAKEFS_H */
-

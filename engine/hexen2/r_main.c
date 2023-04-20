@@ -1,7 +1,4 @@
-/*
- * r_main.c
- * $Id$
- *
+/* r_main.c
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -41,9 +38,11 @@ float		r_lasttime1 = 0;
 
 int		r_numallocatededges;
 
+#if 0
 qboolean	r_drawpolys;
 qboolean	r_drawculledpolys;
 qboolean	r_worldpolysbacktofront;
+#endif
 qboolean	r_recursiveaffinetriangles = true;
 
 int		r_pixbytes = 1;
@@ -283,19 +282,19 @@ void R_Init (void)
 	r_refdef.xOrigin = XCENTERING;
 	r_refdef.yOrigin = YCENTERING;
 
-	transTable = (byte *)FS_LoadHunkFile ("gfx/tinttab.lmp", NULL, NULL);
+	transTable = (byte *)FS_LoadHunkFile ("gfx/tinttab.lmp", NULL);
 	if (!transTable)
 		Sys_Error ("Couldn't load gfx/tinttab.lmp");
 	if (fs_filesize != 65536)
-		Sys_Error ("Unexpected file size (%lu) for %s\n", (unsigned long)fs_filesize, "gfx/tinttab.lmp");
+		Sys_Error ("Unexpected file size (%ld) for %s\n", fs_filesize, "gfx/tinttab.lmp");
 
-	mainTransTable = (byte *)FS_LoadHunkFile ("gfx/tinttab2.lmp", NULL, NULL);
+	mainTransTable = (byte *)FS_LoadHunkFile ("gfx/tinttab2.lmp", NULL);
 	if (!mainTransTable)
 		Sys_Error ("Couldn't load gfx/tinttab2.lmp");
 	if (fs_filesize != 65536)
-		Sys_Error ("Unexpected file size (%lu) for %s\n", (unsigned long)fs_filesize, "gfx/tinttab2.lmp");
+		Sys_Error ("Unexpected file size (%ld) for %s\n", fs_filesize, "gfx/tinttab2.lmp");
 
-	playerTranslation = (byte *)FS_LoadHunkFile ("gfx/player.lmp", NULL, NULL);
+	playerTranslation = (byte *)FS_LoadHunkFile ("gfx/player.lmp", NULL);
 	if (!playerTranslation)
 		Sys_Error ("Couldn't load gfx/player.lmp");
 
@@ -656,14 +655,14 @@ static void R_PrepareAlias (void)
 
 					if (cl_dlights[lnum].radius> 0)
 					{
-						add = cl_dlights[lnum].radius - VectorLength(dist);
+						add = cl_dlights[lnum].radius - VectorLengthFast(dist);
 
 						if (add > 0)
 							lighting.ambientlight += add;
 					}
 					else
 					{
-						add = VectorLength(dist) + cl_dlights[lnum].radius;
+						add = VectorLengthFast(dist) + cl_dlights[lnum].radius;
 
 						if (add < 0)
 							lighting.ambientlight += add;
@@ -821,14 +820,14 @@ static void R_DrawViewModel (void)
 
 			if (dl->radius > 0)
 			{
-				add = dl->radius - VectorLength(dist);
+				add = dl->radius - VectorLengthFast(dist);
 
 				if (add > 0)
 					r_viewlighting.ambientlight += add;
 			}
 			else
 			{
-				add = VectorLength(dist) + dl->radius;
+				add = VectorLengthFast(dist) + dl->radius;
 
 				if (add < 0)
 					r_viewlighting.ambientlight += add;
@@ -948,8 +947,8 @@ static void RotatedBBox (vec3_t mins, vec3_t maxs, vec3_t angles, vec3_t tmins, 
 
 	for (i = 0; i < 3; i++)
 	{
-		tmins[i] = 99999;
-		tmaxs[i] = -99999;
+		tmins[i] = 9999999;	/* FIXME: change these two to FLT_MAX/-FLT_MAX */
+		tmaxs[i] = -9999999;
 	}
 
 	AngleVectors (angles, forward, right, up);
@@ -1051,6 +1050,7 @@ static void R_DrawBEntitiesOnList (void)
 					}
 				}
 
+#if 0
 				// if the driver wants polygons, deliver those. Z-buffering is on
 				// at this point, so no clipping to the world tree is needed, just
 				// frustum clipping
@@ -1059,6 +1059,7 @@ static void R_DrawBEntitiesOnList (void)
 					R_ZDrawSubmodelPolys (clmodel);
 				}
 				else
+#endif
 				{
 					r_pefragtopnode = NULL;
 
@@ -1180,8 +1181,10 @@ static void R_EdgeDrawing (qboolean Translucent)
 		memcpy(surfaces,SaveSurfaces,SaveSurfacesCount * sizeof(surf_t));
 	}
 
+#if 0
 	if (r_drawculledpolys)
 		R_ScanEdges (Translucent);
+#endif
 
 // only the world can be drawn back to front with no z reads or compares, just
 // z writes, so have the driver turn z compares on now
@@ -1228,7 +1231,9 @@ static void R_EdgeDrawing (qboolean Translucent)
 		}
 	}
 
+#if 0
 	if (!(r_drawpolys | r_drawculledpolys))
+#endif
 		R_ScanEdges (Translucent);
 }
 

@@ -1,6 +1,4 @@
-/*
- * $Id$
- * based on an SDL_mixer code:
+/* based on an SDL_mixer code:
  * native_midi_macosx:  Native Midi support on Mac OS X for the SDL_mixer library
  * Copyright (C) 2009  Ryan C. Gordon <icculus@icculus.org>
  *
@@ -36,6 +34,9 @@
 #include <AudioToolbox/AudioToolbox.h>
 #include <AvailabilityMacros.h>
 
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1030 && (defined(__ppc__)||defined(__POWERPC__)))
+#define OLD_TRACK_DURATION
+#endif
 #if (MAC_OS_X_VERSION_MIN_REQUIRED < 1050)
 #define AUGraphNodeInfo_FN(_graph,_node,_desc,_unit)			\
 	AUGraphGetNodeInfo((_graph),(_node),(_desc),NULL,NULL,(_unit))
@@ -173,11 +174,13 @@ qboolean MIDI_Init(void)
 	return true;
 }
 
+/* https://lists.apple.com/archives/Coreaudio-api/2003/Jul/msg00370.html
+ * figure out sequence length. */
 static OSStatus GetSequenceLength(MusicSequence sequence, MusicTimeStamp *_sequenceLength)
 {
-/* http://lists.apple.com/archives/Coreaudio-api/2003/Jul/msg00370.html
- * figure out sequence length  */
+	#ifdef OLD_TRACK_DURATION
 	static qboolean old_osx = false;
+	#endif
 	UInt32 ntracks, i;
 	MusicTimeStamp sequenceLength = 0;
 	OSStatus err;
@@ -189,13 +192,22 @@ static OSStatus GetSequenceLength(MusicSequence sequence, MusicTimeStamp *_seque
 	for (i = 0; i < ntracks; ++i)
 	{
 		MusicTrack track;
+		#ifdef OLD_TRACK_DURATION
 		MusicEventIterator iter = NULL;
+		#endif
 		MusicTimeStamp tracklen = 0;
 		UInt32 tracklenlen = sizeof (tracklen);
 
 		err = MusicSequenceGetIndTrack(sequence, i, &track);
 		if (err != noErr)
 			return err;
+		#ifndef OLD_TRACK_DURATION
+		err = MusicTrackGetProperty(track, kSequenceTrackProperty_TrackLength,
+								&tracklen, &tracklenlen);
+		if (err != noErr) return err;
+		if (sequenceLength < tracklen)
+			sequenceLength = tracklen;
+		#else
 		if (!old_osx)
 		{
 			/* kSequenceTrackProperty_TrackLength (5) needs 10.3 and newer.
@@ -229,6 +241,7 @@ static OSStatus GetSequenceLength(MusicSequence sequence, MusicTimeStamp *_seque
 			if (iter) DisposeMusicEventIterator (iter);
 			if (err != noErr) return err;
 		}
+		#endif
 	}
 
 	*_sequenceLength = sequenceLength;
@@ -276,7 +289,7 @@ static OSStatus GetSequenceAudioUnit(MusicSequence sequence, AudioUnit *aunit)
 static void *MIDI_Play (const char *filename)
 {
 	byte *buf;
-	size_t len;
+	long len;
 	CoreMidiSong *song = NULL;
 	CFDataRef data = NULL;
 
@@ -321,18 +334,19 @@ static void *MIDI_Play (const char *filename)
 		goto fail;
 
 	MusicPlayerPreroll(song->player);
+
+	GetSequenceAudioUnit(song->sequence, &song->audiounit);
+	if (song->audiounit)
+	{
+		AudioUnitSetParameter(song->audiounit, kHALOutputParam_Volume,
+				      kAudioUnitScope_Global, 0, bgmvolume.value, 0);
+	}
+
 	MusicPlayerSetTime(song->player, 0);
 	MusicPlayerStart(song->player);
 
 	currentsong = song;
 	midi_paused = false;
-
-	GetSequenceAudioUnit(song->sequence, &song->audiounit);
-	if (currentsong->audiounit)
-	{
-		AudioUnitSetParameter(currentsong->audiounit, kHALOutputParam_Volume,
-				      kAudioUnitScope_Global, 0, bgmvolume.value, 0);
-	}
 
 	return song;
 
@@ -375,13 +389,15 @@ static void MIDI_Resume (void **handle)
 
 static void MIDI_Stop (void **handle)
 {
-	CHECK_MIDI_ALIVE();
+	CoreMidiSong *song = currentsong;
 
-	MusicPlayerStop(currentsong->player);
-	DisposeMusicSequence(currentsong->sequence);
-	DisposeMusicPlayer(currentsong->player);
-	Z_Free(currentsong);
+	CHECK_MIDI_ALIVE();
 	currentsong = NULL;
+	MusicPlayerStop(song->player);
+//	MusicPlayerSetSequence(song->player, NULL); /* see: https://bugzilla.libsdl.org/show_bug.cgi?id=4573 */
+	DisposeMusicSequence(song->sequence);
+	DisposeMusicPlayer(song->player);
+	Z_Free(song);
 }
 
 void MIDI_Cleanup(void)
@@ -393,4 +409,3 @@ void MIDI_Cleanup(void)
 		midi_mac_core.available = false;
 	}
 }
-

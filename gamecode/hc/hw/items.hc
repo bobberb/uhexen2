@@ -1,6 +1,3 @@
-/*
- * $Header: /cvsroot/uhexen2/gamecode/hc/hw/items.hc,v 1.2 2007-02-07 16:57:56 sezero Exp $
- */
 void() W_SetCurrentAmmo;
 void() W_SetCurrentWeapon;
 void() ring_touch;
@@ -8,7 +5,6 @@ void()puzzle_touch;
 void (entity spawnSpot, float persists) spawnNewDmToken;
 /* ALL LIGHTS SHOULD BE 0 1 0 IN COLOR ALL OTHER ITEMS SHOULD
 BE .8 .3 .4 IN COLOR */
-
 
 
 void() SUB_regen =
@@ -68,8 +64,7 @@ void ItemHitFloorWait ()
 		self.nextthink=-1;
 		return;
 	}
-	else
-		thinktime self : 0.05;
+	thinktime self : 0.05;
 }
 
 float getBackpackSize(entity item)
@@ -399,17 +394,14 @@ void weapon_touch (void)
 		return;
 	}
 
-
 	if (deathmatch == 2 || coop)
 	{
 		if(other.items&self.items)
 			return;
-		else
-			leave = 1;
+		leave = 1;
 	}
 	else
 		leave = 0;
-
 
 	new = self.items;
 	// Give player weapon and mana

@@ -6,8 +6,6 @@
  * Copyright (C) 2005 Stuart Dalton <badcdev@gmail.com>
  * Copyright (C) 2010-2012 O.Sezer <sezero@users.sourceforge.net>
  *
- * $Id$
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
@@ -34,6 +32,7 @@ typedef void (*CODEC_SHUTDOWN)(void);
 typedef qboolean (*CODEC_OPEN)(snd_stream_t *stream);
 typedef int (*CODEC_READ)(snd_stream_t *stream, int bytes, void *buffer);
 typedef int (*CODEC_REWIND)(snd_stream_t *stream);
+typedef int (*CODEC_JUMP)(snd_stream_t *stream, int order);
 typedef void (*CODEC_CLOSE)(snd_stream_t *stream);
 
 struct snd_codec_s
@@ -46,6 +45,7 @@ struct snd_codec_s
 	CODEC_OPEN codec_open;
 	CODEC_READ codec_read;
 	CODEC_REWIND codec_rewind;
+	CODEC_JUMP codec_jump;
 	CODEC_CLOSE codec_close;
 	snd_codec_t *next;
 };

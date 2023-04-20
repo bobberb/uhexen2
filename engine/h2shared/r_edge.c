@@ -1,6 +1,4 @@
-/*
- * r_edge.c
- * $Id$
+/* r_edge.c
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -71,7 +69,7 @@ int	r_currentkey;
 static void (*pdrawfunc)(void);
 static void (*pdrawTfunc)(void);
 
-#if	!id386
+#if	!id386 && !id68k
 static void R_GenerateSpans (void);
 static void R_GenerateTSpans (void);
 #endif
@@ -82,6 +80,7 @@ static void R_LeadingEdgeBackwards (edge_t *edge);
 //=============================================================================
 
 
+#if 0
 /*
 ==============
 R_DrawCulledPolys
@@ -123,6 +122,7 @@ static void R_DrawCulledPolys (void)
 		}
 	}
 }
+#endif
 
 
 /*
@@ -167,7 +167,7 @@ void R_BeginEdgeFrame (void)
 }
 
 
-#if	!id386
+#if	!id386 && !id68k
 
 /*
 ==============
@@ -297,7 +297,7 @@ pushback:
 	}
 }
 
-#endif	/* !id386 */
+#endif	/* !id386 && !id68k */
 
 
 /*
@@ -333,7 +333,7 @@ static void R_CleanupSpan (void)
 	} while (surf != &surfaces[1]);
 }
 
-#if	!id386
+#if	!id386 && !id68k
 
 static void R_CleanupSpanT (void)
 {
@@ -363,7 +363,7 @@ static void R_CleanupSpanT (void)
 	} while (surf != &surfaces[1]);
 }
 
-#endif	/* !id386 */
+#endif	/* !id386 && !id68k */
 
 
 /*
@@ -495,7 +495,7 @@ static void R_TrailingEdge (surf_t *surf, edge_t *edge)
 	}
 }
 
-#if	!id386
+#if	!id386 && !id68k
 
 static void R_TrailingEdgeT (surf_t *surf, edge_t *edge)
 {
@@ -913,7 +913,7 @@ static void R_GenerateTSpans (void)
 	R_CleanupSpanT ();
 }
 
-#endif	/* !id386 */
+#endif	/* !id386 && !id68k */
 
 
 /*
@@ -1043,11 +1043,13 @@ void R_ScanEdges (qboolean Translucent)
 			S_ExtraUpdate ();	// don't let sound get messed up if going slow
 			VID_LockBuffer ();
 
+#if 0
 			if (r_drawculledpolys)
 			{
 				R_DrawCulledPolys ();
 			}
 			else
+#endif
 			{
 				D_DrawSurfaces (Translucent);
 			}
@@ -1086,9 +1088,11 @@ void R_ScanEdges (qboolean Translucent)
 		(*pdrawTfunc) ();
 
 	// draw whatever's left in the span list
+#if 0
 	if (r_drawculledpolys)
 		R_DrawCulledPolys ();
 	else
+#endif
 	{
 		D_DrawSurfaces (Translucent);
 	}

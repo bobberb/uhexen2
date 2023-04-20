@@ -1,6 +1,4 @@
-/*
- * in_sdl.c -- SDL game input code
- * $Id$
+/* in_sdl.c -- SDL game input code.
  *
  * Copyright (C) 2001  contributors of the Anvil of Thyrion project
  * Joystick code taken from the darkplaces project with modifications
@@ -433,7 +431,7 @@ void IN_Move (usercmd_t *cmd)
 		return;
 	}
 
-	app_active = ((SDL_GetAppState() & SDL_APPACTIVE) != 0);
+	app_active = !VID_IsMinimized();
 	x = 0;
 	y = 0;
 
@@ -873,14 +871,14 @@ void IN_SendKeyEvents (void)
 							usym += 64;
 						else	usym += 96;
 					}
-#if defined(__APPLE__) && defined(__MACH__)
+					#if defined(__APPLE__) && defined(__MACH__)
 					if (sym == SDLK_BACKSPACE)
 						usym = sym;	/* avoid change to SDLK_DELETE */
-#endif	/* Mac OS X */
-#if defined(__QNX__) || defined(__QNXNTO__)
+					#endif
+					#if defined(__QNX__) || defined(__QNXNTO__)
 					if (sym == SDLK_BACKSPACE || sym == SDLK_RETURN)
 						usym = sym;	/* S.A: fixes QNX weirdness */
-#endif	/* __QNX__ */
+					#endif
 					/* only use unicode for ` and ~ in game mode */
 					if (!gamekey || usym == '`' || usym == '~')
 						sym = usym;

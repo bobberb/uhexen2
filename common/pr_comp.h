@@ -2,8 +2,6 @@
  * pr_comp.h
  * PROGS structures: This file is shared by Hexen II and HCC
  *
- * $Id$
- *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
  *
@@ -53,8 +51,6 @@ typedef enum
 #define	OFS_PARM6		22
 #define	OFS_PARM7		25
 #define	RESERVED_OFS	28
-
-qboolean params_used[32];
 
 #define	IMMEDIATE_NAME	"I+"		/* was "IMMEDIATE" in qcc */
 
@@ -277,4 +273,3 @@ typedef struct
 } dprograms_t;
 
 #endif	/* __PR_COMP_H */
-

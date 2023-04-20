@@ -1,5 +1,4 @@
 # GNU Makefile using GCC in a unix shell.
-# $Id$
 
 # This file is responsible for determining the Host OS and Target OS,
 # selecting the compiler, assigning the compiler command as the linker,
@@ -97,6 +96,13 @@ CROSS_COMPILE=y
 TARGET_OS=aros
 # override MACH_TYPE on the make command-line, if necessary
 MACH_TYPE=x86
+endif
+ifdef AROS_X64
+# cross compilation for aros
+CROSS_COMPILE=y
+TARGET_OS=aros
+# override MACH_TYPE on the make command-line, if necessary
+MACH_TYPE=x86_64
 endif
 ifdef AMIGABUILD
 # cross compilation for amigaos
@@ -217,4 +223,3 @@ WINDRES ?= windres
 RC ?= $(WINDRES)
 LIPO ?= lipo
 LINKER = $(CC)
-

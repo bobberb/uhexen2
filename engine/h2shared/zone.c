@@ -1,6 +1,4 @@
-/*
- * zone.c -- Memory management
- * $Id$
+/* zone.c -- Memory management
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -35,9 +33,9 @@
 #define	ZONE_MINSIZE	0x40000
 #define	ZONE_MAXSIZE	0x200000
 #if defined(SERVERONLY)
-#define	ZONE_DEFSIZE	0x80000
+#define	ZONE_DEFSIZE	0x40000
 #else
-#define	ZONE_DEFSIZE	0x100000
+#define	ZONE_DEFSIZE	0x60000
 #endif	/* SERVERONLY */
 #define	ZMAGIC		0x1d4a11
 #define	ZMAGIC2		0xf382da
@@ -107,7 +105,6 @@ static void Cache_FreeLow (int new_low_hunk);
 static void Cache_FreeHigh (int new_high_hunk);
 #endif
 
-void TexMgr_FreeTexturesForOwner(qmodel_t *owner);
 
 /*
 ==============================================================================
@@ -123,13 +120,11 @@ The zone calls are pretty much only used for small strings and structures,
 all big things are allocated on the hunk.
 ==============================================================================
 */
-
 static	zonelist_t	*zonelist;
 static	char		mainzone[] = "MAINZONE";
 #if (SECZONE_SIZE > 0)
 static	char		sec_zone[] = "SEC_ZONE";
 #endif
-
 
 /*
 ========================
@@ -363,7 +358,7 @@ typedef struct
 	char		name[HUNKNAME_LEN];
 } hunk_t;
 
-byte	*hunk_base;
+static byte	*hunk_base;
 static int	hunk_size;
 
 static int	hunk_low_used;
@@ -596,13 +591,13 @@ static void Cache_Move ( cache_system_t *c)
 		memcpy (new_cs+1, c+1, c->size - sizeof(cache_system_t));
 		new_cs->user = c->user;
 		memcpy (new_cs->name, c->name, sizeof(new_cs->name));
-		Cache_Free (c->user, false); //johnfitz -- added second argument
+		Cache_Free (c->user);
 		new_cs->user->data = (void *)(new_cs + 1);
 	}
 	else
 	{
 	/*	Con_Printf ("cache_move failed\n");*/
-		Cache_Free (c->user, true); // tough luck... //johnfitz -- added second argument
+		Cache_Free (c->user);	/* tough luck... */
 	}
 }
 
@@ -648,7 +643,7 @@ static void Cache_FreeHigh (int new_high_hunk)
 		if ( (byte *)c + c->size <= hunk_base + hunk_size - new_high_hunk)
 			return;		/* there is space to grow the hunk */
 		if (c == prev)
-			Cache_Free (c->user, true);	// didn't move out of the way //johnfitz -- added second argument
+			Cache_Free (c->user);	/* didn't move out of the way */
 		else
 		{
 			Cache_Move (c);	/* try to move it */
@@ -767,7 +762,7 @@ Throw everything out, so new data will be demand cached
 void Cache_Flush (void)
 {
 	while (cache_head.next != &cache_head)
-		Cache_Free ( cache_head.next->user, true); // reclaim the space //johnfitz -- added second argument
+		Cache_Free ( cache_head.next->user );	/* reclaim the space */
 }
 
 
@@ -801,7 +796,7 @@ Cache_Free
 Frees the memory and removes it from the LRU list
 ==============
 */
-void Cache_Free (cache_user_t *c, qboolean freetextures) //johnfitz -- added second argument
+void Cache_Free (cache_user_t *c)
 {
 	cache_system_t	*cs;
 
@@ -817,14 +812,6 @@ void Cache_Free (cache_user_t *c, qboolean freetextures) //johnfitz -- added sec
 	c->data = NULL;
 
 	Cache_UnlinkLRU (cs);
-
-	//johnfitz -- if a model becomes uncached, free the gltextures.  This only works
-	//becuase the cache_user_t is the last component of the qmodel_t struct.  Should
-	//fail harmlessly if *c is actually part of an sfx_t struct.  I FEEL DIRTY
-#ifdef GLQUAKE
-	if (freetextures)
-		TexMgr_FreeTexturesForOwner((qmodel_t *)(c + 1) - 1);
-#endif
 }
 
 
@@ -882,7 +869,7 @@ void *Cache_Alloc (cache_user_t *c, int size, const char *name)
 	/* free the least recently used cahedat */
 		if (cache_head.lru_prev == &cache_head)	/* not enough memory at all */
 			Sys_Error ("%s: out of memory", __thisfunc__);
-		Cache_Free ( cache_head.lru_prev->user, true); //johnfitz -- added second argument
+		Cache_Free ( cache_head.lru_prev->user );
 	}
 
 	return Cache_Check (c);
@@ -1316,24 +1303,10 @@ void Memory_Init (void *buf, int size)
 #endif	/* SERVERONLY */
 
 	p = COM_CheckParm ("-zone");
-	if (p && p < com_argc-1)
-	{
+	if (p && p < com_argc-1) {
 		zonesize = atoi (com_argv[p+1]) * 1024;
-		if (zonesize < ZONE_MINSIZE && !COM_CheckParm ("-forcemem"))
-		{
-			Sys_Printf ("Requested zone size (%d Kb) too little, using %d Kb.\n",
-					zonesize / 1024, (ZONE_MINSIZE / 1024));
-			Sys_Printf ("If you are sure, use the -forcemem switch.\n");
-			zonesize = ZONE_MINSIZE;
-		}
-		else if (zonesize > ZONE_MAXSIZE && !COM_CheckParm ("-forcemem"))
-		{
-			Sys_Printf ("Requested zone size (%d Kb) too large, using %d Kb.\n",
-					zonesize / 1024, (ZONE_MAXSIZE / 1024));
-			Sys_Printf ("If you are sure, use the -forcemem switch.\n");
-			zonesize = ZONE_MAXSIZE;
-		}
 	}
+
 	Memory_InitZone (mainzone, Z_MAINZONE, ZMAGIC, zonesize);
 
 #if (SECZONE_SIZE > 0)

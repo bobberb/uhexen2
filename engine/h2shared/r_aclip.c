@@ -1,7 +1,6 @@
 /*
  * r_aclip.c --
  * clip routines for drawing Alias models directly to the screen.
- * $Id: r_aclip.c,v 1.11 2008-03-07 08:10:38 sezero Exp $
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  *
@@ -28,7 +27,7 @@
 static finalvert_t		fv[2][8];
 static auxvert_t		av[8];
 
-#if !id386
+#if !id386 && !id68k
 static void R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out);
 static void R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out);
 static void R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out);
@@ -89,7 +88,7 @@ static void R_Alias_clip_z (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *o
 }
 
 
-#if	!id386
+#if	!id386 && !id68k
 
 static void R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 {
@@ -326,13 +325,13 @@ void R_AliasClipTriangle (mtriangle_t *ptri)
 	{
 		mtri.vertindex[1] = i;
 		mtri.vertindex[2] = i+1;
-		if ((currententity->model->flags & EF_SPECIAL_TRANS))
+		if (currententity->model->flags & EF_SPECIAL_TRANS)
 			D_PolysetDrawT5 ();
 		else if (currententity->drawflags & DRF_TRANSLUCENT)
 			D_PolysetDrawT ();
-		else if ((currententity->model->flags & EF_TRANSPARENT))
+		else if (currententity->model->flags & EF_TRANSPARENT)
 			D_PolysetDrawT2 ();
-		else if ((currententity->model->flags & EF_HOLEY))
+		else if (currententity->model->flags & EF_HOLEY)
 			D_PolysetDrawT3 ();
 		else
 			D_PolysetDraw ();

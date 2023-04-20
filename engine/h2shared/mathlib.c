@@ -1,6 +1,5 @@
 /*
  * mathlib.c -- math primitives
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 2005-2012  O.Sezer <sezero@users.sourceforge.net>
@@ -24,6 +23,22 @@
 #include "quakedef.h"
 
 vec3_t vec3_origin = { 0, 0, 0 };
+
+#if 0
+void Math_InitSinCos (void)
+{
+	int	i;
+	for (i = 0; i < SINCOS_ANGLES; i++) {
+		printf("%f, %f,\n", sin(i * M_PI*2 / SINCOS_ANGLES), cos(i * M_PI*2 / SINCOS_ANGLES));
+	}
+}
+#endif
+
+#ifdef USE_SINCOS_TABLE
+const float sincos_tab[SINCOS_SIZE] = {
+#include "sincos.h"
+};
+#endif
 
 
 /*

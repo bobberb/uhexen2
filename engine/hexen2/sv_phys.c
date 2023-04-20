@@ -1,6 +1,5 @@
 /*
  * sv_phys.c -- sv physics
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -141,7 +140,12 @@ static qboolean SV_RunThink (edict_t *ent)
 	float	thinktime;
 
 	thinktime = ent->v.nextthink;
+#ifdef PLATFORM_AMIGAOS3
+	// SV_SpawnServer race condition workaround for meso2 and romeric5
+	if (thinktime <= 0 || (thinktime + 0.0000001) > sv.time + host_frametime)
+#else
 	if (thinktime <= 0 || thinktime > sv.time + host_frametime)
+#endif
 		return true;
 
 	if (thinktime < sv.time)
@@ -152,7 +156,7 @@ static qboolean SV_RunThink (edict_t *ent)
 	*sv_globals.time = thinktime;
 	*sv_globals.self = EDICT_TO_PROG(ent);
 	*sv_globals.other = EDICT_TO_PROG(sv.edicts);
-	PR_ExecuteProgram (ent->v.think, "think in SV_RunThink");
+	PR_ExecuteProgram (ent->v.think);
 
 	return !ent->free;
 }
@@ -177,14 +181,14 @@ static void SV_Impact (edict_t *e1, edict_t *e2)
 	{
 		*sv_globals.self = EDICT_TO_PROG(e1);
 		*sv_globals.other = EDICT_TO_PROG(e2);
-		PR_ExecuteProgram (e1->v.touch, "touch");
+		PR_ExecuteProgram (e1->v.touch);
 	}
 
 	if (e2->v.touch && e2->v.solid != SOLID_NOT)
 	{
 		*sv_globals.self = EDICT_TO_PROG(e2);
 		*sv_globals.other = EDICT_TO_PROG(e1);
-		PR_ExecuteProgram (e2->v.touch, "touch");
+		PR_ExecuteProgram (e2->v.touch);
 	}
 
 	*sv_globals.self = old_self;
@@ -573,9 +577,6 @@ static void SV_PushMove (edict_t *pusher, float movetime, qboolean update_time)
 		pusher->v.ltime += movetime;
 	SV_LinkEdict (pusher, false);
 
-	//Inky No collision check if the moving volume is liquid
-	if (pusher->v.watertype != 0) return;
-
 	// see if any solid entities are inside the final position
 	num_moved = 0;
 	check = NEXT_EDICT(sv.edicts);
@@ -649,7 +650,7 @@ static void SV_PushMove (edict_t *pusher, float movetime, qboolean update_time)
 			{
 				*sv_globals.self = EDICT_TO_PROG(pusher);
 				*sv_globals.other = EDICT_TO_PROG(check);
-				PR_ExecuteProgram (pusher->v.blocked, "blocked");
+				PR_ExecuteProgram (pusher->v.blocked);
 			}
 
 			// move back any entities we already moved
@@ -1237,7 +1238,7 @@ static void SV_PushRotate (edict_t *pusher, float movetime)
 				{
 					*sv_globals.self = EDICT_TO_PROG(pusher);
 					*sv_globals.other = EDICT_TO_PROG(check);
-					PR_ExecuteProgram (pusher->v.blocked, "blocked");
+					PR_ExecuteProgram (pusher->v.blocked);
 				}
 
 				// move back any entities we already moved
@@ -1306,13 +1307,18 @@ static void SV_Physics_Pusher (edict_t *ent)
 			SV_PushMove (ent, movetime, true);	// advances ent->v.ltime if not blocked
 	}
 
+#ifdef PLATFORM_AMIGAOS3
+	// SV_SpawnServer race condition workaround for meso2 and romeric5
+	if (thinktime > oldltime && (thinktime - 0.00000001) <= ent->v.ltime)
+#else
 	if (thinktime > oldltime && thinktime <= ent->v.ltime)
+#endif
 	{
 		ent->v.nextthink = 0;
 		*sv_globals.time = sv.time;
 		*sv_globals.self = EDICT_TO_PROG(ent);
 		*sv_globals.other = EDICT_TO_PROG(sv.edicts);
-		PR_ExecuteProgram (ent->v.think, "think in SV_Physics_Pusher");
+		PR_ExecuteProgram (ent->v.think);
 		if (ent->free)
 			return;
 	}
@@ -1674,7 +1680,7 @@ static void SV_Physics_Client (edict_t *ent, int num)
 //
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (*sv_globals.PlayerPreThink, "PlayerPreThink");
+	PR_ExecuteProgram (*sv_globals.PlayerPreThink);
 
 //
 // do a move
@@ -1738,7 +1744,7 @@ static void SV_Physics_Client (edict_t *ent, int num)
 
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (*sv_globals.PlayerPostThink, "PlayerPostThink");
+	PR_ExecuteProgram (*sv_globals.PlayerPostThink);
 }
 
 
@@ -1754,8 +1760,7 @@ Non moving objects can only think
 static void SV_Physics_None (edict_t *ent)
 {
 // regular thinking
-	func_t fnum = ent->v.think;
-	if (fnum && fnum < progs->numfunctions) SV_RunThink (ent);
+	SV_RunThink (ent);
 }
 
 
@@ -2152,7 +2157,7 @@ void SV_Physics (void)
 	*sv_globals.self = EDICT_TO_PROG(sv.edicts);
 	*sv_globals.other = EDICT_TO_PROG(sv.edicts);
 	*sv_globals.time = sv.time;
-	PR_ExecuteProgram (*sv_globals.StartFrame, "StartFrame");
+	PR_ExecuteProgram (*sv_globals.StartFrame);
 
 	//SV_CheckAllEnts ();
 
@@ -2229,7 +2234,7 @@ void SV_Physics (void)
 					{	// callback function
 						*sv_globals.self = EDICT_TO_PROG(ent2);
 						*sv_globals.other = EDICT_TO_PROG(ent);
-						PR_ExecuteProgram(ent2->v.chainmoved, "chainmoved");
+						PR_ExecuteProgram(ent2->v.chainmoved);
 					}
 
 					ent2 = PROG_TO_EDICT(ent2->v.movechain);

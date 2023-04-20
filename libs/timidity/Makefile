@@ -1,5 +1,4 @@
 # GNU Makefile for building a static timidity library using GCC.
-# $Id$
 #
 # To cross-compile for Win32 on Unix: either pass the W32BUILD=1
 # argument to make, or export it.  Also see build_win32.sh script.
@@ -39,6 +38,7 @@ endif
 CPUFLAGS=$(CPU_X86)
 
 CFLAGS += -Wall -DTIMIDITY_BUILD=1 -DTIMIDITY_STATIC=1
+#CFLAGS += -DLOOKUP_SINE
 CFLAGS += $(CPUFLAGS)
 ifndef DEBUG
 CFLAGS += -O2 -DNDEBUG=1 -ffast-math
@@ -75,12 +75,17 @@ CFLAGS += -noixemul
 endif
 
 ifeq ($(TARGET_OS),aros)
-# nothing extra is needed
+CFLAGS += -fno-common
 endif
 
 ifeq ($(TARGET_OS),amigaos)
+# use Bebbo's GCC6 toolchain
+BEBBO_TOOLCHAIN=yes
 # crt: libnix or clib2
 USE_CLIB2=yes
+ifeq ($(BEBBO_TOOLCHAIN),yes)
+USE_CLIB2=no
+endif
 ifeq ($(USE_CLIB2),yes)
 CRT_FLAGS=-mcrt=clib2
 else
@@ -89,7 +94,6 @@ endif
 
 CFLAGS += $(CRT_FLAGS) -m68060 -m68881
 ifndef DEBUG
-CFLAGS += -O3
 CFLAGS += -fno-omit-frame-pointer
 endif
 # for extra missing headers

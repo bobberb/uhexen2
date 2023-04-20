@@ -1,7 +1,6 @@
 /*
  * host_string.c --
  * internationalized string resource shared between client and server
- * $Id$
  *
  * Copyright (C) 1997-1998 Raven Software Corp.
  *
@@ -28,12 +27,12 @@ static int	*host_string_index = NULL;
 int		host_string_count = 0;
 
 
-void Host_LoadStrings (unsigned int *dir_path_id)
+void Host_LoadStrings (void)
 {
 	int		i, count, start;
 	signed char	newline_char;
 
-	host_strings = (char *)FS_LoadHunkFile ("strings.txt", NULL, dir_path_id);
+	host_strings = (char *)FS_LoadHunkFile ("strings.txt", NULL);
 	if (!host_strings)
 		Host_Error ("%s: couldn't load strings.txt", __thisfunc__);
 

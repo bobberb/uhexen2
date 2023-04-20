@@ -1,6 +1,5 @@
 /*
  * world.c -- world query functions
- * $Id$
  *
  * entities never clip against themselves, or their owner
  * line of sight checks trace->crosscontent, but bullets don't
@@ -50,7 +49,7 @@ HULL BOXES
 
 
 static	hull_t		box_hull;
-static	dclipnode_t	box_clipnodes[6];
+static	mclipnode_t	box_clipnodes[6];
 static	mplane_t	box_planes[6];
 static	int			move_type;
 
@@ -532,7 +531,7 @@ SV_HullPointContents
 static int SV_HullPointContents (hull_t *hull, int num, vec3_t p)
 {
 	float		d;
-	dclipnode_t	*node;
+	mclipnode_t	*node;
 	mplane_t	*plane;
 
 	while (num >= 0)
@@ -623,7 +622,7 @@ SV_RecursiveHullCheck
 */
 qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace)
 {
-	dclipnode_t	*node;
+	mclipnode_t	*node;
 	mplane_t	*plane;
 	float		t1, t2;
 	float		frac;
@@ -963,8 +962,8 @@ static void SV_MoveBounds (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, v
 {
 #if 0
 	// debug to test against everything
-	boxmins[0] = boxmins[1] = boxmins[2] = -9999;
-	boxmaxs[0] = boxmaxs[1] = boxmaxs[2] = 9999;
+	boxmins[0] = boxmins[1] = boxmins[2] = -9999999;	//FIXME: change to FLT_MAX/-FLT_MAX
+	boxmaxs[0] = boxmaxs[1] = boxmaxs[2] = 9999999;
 #else
 	int		i;
 

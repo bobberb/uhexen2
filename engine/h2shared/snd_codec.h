@@ -6,8 +6,6 @@
  * Copyright (C) 2005 Stuart Dalton <badcdev@gmail.com>
  * Copyright (C) 2010-2012 O.Sezer <sezero@users.sourceforge.net>
  *
- * $Id$
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
@@ -56,6 +54,7 @@ typedef struct snd_stream_s
 	snd_info_t info;
 	stream_status_t status;
 	snd_codec_t *codec;	/* codec handling this stream */
+	qboolean loop;
 	void *priv;		/* data private to the codec. */
 } snd_stream_t;
 
@@ -66,22 +65,24 @@ void S_CodecShutdown (void);
 /* Callers of the following S_CodecOpenStream* functions
  * are reponsible for attaching any path to the filename */
 
-snd_stream_t *S_CodecOpenStreamType (const char *filename, unsigned int type);
+snd_stream_t *S_CodecOpenStreamType (const char *filename, unsigned int type,
+							  qboolean loop);
 	/* Decides according to the required type. */
 
-snd_stream_t *S_CodecOpenStreamAny (const char *filename);
+snd_stream_t *S_CodecOpenStreamAny (const char *filename, qboolean loop);
 	/* Decides according to file extension. if the
 	 * name has no extension, try all available. */
 
-snd_stream_t *S_CodecOpenStreamExt (const char *filename);
+snd_stream_t *S_CodecOpenStreamExt (const char *filename, qboolean loop);
 	/* Decides according to file extension. the name
 	 * MUST have an extension. */
 
 void S_CodecCloseStream (snd_stream_t *stream);
 int S_CodecReadStream (snd_stream_t *stream, int bytes, void *buffer);
 int S_CodecRewindStream (snd_stream_t *stream);
+int S_CodecJumpToOrder (snd_stream_t *stream, int to);
 
-snd_stream_t *S_CodecUtilOpen(const char *filename, snd_codec_t *codec);
+snd_stream_t *S_CodecUtilOpen(const char *filename, snd_codec_t *codec, qboolean loop);
 void S_CodecUtilClose(snd_stream_t **stream);
 
 

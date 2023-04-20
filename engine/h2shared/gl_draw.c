@@ -1,7 +1,5 @@
-/*
- * gl_draw.c
+/* gl_draw.c
  * this is the only file outside the refresh that touches the vid buffer
- * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -24,6 +22,7 @@
  */
 
 #include "quakedef.h"
+#include "hashindex.h"
 
 #if ENDIAN_RUNTIME_DETECT
 /* initialized by VID_Init() */
@@ -39,23 +38,19 @@ unsigned int	SHIFT_a;
 #endif
 
 qboolean	draw_reinit = false;
-qpic_t             *pic_nul; //johnfitz -- for missing gfx, don't crash
 
 static cvar_t	gl_picmip = {"gl_picmip", "0", CVAR_NONE};
 static cvar_t	gl_constretch = {"gl_constretch", "0", CVAR_ARCHIVE};
 static cvar_t	gl_texturemode = {"gl_texturemode", "", CVAR_ARCHIVE};
 static cvar_t	gl_texture_anisotropy = {"gl_texture_anisotropy", "1", CVAR_ARCHIVE};
-extern cvar_t gl_max_size;
 
-
-static gltexture_t		*menuplyr_textures[MAX_PLAYER_CLASS];	// player textures in multiplayer config screens
-//static GLuint		draw_backtile;
-qpic_t		*draw_backtile;
-static gltexture_t		*conback;
-static gltexture_t		*char_texture;
-static gltexture_t		*cs_texture;	// crosshair texture
-static gltexture_t		*char_smalltexture;
-static gltexture_t		*char_menufonttexture;
+static GLuint		menuplyr_textures[MAX_PLAYER_CLASS];	// player textures in multiplayer config screens
+static GLuint		draw_backtile;
+static GLuint		conback;
+static GLuint		char_texture;
+static GLuint		cs_texture;	// crosshair texture
+static GLuint		char_smalltexture;
+static GLuint		char_menufonttexture;
 
 // Crosshair texture is a 32x32 alpha map with 8 levels of alpha.
 // The format is similar to an X11 pixmap, but not the same.
@@ -100,7 +95,11 @@ static const char	*cs_data = {
 
 int		gl_filter_idx = 4; /* Bilinear */
 
-static gltexture_t *GL_LoadPixmap (const char *name, const char *data);
+gltexture_t	gltextures[MAX_GLTEXTURES];
+int			numgltextures;
+hashindex_t	hash_gltextures;
+
+static GLuint GL_LoadPixmap (const char *name, const char *data);
 static void GL_Upload32 (unsigned int *data, gltexture_t *glt);
 static void GL_Upload8 (byte *data, gltexture_t *glt);
 
@@ -110,6 +109,7 @@ static void GL_Upload8 (byte *data, gltexture_t *glt);
 
 cachepic_t	menu_cachepics[MAX_CACHED_PICS];
 int			menu_numcachepics;
+hashindex_t	hash_cachepics;
 
 /*
  * Geometry for the player/skin selection screen image.
@@ -128,7 +128,7 @@ static void Draw_PicCheckError (void *ptr, const char *name)
 		Sys_Error ("Failed to load %s", name);
 }
 
-/*
+
 qpic_t *Draw_PicFromFile (const char *name)
 {
 	qpic_t	*p;
@@ -149,41 +149,24 @@ qpic_t *Draw_PicFromFile (const char *name)
 
 	return p;
 }
-*/
 
-/*
-================
-Draw_PicFromWad
-================
-*/
-qpic_t *Draw_PicFromWad(const char *name)
+qpic_t *Draw_PicFromWad (const char *name)
 {
 	qpic_t	*p;
 	glpic_t	gl;
-	src_offset_t offset; //johnfitz
 
-	p = (qpic_t *)W_GetLumpName(name);
-	if (!p) return pic_nul; //johnfitz
+	p = (qpic_t *) W_GetLumpName (name);
 
-	char texturename[64]; //johnfitz
-	q_snprintf(texturename, sizeof(texturename), "%s:%s", WADFILENAME, name); //johnfitz
-
-	offset = (src_offset_t)p - (src_offset_t)wad_base + sizeof(int) * 2; //johnfitz
-
-	gl.gltexture = TexMgr_LoadImage(NULL, texturename, p->width, p->height, SRC_INDEXED, p->data, WADFILENAME,
-									offset, TEXPREF_ALPHA | TEXPREF_PAD | TEXPREF_NOPICMIP); //johnfitz -- TexMgr
-	//gl.sl = 0;
-	//gl.sh = 1;
-	//gl.tl = 0;
-	//gl.th = 1;
+	gl.texnum = GL_LoadPicTexture (p);
 	gl.sl = 0;
-	gl.sh = (float)p->width / (float)TexMgr_PadConditional(p->width); //johnfitz
+	gl.sh = 1;
 	gl.tl = 0;
-	gl.th = (float)p->height / (float)TexMgr_PadConditional(p->height); //johnfitz
-	memcpy(p->data, &gl, sizeof(glpic_t));
+	gl.th = 1;
+	memcpy (p->data, &gl, sizeof(glpic_t));
 
 	return p;
 }
+
 
 /*
 ================
@@ -193,25 +176,29 @@ Draw_CachePic
 qpic_t	*Draw_CachePic (const char *path)
 {
 	cachepic_t	*pic;
-	int			i;
+	int			i, key;
 	qpic_t		*dat;
 	glpic_t		gl;
 
-	for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++)
+	key = Hash_GenerateKeyString (&hash_cachepics, path, true);
+	for (i = Hash_First(&hash_cachepics, key); i != -1; i = Hash_Next(&hash_cachepics, i))
 	{
+		pic = &menu_cachepics[i];
 		if (!strcmp (path, pic->name))
 			return &pic->pic;
 	}
 
 	if (menu_numcachepics == MAX_CACHED_PICS)
 		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
+	Hash_Add (&hash_cachepics, key, menu_numcachepics);
+	pic = &menu_cachepics[menu_numcachepics];
 	menu_numcachepics++;
 	q_strlcpy (pic->name, path, MAX_QPATH);
 
 //
 // load the pic from disk
 //
-	dat = (qpic_t *)FS_LoadTempFile (path, NULL, NULL);
+	dat = (qpic_t *)FS_LoadTempFile (path, NULL);
 	Draw_PicCheckError (dat, path);
 	SwapPic (dat);
 
@@ -237,9 +224,7 @@ qpic_t	*Draw_CachePic (const char *path)
 	pic->pic.width = dat->width;
 	pic->pic.height = dat->height;
 
-	gl.gltexture = TexMgr_LoadImage(NULL, path, dat->width, dat->height, SRC_INDEXED, dat->data, path,
-		sizeof(int) * 2, TEXPREF_ALPHA | TEXPREF_NOPICMIP | TEXPREF_NEAREST); //johnfitz -- TexMgr
-
+	gl.texnum = GL_LoadPicTexture (dat);
 	gl.sl = 0;
 	gl.sh = 1;
 	gl.tl = 0;
@@ -261,12 +246,14 @@ static const char ls_path[] = "gfx/menu/loading.lmp";
 qpic_t	*Draw_CacheLoadingPic (void)
 {
 	cachepic_t	*pic;
-	int			i;
+	int			i, key;
 	qpic_t		*dat;
 	glpic_t		gl;
 
-	for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++)
+	key = Hash_GenerateKeyString (&hash_cachepics, ls_path, true);
+	for (i = Hash_First(&hash_cachepics, key); i != -1; i = Hash_Next(&hash_cachepics, i))
 	{
+		pic = &menu_cachepics[i];
 		if (!strcmp (ls_path, pic->name))
 			return &pic->pic;
 	}
@@ -274,12 +261,14 @@ qpic_t	*Draw_CacheLoadingPic (void)
 	if (menu_numcachepics == MAX_CACHED_PICS)
 		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
 
-	dat = (qpic_t *)FS_LoadTempFile (ls_path, NULL, NULL);
+	dat = (qpic_t *)FS_LoadTempFile (ls_path, NULL);
 	Draw_PicCheckError (dat, ls_path);
 	SwapPic (dat);
 	if (fs_filesize != 17592 || dat->width != 157 || dat->height != 112)
 		return Draw_CachePic(ls_path);
 
+	Hash_Add (&hash_cachepics, key, menu_numcachepics);
+	pic = &menu_cachepics[menu_numcachepics];
 	q_strlcpy (pic->name, ls_path, MAX_QPATH);
 	menu_numcachepics++;
 
@@ -290,50 +279,51 @@ qpic_t	*Draw_CacheLoadingPic (void)
 	pic->pic.width = dat->width;
 	pic->pic.height = dat->height;
 
-	gl.gltexture = TexMgr_LoadImage(NULL, ls_path, dat->width, dat->height, SRC_INDEXED, dat->data, ls_path,
-		sizeof(int) * 2, TEXPREF_ALPHA | TEXPREF_PAD | TEXPREF_NOPICMIP | TEXPREF_OVERWRITE); //johnfitz -- TexMgr
-	//gl.sl = 0;
-	//gl.sh = 1;
-	//gl.tl = 0;
-	//gl.th = 1;
+	gl.texnum = GL_LoadPicTexture (dat);
 	gl.sl = 0;
-	gl.sh = (float)dat->width / (float)TexMgr_PadConditional(dat->width); //johnfitz
+	gl.sh = 1;
 	gl.tl = 0;
-	gl.th = (float)dat->height / (float)TexMgr_PadConditional(dat->height); //johnfitz
+	gl.th = 1;
 	memcpy (pic->pic.data, &gl, sizeof(glpic_t));
 
 	return &pic->pic;
 }
 #endif	/* !DRAW_PROGRESSBARS */
 
-/*
-================
-Draw_MakePic -- johnfitz -- generate pics from internal data
-================
-*/
-qpic_t *Draw_MakePic(const char *name, int width, int height, byte *data)
+glmode_t gl_texmodes[NUM_GL_FILTERS] =
 {
-	int flags = TEXPREF_NEAREST | TEXPREF_ALPHA | TEXPREF_PERSIST | TEXPREF_NOPICMIP | TEXPREF_PAD;
-	qpic_t		*pic;
-	glpic_t		gl;
+	{ "GL_NEAREST",			GL_NEAREST,			GL_NEAREST },	/* point sampled	*/
+	{ "GL_NEAREST_MIPMAP_NEAREST",	GL_NEAREST_MIPMAP_NEAREST,	GL_NEAREST },	/* nearest, 1 mipmap	*/
+	{ "GL_NEAREST_MIPMAP_LINEAR",	GL_NEAREST_MIPMAP_LINEAR,	GL_NEAREST },	/* nearest, 2 mipmaps	*/
+	{ "GL_LINEAR",			GL_LINEAR,			GL_LINEAR  },	/* Bilinear, no mipmaps	*/
+	{ "GL_LINEAR_MIPMAP_NEAREST",	GL_LINEAR_MIPMAP_NEAREST,	GL_LINEAR  },	/* Bilinear, 1 mipmap	*/
+	{ "GL_LINEAR_MIPMAP_LINEAR",	GL_LINEAR_MIPMAP_LINEAR,	GL_LINEAR  }	/* Trilinear: 2 mipmaps	*/
+};
 
-	pic = (qpic_t *)Hunk_Alloc(sizeof(qpic_t) - 4 + sizeof(glpic_t));
-	pic->width = width;
-	pic->height = height;
+/*
+===============
+Draw_TextureMode_f
+===============
+*/
+static void Draw_TouchAllFilterModes (void)
+{
+	gltexture_t	*glt;
+	int	i;
 
-	gl.gltexture = TexMgr_LoadImage(NULL, name, width, height, SRC_RGBA, data, "", (src_offset_t)data, flags);
-
-	//gl.sl = 0;
-	//gl.sh = 1;
-	//gl.tl = 0;
-	//gl.th = 1;
-	gl.sl = 0;
-	gl.sh = (float)width / (float)TexMgr_PadConditional(width);
-	gl.tl = 0;
-	gl.th = (float)height / (float)TexMgr_PadConditional(height);
-	memcpy(pic->data, &gl, sizeof(glpic_t));
-
-	return pic;
+	for (i = 0, glt = gltextures; i < numgltextures; i++, glt++)
+	{
+		if (glt->flags & (TEX_NEAREST|TEX_LINEAR))	/* TEX_MIPMAP mustn't be set in this case */
+			continue;
+		GL_Bind (glt->texnum);
+		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_texmodes[gl_filter_idx].maximize);
+		if (glt->flags & TEX_MIPMAP)
+		{
+			glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_texmodes[gl_filter_idx].minimize);
+			if (gl_max_anisotropy >= 2)
+				glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_texture_anisotropy.value);
+		}
+		else	glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_texmodes[gl_filter_idx].maximize);
+	}
 }
 
 static void Draw_TextureMode_f (cvar_t *var)
@@ -342,13 +332,13 @@ static void Draw_TextureMode_f (cvar_t *var)
 
 	for (i = 0; i < NUM_GL_FILTERS; i++)
 	{
-		if (!strcmp (glmodes[i].name, var->string))
+		if (!strcmp (gl_texmodes[i].name, var->string))
 		{
 			if (gl_filter_idx != i)
 			{
 				gl_filter_idx = i;
 				// change all the existing mipmap texture objects
-				//Draw_TouchAllFilterModes ();
+				Draw_TouchAllFilterModes ();
 			}
 			return;
 		}
@@ -356,15 +346,49 @@ static void Draw_TextureMode_f (cvar_t *var)
 
 	for (i = 0; i < NUM_GL_FILTERS; i++)
 	{
-		if (!q_strcasecmp (glmodes[i].name, var->string))
+		if (!q_strcasecmp (gl_texmodes[i].name, var->string))
 		{
-			Cvar_SetQuick (var, glmodes[i].name);
+			Cvar_SetQuick (var, gl_texmodes[i].name);
 			return;
 		}
 	}
 
 	Con_Printf ("bad filter name\n");
-	Cvar_SetQuick (var, glmodes[gl_filter_idx].name);
+	Cvar_SetQuick (var, gl_texmodes[gl_filter_idx].name);
+}
+
+static void Draw_TouchMipmapFilterModes (void)
+{
+	gltexture_t	*glt;
+	int	i;
+
+	for (i = 0, glt = gltextures; i < numgltextures; i++, glt++)
+	{
+		if (glt->flags & TEX_MIPMAP)
+		{
+			GL_Bind (glt->texnum);
+			glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_texmodes[gl_filter_idx].maximize);
+			glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_texmodes[gl_filter_idx].minimize);
+			glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_texture_anisotropy.value);
+		}
+	}
+}
+
+static void Draw_Anisotropy_f (cvar_t *var)
+{
+	if (var->value < 1)
+	{
+		Cvar_SetQuick (var, "1");
+	}
+	else if (var->value > gl_max_anisotropy)
+	{
+		Cvar_SetValueQuick (var, gl_max_anisotropy);
+	}
+	else
+	{
+		if (gl_max_anisotropy >= 2)
+			Draw_TouchMipmapFilterModes ();
+	}
 }
 
 /*
@@ -406,7 +430,6 @@ static void Draw_ReinitTextures (void)
 
 	// Reload pre-map pics, fonts, console, etc
 	W_LoadWadFile ("gfx.wad");
-	TexMgr_Init(); //johnfitz
 	Draw_Init();
 	SCR_Init();
 	Sbar_Init();
@@ -447,16 +470,13 @@ void Draw_ReInit (void)
 	scr_disabled_for_loading = true;
 	draw_reinit = true;
 
-	//D_ClearOpenGLTextures(NULL);
-	TexMgr_DeleteTextureObjects();
-
-	//memset (lightmap_textures, 0, sizeof(lightmap_textures));
+	D_ClearOpenGLTextures(0);
+	memset (lightmap_textures, 0, sizeof(lightmap_textures));
 	// make sure all of alias models are cleared
 	Draw_ClearAllModels ();
 
 	// Reload pre-map pics, fonts, console, etc
 	W_LoadWadFile ("gfx.wad");
-	TexMgr_Init(); //johnfitz
 	Draw_Init();
 	SCR_Init();
 	Sbar_Init();
@@ -478,34 +498,35 @@ Draw_Init
 */
 void Draw_Init (void)
 {
-	static qpic_t		*p;
+	qpic_t		*p;
 	byte		*chars;
 	int		i;
 
-	/*
 	if (!draw_reinit)
 	{
 		Cvar_RegisterVariable (&gl_picmip);
 		Cvar_RegisterVariable (&gl_constretch);
-		gl_texturemode.string = glmodes[gl_filter_idx].name;
+		gl_texturemode.string = gl_texmodes[gl_filter_idx].name;
 		Cvar_RegisterVariable (&gl_texturemode);
 		Cvar_RegisterVariable (&gl_texture_anisotropy);
 		Cvar_SetCallback (&gl_texturemode, Draw_TextureMode_f);
 		Cvar_SetCallback (&gl_texture_anisotropy, Draw_Anisotropy_f);
+		Hash_Allocate (&hash_cachepics, MAX_CACHED_PICS);
+		Hash_Allocate (&hash_gltextures, MAX_GLTEXTURES);
 	}
-	*/
 
 	// load the charset: 8*8 graphic characters
-	chars = FS_LoadTempFile ("gfx/menu/conchars.lmp", NULL, NULL);
+	chars = FS_LoadTempFile ("gfx/menu/conchars.lmp", NULL);
 	Draw_PicCheckError (chars, "gfx/menu/conchars.lmp");
+	if (fs_filesize != 256*128) {
+		Sys_Error ("gfx/menu/conchars.lmp: bad size.");
+	}
 	for (i = 0; i < 256*128; i++)
 	{
 		if (chars[i] == 0)
 			chars[i] = 255;	// proper transparent color
 	}
-	//char_texture = GL_LoadTexture ("charset", chars, 256, 128, TEX_ALPHA|TEX_NEAREST);
-	char_texture = TexMgr_LoadImage(NULL, "gfx/menu/conchars.lmp", 256, 128, SRC_INDEXED, chars,
-		WADFILENAME, 0, TEXPREF_ALPHA | TEXPREF_NEAREST | TEXPREF_NOPICMIP | TEXPREF_CONCHARS);
+	char_texture = GL_LoadTexture ("charset", chars, 256, 128, TEX_ALPHA|TEX_NEAREST);
 
 	// load the small characters for status bar
 	chars = (byte *) W_GetLumpName("tinyfont");
@@ -514,14 +535,12 @@ void Draw_Init (void)
 		if (chars[i] == 0)
 			chars[i] = 255;	// proper transparent color
 	}
-	//char_smalltexture = GL_LoadTexture ("smallcharset", chars, 128, 32, TEX_ALPHA|TEX_NEAREST);
-	char_smalltexture = TexMgr_LoadImage(NULL, "gfx/menu/conchars.lmp", 128, 32, SRC_INDEXED, chars,
-		WADFILENAME, 0, TEXPREF_ALPHA | TEXPREF_NEAREST | TEXPREF_NOPICMIP | TEXPREF_CONCHARS);
+	char_smalltexture = GL_LoadTexture ("smallcharset", chars, 128, 32, TEX_ALPHA|TEX_NEAREST);
 
 	// load the big menu font
 	// Note: old version of demo has bigfont.lmp, not bigfont2.lmp
-	p = (qpic_t *)FS_LoadTempFile("gfx/menu/bigfont2.lmp", NULL, NULL);
-	if (!p) p = (qpic_t *)FS_LoadTempFile("gfx/menu/bigfont.lmp", NULL, NULL);
+	p = (qpic_t *)FS_LoadTempFile("gfx/menu/bigfont2.lmp", NULL);
+	if (!p) p = (qpic_t *)FS_LoadTempFile("gfx/menu/bigfont.lmp", NULL);
 	Draw_PicCheckError (p, "gfx/menu/bigfont2.lmp");
 	SwapPic (p);
 	for (i = 0; i < p->width * p->height; i++)	// MUST be 160 * 80
@@ -529,39 +548,25 @@ void Draw_Init (void)
 		if (p->data[i] == 0)
 			p->data[i] = 255;	// proper transparent color
 	}
-	//char_menufonttexture = GL_LoadTexture ("menufont", p->data, p->width, p->height, TEX_ALPHA|TEX_LINEAR);
-
-	char_menufonttexture = TexMgr_LoadImage(NULL, WADFILENAME":menufont", p->width, p->height, SRC_INDEXED, (byte *)p->data,
-		WADFILENAME, (src_offset_t)p->data, TEXPREF_PERSIST | TEXPREF_NOPICMIP | TEXPREF_ALPHA | TEXPREF_LINEAR);
-
+	char_menufonttexture = GL_LoadTexture ("menufont", p->data, p->width, p->height, TEX_ALPHA|TEX_LINEAR);
 
 	// load the console background
-	p = (qpic_t *)FS_LoadTempFile ("gfx/menu/conback.lmp", NULL, NULL);
+	p = (qpic_t *)FS_LoadTempFile ("gfx/menu/conback.lmp", NULL);
 	Draw_PicCheckError (p, "gfx/menu/conback.lmp");
 	SwapPic (p);
-	//conback = GL_LoadTexture ("conback", p->data, p->width, p->height, TEX_LINEAR);
-
-	conback = TexMgr_LoadImage(NULL, WADFILENAME":conback", p->width, p->height, SRC_INDEXED, (byte *)p->data, 
-		WADFILENAME, (src_offset_t)p->data, TEXPREF_PERSIST | TEXPREF_NOPICMIP | TEXPREF_ALPHA | TEXPREF_LINEAR);
+	conback = GL_LoadTexture ("conback", p->data, p->width, p->height, TEX_LINEAR);
 
 	// load the backtile
-	//p = (qpic_t *)FS_LoadTempFile("gfx/menu/backtile.lmp", NULL);
-	draw_backtile = Draw_CachePic("gfx/menu/backtile.lmp");
-
-	//Draw_PicCheckError(p, "gfx/menu/backtile.lmp");
-	//SwapPic(p);
-	//draw_backtile = GL_LoadPicTexture(p);
-	//draw_backtile = GL_LoadPixmap("conback", cs_data);
-	//gltexture_t* blah = TexMgr_LoadImage(NULL, WADFILENAME":backtile", p->width, p->height, SRC_INDEXED, p->data,
-	//	WADFILENAME, 0, TEXPREF_ALPHA | TEXPREF_LINEAR | TEXPREF_NOPICMIP);
-	//draw_backtile = Draw_PicFromWad("backtile");
-
+	p = (qpic_t *)FS_LoadTempFile ("gfx/menu/backtile.lmp", NULL);
+	Draw_PicCheckError (p, "gfx/menu/backtile.lmp");
+	SwapPic (p);
+	draw_backtile = GL_LoadPicTexture (p);
 
 	// load the crosshair texture
 	cs_texture = GL_LoadPixmap ("crosshair", cs_data);
 
 	// initialize the player texnums for multiplayer config screens
-	//glGenTextures_fp(MAX_PLAYER_CLASS, menuplyr_textures);
+	glGenTextures_fp(MAX_PLAYER_CLASS, menuplyr_textures);
 }
 
 
@@ -789,25 +794,33 @@ void Draw_BigCharacter (int x, int y, int num)
 
 /*
 =============
-Draw_Pic -- johnfitz -- modified
+Draw_Pic
 =============
 */
-void Draw_Pic(int x, int y, qpic_t *pic)
+void Draw_Pic (int x, int y, qpic_t *pic)
 {
 	glpic_t			*gl;
 
 	gl = (glpic_t *)pic->data;
-	GL_Bind(gl->gltexture);
-	glBegin_fp(GL_QUADS);
-	glTexCoord2f_fp(gl->sl, gl->tl);
-	glVertex2f_fp(x, y);
-	glTexCoord2f_fp(gl->sh, gl->tl);
-	glVertex2f_fp(x + pic->width, y);
-	glTexCoord2f_fp(gl->sh, gl->th);
-	glVertex2f_fp(x + pic->width, y + pic->height);
-	glTexCoord2f_fp(gl->sl, gl->th);
-	glVertex2f_fp(x, y + pic->height);
-	glEnd_fp();
+	glColor4f_fp (1,1,1,1);
+	GL_Bind (gl->texnum);
+
+	glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	glBegin_fp (GL_QUADS);
+	glTexCoord2f_fp (gl->sl, gl->tl);
+	glVertex2f_fp (x, y);
+	glTexCoord2f_fp (gl->sh, gl->tl);
+	glVertex2f_fp (x+pic->width, y);
+	glTexCoord2f_fp (gl->sh, gl->th);
+	glVertex2f_fp (x+pic->width, y+pic->height);
+	glTexCoord2f_fp (gl->sl, gl->th);
+	glVertex2f_fp (x, y+pic->height);
+	glEnd_fp ();
+
+	glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 /*
@@ -821,23 +834,23 @@ void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
 
 	gl = (glpic_t *)pic->data;
 	glDisable_fp(GL_ALPHA_TEST);
-	glEnable_fp(GL_BLEND);
+	glEnable_fp (GL_BLEND);
 	glCullFace_fp(GL_FRONT);
-	glColor4f_fp(1, 1, 1, alpha);
-	GL_Bind(gl->gltexture);
-	glBegin_fp(GL_QUADS);
-	glTexCoord2f_fp(gl->sl, gl->tl);
-	glVertex2f_fp(x, y);
-	glTexCoord2f_fp(gl->sh, gl->tl);
-	glVertex2f_fp(x + pic->width, y);
-	glTexCoord2f_fp(gl->sh, gl->th);
-	glVertex2f_fp(x + pic->width, y + pic->height);
-	glTexCoord2f_fp(gl->sl, gl->th);
-	glVertex2f_fp(x, y + pic->height);
-	glEnd_fp();
-	glColor4f_fp(1, 1, 1, 1);
+	glColor4f_fp (1,1,1,alpha);
+	GL_Bind (gl->texnum);
+	glBegin_fp (GL_QUADS);
+	glTexCoord2f_fp (gl->sl, gl->tl);
+	glVertex2f_fp (x, y);
+	glTexCoord2f_fp (gl->sh, gl->tl);
+	glVertex2f_fp (x+pic->width, y);
+	glTexCoord2f_fp (gl->sh, gl->th);
+	glVertex2f_fp (x+pic->width, y+pic->height);
+	glTexCoord2f_fp (gl->sl, gl->th);
+	glVertex2f_fp (x, y+pic->height);
+	glEnd_fp ();
+	glColor4f_fp (1,1,1,1);
 	glEnable_fp(GL_ALPHA_TEST);
-	glDisable_fp(GL_BLEND);
+	glDisable_fp (GL_BLEND);
 }
 
 #if FULLSCREEN_INTERMISSIONS
@@ -852,25 +865,29 @@ colors (e.g. in intermission screens)
 qpic_t *Draw_CachePicNoTrans (const char *path)
 {
 	cachepic_t	*pic;
-	int		i;
+	int		i, key;
 	qpic_t		*dat;
 	glpic_t		gl;
 
-	for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++)
+	key = Hash_GenerateKeyString (&hash_cachepics, path, true);
+	for (i = Hash_First(&hash_cachepics, key); i != -1; i = Hash_Next(&hash_cachepics, i))
 	{
+		pic = &menu_cachepics[i];
 		if (!strcmp (path, pic->name))
 			return &pic->pic;
 	}
 
 	if (menu_numcachepics == MAX_CACHED_PICS)
 		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
+	Hash_Add (&hash_cachepics, key, menu_numcachepics);
+	pic = &menu_cachepics[menu_numcachepics];
 	menu_numcachepics++;
 	q_strlcpy (pic->name, path, MAX_QPATH);
 
 //
 // load the pic from disk
 //
-	dat = (qpic_t *)FS_LoadTempFile (path, NULL, NULL);
+	dat = (qpic_t *)FS_LoadTempFile (path, NULL);
 	Draw_PicCheckError (dat, path);
 	SwapPic (dat);
 
@@ -883,21 +900,12 @@ qpic_t *Draw_CachePicNoTrans (const char *path)
 		if (dat->data[i] == 255)
 			dat->data[i] = 31; // pal(31) == pal(255) == FCFCFC (white)
 	}
-	//gl.texnum = GL_LoadPicTexture (dat);
-	//gl.gltexture = TexMgr_LoadImage(NULL, path, dat->width, dat->height, SRC_INDEXED, dat->data, path,
-	//	sizeof(int) * 2, TEXPREF_NOPICMIP); //johnfitz -- TexMgr
-	gl.gltexture = TexMgr_LoadImage(NULL, path, dat->width, dat->height, SRC_INDEXED, dat->data, WADFILENAME, 
-		sizeof(int) * 2, TEXPREF_RGBA | TEXPREF_LINEAR | TEXPREF_NOPICMIP | TEXPREF_OVERWRITE);
+	gl.texnum = GL_LoadPicTexture (dat);
 
-
-	//gl.sl = 0;
-	//gl.sh = 1;
-	//gl.tl = 0;
-	//gl.th = 1;
 	gl.sl = 0;
-	gl.sh = (float)dat->width / (float)TexMgr_PadConditional(dat->width); //johnfitz
+	gl.sh = 1;
 	gl.tl = 0;
-	gl.th = (float)dat->height / (float)TexMgr_PadConditional(dat->height); //johnfitz
+	gl.th = 1;
 	memcpy (pic->pic.data, &gl, sizeof(glpic_t));
 
 	return &pic->pic;
@@ -916,7 +924,7 @@ void Draw_IntermissionPic (qpic_t *pic)
 
 	gl = (glpic_t *)pic->data;
 	glColor4f_fp (1,1,1,1);
-	GL_Bind (gl->gltexture);
+	GL_Bind (gl->texnum);
 
 	glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
@@ -956,7 +964,7 @@ void Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int 
 	newth = newtl + (height*oldglheight)/pic->height;
 
 	glColor4f_fp (1,1,1,1);
-	GL_Bind (gl->gltexture);
+	GL_Bind (gl->texnum);
 	glBegin_fp (GL_QUADS);
 	glTexCoord2f_fp (newsl, newtl);
 	glVertex2f_fp (x, y);
@@ -1005,12 +1013,11 @@ void Draw_PicCropped (int x, int y, qpic_t *pic)
 	{
 		height = pic->height;
 		tl = gl->tl;
-		//th = (height-0.01)/pic->height;
 		th = gl->th;//(height-0.01)/pic->height;
 	}
 
 	glColor4f_fp (1,1,1,1);
-	GL_Bind (gl->gltexture);
+	GL_Bind (gl->texnum);
 	glBegin_fp (GL_QUADS);
 	glTexCoord2f_fp (gl->sl, tl);
 	glVertex2f_fp (x, y);
@@ -1068,7 +1075,7 @@ void Draw_SubPicCropped (int x, int y, int h, qpic_t *pic)
 	}
 
 	glColor4f_fp (1,1,1,1);
-	GL_Bind (gl->gltexture);
+	GL_Bind (gl->texnum);
 	glBegin_fp (GL_QUADS);
 	glTexCoord2f_fp (gl->sl, tl);
 	glVertex2f_fp (x, y);
@@ -1088,11 +1095,11 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, qpic_t *pic)
 {
-	//if (x < 0 || (x + pic->width) > vid.width ||
-	//    y < 0 || (y + pic->height) > vid.height)
-	//{
-		//Sys_Error ("%s: bad coordinates", __thisfunc__);
-	//}
+	if (x < 0 || (x + pic->width) > vid.width ||
+	    y < 0 || (y + pic->height) > vid.height)
+	{
+		Sys_Error ("%s: bad coordinates", __thisfunc__);
+	}
 
 	Draw_Pic (x, y, pic);
 }
@@ -1116,7 +1123,7 @@ void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation, int p
 	byte		*src;
 	int		p;
 
-	GL_Bind(NULL);
+	GL_Bind(menuplyr_textures[p_class-1]);
 	dest = trans;
 	for (v = 0; v < 64; v++, dest += 64)
 	{
@@ -1159,35 +1166,31 @@ void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation, int p
 /*
 ================
 Draw_ConsoleBackground
+
 ================
 */
-static void Draw_ConsolePic(int lines, float ofs, gltexture_t *pic, float alpha)
+static void Draw_ConsolePic (int lines, float ofs, GLuint num, float alpha)
 {
-	//glpic_t			*gl;
-
-	//gl = (glpic_t *)pic->data;
-
 	glDisable_fp(GL_ALPHA_TEST);
-	glEnable_fp(GL_BLEND);
+	glEnable_fp (GL_BLEND);
 	glCullFace_fp(GL_FRONT);
-	glColor4f_fp(1, 1, 1, alpha);
-	//GL_Bind(gl->gltexture);
-	GL_Bind(pic);
+	glColor4f_fp (1,1,1,alpha);
+	GL_Bind (num);
 
-	glBegin_fp(GL_QUADS);
-	glTexCoord2f_fp(0, 0 + ofs);
-	glVertex2f_fp(0, 0);
-	glTexCoord2f_fp(1, 0 + ofs);
-	glVertex2f_fp(vid.conwidth, 0);
-	glTexCoord2f_fp(1, 1);
-	glVertex2f_fp(vid.conwidth, lines);
-	glTexCoord2f_fp(0, 1);
-	glVertex2f_fp(0, lines);
-	glEnd_fp();
+	glBegin_fp (GL_QUADS);
+	glTexCoord2f_fp (0, 0 + ofs);
+	glVertex2f_fp (0, 0);
+	glTexCoord2f_fp (1, 0 + ofs);
+	glVertex2f_fp (vid.conwidth, 0);
+	glTexCoord2f_fp (1, 1);
+	glVertex2f_fp (vid.conwidth, lines);
+	glTexCoord2f_fp (0, 1);
+	glVertex2f_fp (0, lines);
+	glEnd_fp ();
 
-	glColor4f_fp(1, 1, 1, 1);
+	glColor4f_fp (1,1,1,1);
 	glEnable_fp(GL_ALPHA_TEST);
-	glDisable_fp(GL_BLEND);
+	glDisable_fp (GL_BLEND);
 }
 
 static void Draw_ConsoleVersionInfo (int lines)
@@ -1230,13 +1233,8 @@ refresh window.
 */
 void Draw_TileClear (int x, int y, int w, int h)
 {
-	glpic_t	*gl;
-
-	gl = (glpic_t *)draw_backtile->data;
-
 	glColor3f_fp (1,1,1);
-	//GL_Bind (draw_backtile);
-	GL_Bind(gl->gltexture);
+	GL_Bind (draw_backtile);
 	glBegin_fp (GL_QUADS);
 	glTexCoord2f_fp (x/64.0, y/64.0);
 	glVertex2f_fp (x, y);
@@ -1596,11 +1594,11 @@ static void GL_Upload32 (unsigned int *data, gltexture_t *glt)
 	if (scaled_height < 1)
 		scaled_height = 1;
 
-	if (scaled_width > gl_max_size.integer)
-		scaled_width = gl_max_size.integer;
+	if (scaled_width > gl_max_size)
+		scaled_width = gl_max_size;
 
-	if (scaled_height > gl_max_size.integer)
-		scaled_height = gl_max_size.integer;
+	if (scaled_height > gl_max_size)
+		scaled_height = gl_max_size;
 
 	// 3dfx has some aspect ratio constraints.
 	// can't go beyond 8 to 1 or below 1 to 8.
@@ -1616,7 +1614,7 @@ static void GL_Upload32 (unsigned int *data, gltexture_t *glt)
 		}
 	}
 
-	samples = (glt->flags & TEXPREF_ALPHA) ? gl_alpha_format : gl_solid_format;
+	samples = (glt->flags & TEX_ALPHA) ? gl_alpha_format : gl_solid_format;
 
 	if (scaled_width == glt->width && scaled_height == glt->height)
 	{
@@ -1629,7 +1627,7 @@ static void GL_Upload32 (unsigned int *data, gltexture_t *glt)
 		GL_ResampleTexture (data, glt->width, glt->height, scaled, scaled_width, scaled_height);
 	}
 
-	if (is8bit && !(glt->flags & TEXPREF_ALPHA))
+	if (is8bit && !(glt->flags & TEX_ALPHA))
 	{
 		if (!mark)
 			mark = Hunk_LowMark();
@@ -1641,7 +1639,7 @@ static void GL_Upload32 (unsigned int *data, gltexture_t *glt)
 		glTexImage2D_fp (GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 	}
 
-	if (glt->flags & TEXPREF_MIPMAP)
+	if (glt->flags & TEX_MIPMAP)
 	{
 		int		miplevel;
 
@@ -1650,33 +1648,33 @@ static void GL_Upload32 (unsigned int *data, gltexture_t *glt)
 		{
 			GL_MipMap ((byte *)scaled, (byte *)scaled, &scaled_width, &scaled_height, 1, 1);
 			miplevel++;
-			if (is8bit && !(glt->flags & TEXPREF_ALPHA))
+			if (is8bit && !(glt->flags & TEX_ALPHA))
 				fxPalTexImage2D (GL_TEXTURE_2D, miplevel, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 			else	glTexImage2D_fp (GL_TEXTURE_2D, miplevel, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 		}
 	}
 
-	if (glt->flags & TEXPREF_NEAREST)
+	if (glt->flags & TEX_NEAREST)
 	{
 		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	}
-	else if (glt->flags & TEXPREF_LINEAR)
+	else if (glt->flags & TEX_LINEAR)
 	{
 		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	}
-	else if (glt->flags & TEXPREF_MIPMAP)
+	else if (glt->flags & TEX_MIPMAP)
 	{
-		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glmodes[gl_filter_idx].minfilter);
-		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glmodes[gl_filter_idx].magfilter);
+		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_texmodes[gl_filter_idx].minimize);
+		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_texmodes[gl_filter_idx].maximize);
 		if (gl_max_anisotropy >= 2)
 			glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_texture_anisotropy.value);
 	}
 	else
 	{
-		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glmodes[gl_filter_idx].minfilter);
-		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glmodes[gl_filter_idx].magfilter);
+		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_texmodes[gl_filter_idx].maximize);
+		glTexParameterf_fp(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_texmodes[gl_filter_idx].maximize);
 	}
 
 	if (mark)
@@ -1704,11 +1702,11 @@ static void GL_Upload8 (byte *data, gltexture_t *glt)
 	mark = Hunk_LowMark();
 	trans = (unsigned int *) Hunk_AllocName(s * sizeof(unsigned int), "texbuf_upload8");
 
-	if (glt->flags & (TEXPREF_ALPHA | TEXPREF_TRANSPARENT |TEX_HOLEY|TEX_SPECIAL_TRANS))
+	if (glt->flags & (TEX_ALPHA|TEX_TRANSPARENT|TEX_HOLEY|TEX_SPECIAL_TRANS))
 	{
 		// if there are no transparent pixels, make it a 3 component
 		// texture even if it was flagged as TEX_ALPHA.
-		qboolean noalpha = !(glt->flags & (TEXPREF_TRANSPARENT |TEX_HOLEY|TEX_SPECIAL_TRANS));
+		qboolean noalpha = !(glt->flags & (TEX_TRANSPARENT|TEX_HOLEY|TEX_SPECIAL_TRANS));
 
 		for (i = 0; i < s; i++)
 		{
@@ -1740,7 +1738,7 @@ static void GL_Upload8 (byte *data, gltexture_t *glt)
 				((byte *)&trans[i])[2] = ((byte *)&d_8to24table[p])[2];
 			}
 
-			if (glt->flags & TEXPREF_TRANSPARENT)
+			if (glt->flags & TEX_TRANSPARENT)
 			{
 				p = data[i];
 				if (p == 0)
@@ -1761,16 +1759,8 @@ static void GL_Upload8 (byte *data, gltexture_t *glt)
 			else if (glt->flags & TEX_HOLEY)
 			{
 				p = data[i];
-				if (glt->name[0] == '{')
-				{
-					if (p == 255)
-						trans[i] &= MASK_rgb;
-				}
-				else
-				{
-					if (p == 0)
-						trans[i] &= MASK_rgb;
-				}
+				if (p == 0)
+					trans[i] &= MASK_rgb;
 			}
 			else if (glt->flags & TEX_SPECIAL_TRANS)
 			{
@@ -1781,9 +1771,9 @@ static void GL_Upload8 (byte *data, gltexture_t *glt)
 		}
 
 		if (noalpha)
-			glt->flags &= ~TEXPREF_ALPHA;
-		if (glt->flags & (TEXPREF_TRANSPARENT |TEX_HOLEY|TEX_SPECIAL_TRANS))
-			glt->flags |= TEXPREF_ALPHA;
+			glt->flags &= ~TEX_ALPHA;
+		if (glt->flags & (TEX_TRANSPARENT|TEX_HOLEY|TEX_SPECIAL_TRANS))
+			glt->flags |= TEX_ALPHA;
 	}
 	else
 	{
@@ -1808,10 +1798,9 @@ static void GL_Upload8 (byte *data, gltexture_t *glt)
 GL_LoadTexture
 ================
 */
-/*
 GLuint GL_LoadTexture (const char *identifier, byte *data, int width, int height, int flags)
 {
-	int		i, size;
+	int		i, size, key;
 	unsigned short	crc;
 	gltexture_t	*glt;
 
@@ -1821,28 +1810,29 @@ GLuint GL_LoadTexture (const char *identifier, byte *data, int width, int height
 #endif
 
 	size = width * height;
-	if (flags & TEXPREF_RGBA)
+	if (flags & TEX_RGBA)
 		size *= 4;
 	crc = CRC_Block (data, size);
 
+	key = Hash_GenerateKeyString (&hash_gltextures, identifier, true);
 	if (identifier[0])
 	{
-		//texture already present?
-		for (i = 0, glt = gltextures; i < numgltextures; i++, glt++)
+		/* texture already present? */
+		for (i = Hash_First(&hash_gltextures, key); i != -1; i = Hash_Next(&hash_gltextures, i))
 		{
-			if (!strcmp (identifier, glt->name))
+			glt = &gltextures[i];
+			if (!strcmp (identifier, glt->identifier))
 			{
-				if (crc != glt->source_crc ||
-				    (glt->flags & TEXPREF_MIPMAP) != (flags & TEXPREF_MIPMAP) ||
+				if (crc != glt->crc ||
+				    (glt->flags & TEX_MIPMAP) != (flags & TEX_MIPMAP) ||
 				    width  != glt->width || height != glt->height)
-				{ 
-					//not the same, delete and rebind to new image
+				{ /* not the same, delete and rebind to new image */
 					Con_DPrintf ("Texture cache mismatch: %lu, %s, reloading\n",
 							    (unsigned long)glt->texnum, identifier);
 					glDeleteTextures_fp (1, &glt->texnum);
 					goto gl_rebind;
 				}
-				else	return glt->texnum;	//the same is present.
+				else	return glt->texnum;	/* the same is present. */
 			}
 		}
 	}
@@ -1850,25 +1840,25 @@ GLuint GL_LoadTexture (const char *identifier, byte *data, int width, int height
 	if (numgltextures >= MAX_GLTEXTURES)
 		Sys_Error ("%s: cache full, max is %i textures.", __thisfunc__, MAX_GLTEXTURES);
 
+	Hash_Add (&hash_gltextures, key, numgltextures);
 	glt = &gltextures[numgltextures];
 	numgltextures++;
-	q_strlcpy (glt->name, identifier, MAX_QPATH);
+	q_strlcpy (glt->identifier, identifier, MAX_QPATH);
 
 gl_rebind:
 	glGenTextures_fp(1, &glt->texnum);
 	glt->width = width;
 	glt->height = height;
 	glt->flags = flags;
-	glt->source_crc = crc;
+	glt->crc = crc;
 
-	GL_Bind (glt);
-	if (flags & TEXPREF_RGBA)
+	GL_Bind (glt->texnum);
+	if (flags & TEX_RGBA)
 		GL_Upload32 ((unsigned int *)data, glt);
 	else	GL_Upload8 (data, glt);
 
 	return glt->texnum;
 }
-*/
 
 /*
 ===============
@@ -1880,7 +1870,7 @@ crosshairs or pointers. The data string is in a format similar to an X11
 pixmap.  '0'-'7' are brightness levels, any other character is considered
 transparent. Remember, NO error checking is performed on the input string.
 */
-static gltexture_t *GL_LoadPixmap (const char *name, const char *data)
+static GLuint GL_LoadPixmap (const char *name, const char *data)
 {
 	int		i;
 	unsigned char	pixels[32*32][4];
@@ -1903,9 +1893,7 @@ static gltexture_t *GL_LoadPixmap (const char *name, const char *data)
 		}
 	}
 
-	//return GL_LoadTexture (name, (unsigned char *) pixels, 32, 32, TEX_ALPHA | TEX_RGBA | TEX_LINEAR);
-	return TexMgr_LoadImage(NULL, name, 32, 32, SRC_RGBA, (unsigned char *)pixels,
-		WADFILENAME, 0, TEXPREF_ALPHA | TEXPREF_RGBA | TEXPREF_LINEAR);
+	return GL_LoadTexture (name, (unsigned char *) pixels, 32, 32, TEX_ALPHA | TEX_RGBA | TEX_LINEAR);
 }
 
 /*
@@ -1913,10 +1901,8 @@ static gltexture_t *GL_LoadPixmap (const char *name, const char *data)
 GL_LoadPicTexture
 ================
 */
-gltexture_t* GL_LoadPicTexture (qpic_t *pic)
+GLuint GL_LoadPicTexture (qpic_t *pic)
 {
-	//return GL_LoadTexture ("", pic->data, pic->width, pic->height, TEX_ALPHA|TEX_NEAREST);
-	return TexMgr_LoadImage(NULL, "", pic->width, pic->height, SRC_INDEXED, pic->data,
-		WADFILENAME, 0, TEXPREF_ALPHA | TEXPREF_LINEAR);
+	return GL_LoadTexture ("", pic->data, pic->width, pic->height, TEX_ALPHA|TEX_NEAREST);
 }
 

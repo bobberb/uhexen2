@@ -1,6 +1,4 @@
-/*
- * quakedef.h -- common definitions for client and server.
- * $Id$
+/* quakedef.h -- common definitions for client and server.
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -29,8 +27,8 @@
 
 #define	HOT_VERSION_MAJ		1
 #define	HOT_VERSION_MID		5
-#define	HOT_VERSION_MIN		9
-#define	HOT_VERSION_REL_DATE	"2018-07-31"
+#define	HOT_VERSION_MIN		10
+#define	HOT_VERSION_REL_DATE	"2022-10-25"
 #define	HOT_VERSION_STR		STRINGIFY(HOT_VERSION_MAJ) "." STRINGIFY(HOT_VERSION_MID) "." STRINGIFY(HOT_VERSION_MIN)
 #define	GLQUAKE_VERSION		1.00
 #define	ENGINE_VERSION		0.29
@@ -232,4 +230,3 @@
 #endif
 
 #endif	/* __QUAKEDEFS_H */
-

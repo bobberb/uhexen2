@@ -9,8 +9,6 @@
  * (uHexen2) code by O.Sezer:
  * Copyright (C) 2006-2012 O.Sezer <sezero@users.sourceforge.net>
  *
- * $Id$
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
@@ -83,17 +81,17 @@ static int MID2STREAM_fileopen(const char *filename)
 {
 	FILE *handle;
 	qboolean pak;
-	size_t length;
+	long length;
 
-	length = FS_OpenFile(filename, &handle, NULL, NULL);
+	length = FS_OpenFile(filename, &handle, NULL);
 	pak = file_from_pak;
-	if (length == (size_t)-1)
+	if (length < 0)
 		return -1;
 
 	midi_fh.file = handle;
 	midi_fh.start = ftell(handle);
 	midi_fh.pos = 0;
-	midi_fh.length = (long)length;
+	midi_fh.length = length;
 	midi_fh.pak = pak;
 	return 0;
 }
@@ -918,7 +916,6 @@ static int AddEventToStreamBuffer (temp_event_t *te, convert_buf_t *buf)
 			/* If this is a volume change, generate a callback
 			 * so we can grab the new volume for our cache. */
 			me->dwEvent |= MEVT_F_CALLBACK;
-			te->shortdata[2] *= 0;
 		}
 		buf->bytes_in += 3 *sizeof(DWORD);
 	}

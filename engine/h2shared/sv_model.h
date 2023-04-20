@@ -1,6 +1,5 @@
 /*
  * sv_model.h -- header for model loading and caching
- * $Id$
  *
  * This version of model.[ch] are based on the quake dedicated server
  * application lhnqserver by Forest 'LordHavoc' Hale, with simplified
@@ -25,8 +24,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __HX2_MODEL_H
-#define __HX2_MODEL_H
+#ifndef SV_MODEL_H
+#define SV_MODEL_H
 
 #include "genmodel.h"
 #include "spritegn.h"
@@ -50,9 +49,6 @@ BRUSH MODELS
 //
 // in memory representation
 //
-
-typedef dlclipnode_t mclipnode_t;
-
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct
 {
@@ -135,6 +131,12 @@ typedef struct mleaf_s
 // leaf specific
 	byte		*compressed_vis;
 } mleaf_t;
+
+#ifdef ENABLE_BSP2
+typedef dclipnode2_t	mclipnode_t;
+#else
+typedef dclipnode_t	mclipnode_t;
+#endif
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
@@ -243,7 +245,7 @@ typedef struct qmodel_s
 	int		numvertexes;
 	mvertex_t	*vertexes;
 
-	long		numnodes;
+	int		numnodes;
 	mnode_t		*nodes;
 
 	int		numtexinfo;
@@ -270,13 +272,12 @@ typedef struct qmodel_s
 //============================================================================
 
 void	Mod_Init (void);
-void	Mod_ResetAll(void); // for gamedir changes (Host_Game_f)
 void	Mod_ClearAll (void);
 qmodel_t *Mod_ForName (const char *name, qboolean crash);
 qmodel_t *Mod_FindName (const char *name);
 
-mleaf_t *Mod_PointInLeaf (float *p, qmodel_t *model);
+mleaf_t *Mod_PointInLeaf (vec3_t p, qmodel_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model);
 
-#endif	/* __HX2_MODEL_H */
+#endif	/* SV_MODEL_H */
 

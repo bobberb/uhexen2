@@ -1,6 +1,70 @@
 Hammer of Thyrion (uHexen2) release notes:
 
 ========================================================================
+Changes in v1.5.10: (Oct. 25, 2022.)
+========================================================================
+
+This is a minor bug fix and maintenance release:
+
+- Added BSP2 format support, thanks to an initial patch by Spike.
+
+- Fixed possible crash in effects code (thanks to Jonathan Bergeron).
+
+- Fixed getting stuck with loading plaque upon attempting to load a
+  bad save from the menu.
+
+- OpenGL: Fixed dark dynamic lights -- e.g. when Necromancer uses
+  invulnerability. (thanks to Shanjaq Astraljam, sf.net bug 48.)
+
+- OpenGL: Fixed graphical artifacts with scaled UI (sf.net bug 59.)
+
+- OpenGL: gl_clear now defaults to 1 and glClearColor is black. The
+  new cvar r_clearcolor (palette index from 0 to 255, default is 0)
+  can be used to change the clear color (from fitzquake.)
+
+- OpenGL: compensate viewmodel distortion at fov > 90.
+
+- Software renderer: replaced client sin/cos calls with precomputed
+  table lookups for better performance especially on old hardware.
+
+- More performance tweaks mostly targeting the software renderer.
+
+- Windows, midi: Fixed volume reseting after loop (sf.net bug 66.)
+
+- Improvements to mp3 tag detection / skipping.
+
+- New console command music_jump: Jump to given order in music,
+  like Unreal's music change.  Only for module (tracker) music.
+
+- Map utils: BSP2 format support:  qbsp must be run with the "-bsp2"
+  command line switch in order to output in bsp2 format.
+
+- Utils: light, vis, and jsh2color now default to auto-detecting the
+  max number of threads.
+
+- Windows: removed the long-obsoleted Scitech MGL video driver.
+
+- DOS: removed the long-obsoleted MPATH and BW-TCP network drivers.
+
+- Amiga (m68k): multiple updates/optimizations thanks to Szilard Biro.
+
+- Amiga (m68k): support for PSX controller, cdplayer.library and Paula
+  audio support, thanks to Szilard Biro.
+
+- Amiga (m68k): added support for Bebbo's gcc6/libnix based toolchain,
+  dropped support for VBCC compiler.
+
+- AROS: initial x86_64 support.
+
+- All platforms: Several HexenC (hcode) tweaks and clean-ups.
+
+- Multiple minor fixes, tidy-ups, and protability tweaks, and updates
+  to third-party libraries.
+
+- Source repository moved to git.
+
+
+========================================================================
 Changes in v1.5.9: (May 31, 2018.)
 ========================================================================
 
@@ -21,7 +85,7 @@ This is a minor bug fix and maintenance release:
 
 - Several optimized assembler sources for m68k-amigaos.
 
-- gcc is now supported to target m68k-amigaos.
+- GCC is now supported to target m68k-amigaos.
 
 - Software renderer: Reduced some 2D overdraw. Faster model lighting.
 
@@ -625,8 +689,8 @@ Changes in v1.5.0: (Sep. 15, 2011.)
 
 - improved soul spheres' HexenC code.
 
-- fixed a HexenC where medusa's gaze attack sound would persist when she
-  is dead.
+- fixed a HexenC bug where medusa's gaze attack sound would persist when
+  she is dead.
 
 - fixed an Eidolon/imp HexenC bug which used to render Eidolon idle.
 
@@ -809,4 +873,3 @@ Changes in v1.5.0: (Sep. 15, 2011.)
   dead code.
 
 - other minor fixes.
-
