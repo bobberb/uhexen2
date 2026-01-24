@@ -18,8 +18,8 @@
           src = pkgs.fetchFromGitHub {
             owner = "Shanjaq";
             repo = "uhexen2";
-            rev = "master";
-            hash = "sha256-9qfIJddOrlzZ+IZun9jq/whWXEAjjjU1WC+G6bT+dQ0=";
+            rev = "dev";
+            hash = "sha256-okudrZPVFNpQ7sLJlXJiDXwXV0dFu06KIulXOfipgc0=";
           };
 
           nativeBuildInputs = with pkgs; [
