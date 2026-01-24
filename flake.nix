@@ -189,12 +189,126 @@
           fi
         '';
 
+        # Windows x64 cross-compilation
+        pkgsWindows = pkgs.pkgsCross.mingwW64;
+
+        uhexen2-windows = pkgsWindows.stdenv.mkDerivation rec {
+          pname = "uhexen2-windows";
+          version = "1.5.9";
+
+          src = pkgs.fetchFromGitHub {
+            owner = "Shanjaq";
+            repo = "uhexen2";
+            rev = "dev";
+            hash = "sha256-okudrZPVFNpQ7sLJlXJiDXwXV0dFu06KIulXOfipgc0=";
+          };
+
+          nativeBuildInputs = with pkgs; [
+            gnumake
+            nasm
+            pkgsWindows.buildPackages.gcc
+            pkgsWindows.buildPackages.binutils
+          ];
+
+          buildInputs = with pkgsWindows; [
+            windows.mingw_w64_pthreads
+          ];
+
+          preBuild = ''
+            export W64BUILD=1
+            export CC=${pkgsWindows.stdenv.cc.targetPrefix}cc
+            export AS=${pkgsWindows.stdenv.cc.bintools.targetPrefix}as
+            export RANLIB=${pkgsWindows.stdenv.cc.bintools.targetPrefix}ranlib
+            export AR=${pkgsWindows.stdenv.cc.bintools.targetPrefix}ar
+            export WINDRES=${pkgsWindows.stdenv.cc.bintools.targetPrefix}windres
+            export NASM=${pkgs.nasm}/bin/nasm
+
+            # Disable codecs that require external libraries for now
+            export USE_CODEC_WAVE=yes
+            export USE_CODEC_FLAC=no
+            export USE_CODEC_MP3=no
+            export USE_CODEC_VORBIS=no
+            export USE_CODEC_OPUS=no
+            export USE_CODEC_MIKMOD=no
+            export USE_CODEC_TIMIDITY=no
+
+            # Compiler flags for old C code
+            export CFLAGS="-std=gnu99 -fcommon -Wno-incompatible-pointer-types -Wno-int-conversion -Wno-implicit-function-declaration"
+          '';
+
+          buildPhase = ''
+            runHook preBuild
+
+            cd engine/hexen2
+
+            echo "Building OpenGL renderer (glh2.exe)..."
+            make glh2
+
+            echo "Building software renderer (h2.exe)..."
+            make clean
+            make h2
+
+            echo "Building dedicated server (h2ded.exe)..."
+            make -C server
+
+            runHook postBuild
+          '';
+
+          installPhase = ''
+            runHook preInstall
+
+            mkdir -p $out/bin
+            mkdir -p $out/share/doc/uhexen2
+
+            # Install binaries
+            cp glh2.exe $out/bin/
+            cp h2.exe $out/bin/
+            cp server/h2ded.exe $out/bin/
+
+            # Install required Windows DLLs from oslibs
+            cd $NIX_BUILD_TOP/source
+            cp oslibs/windows/codecs/x64/*.dll $out/bin/ || echo "Warning: codec DLLs not found"
+            cp oslibs/windows/SDL/lib64/SDL.dll $out/bin/ || echo "Warning: SDL.dll not found"
+
+            # Install documentation
+            cp -r docs/* $out/share/doc/uhexen2/ 2>/dev/null || true
+            cp README.txt $out/share/doc/uhexen2/ 2>/dev/null || true
+
+            # Create a README for Windows users
+            cat > $out/bin/README-WINDOWS.txt <<EOF
+Hexen II: Hammer of Thyrion - Windows x64 Build
+
+Files included:
+- glh2.exe: OpenGL renderer (recommended)
+- h2.exe: Software renderer
+- h2ded.exe: Dedicated server
+- *.dll: Required runtime libraries
+
+To play:
+1. Copy your Hexen II game data files (pak0.pak, pak1.pak, etc.) to a 'data1' folder
+2. Run glh2.exe from the same directory
+
+For more information, see the documentation in the share/doc folder.
+EOF
+
+            runHook postInstall
+          '';
+
+          meta = with pkgs.lib; {
+            description = "Hexen II: Hammer of Thyrion - Windows x64 build";
+            homepage = "https://hexenworld.org";
+            license = licenses.gpl2Plus;
+            platforms = platforms.windows;
+          };
+        };
+
       in
       {
         packages = {
           default = uhexen2;
           uhexen2 = uhexen2;
           launcher = uhexen2-launcher;
+          windows = uhexen2-windows;
         };
 
         apps = {
