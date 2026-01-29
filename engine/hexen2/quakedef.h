@@ -92,7 +92,8 @@
 #define	MAX_SOUNDS_H2MP	512		/* Mission Pack (protocol 19), messy thing:		*/
 					/* SV_StartSound sends it as a byte, but PF_ambientsound
 					   sends it as a word.					*/
-#define	MAX_SOUNDS	(MAX_SOUNDS_H2MP)
+#define	MAX_SOUNDS_UH2	1024		/* uhexen2: increased for large mods like SoT		*/
+#define	MAX_SOUNDS	(MAX_SOUNDS_UH2)
 
 #define	MAX_STYLESTRING		64
 
