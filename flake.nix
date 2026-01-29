@@ -16,10 +16,10 @@
           version = "1.5.9";
 
           src = pkgs.fetchFromGitHub {
-            owner = "Shanjaq";
+            owner = "bobberb";
             repo = "uhexen2";
-            rev = "dev";
-            hash = "sha256-okudrZPVFNpQ7sLJlXJiDXwXV0dFu06KIulXOfipgc0=";
+            rev = "master";
+            hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
           };
 
           nativeBuildInputs = with pkgs; [
@@ -197,10 +197,10 @@
           version = "1.5.9";
 
           src = pkgs.fetchFromGitHub {
-            owner = "Shanjaq";
+            owner = "bobberb";
             repo = "uhexen2";
-            rev = "dev";
-            hash = "sha256-okudrZPVFNpQ7sLJlXJiDXwXV0dFu06KIulXOfipgc0=";
+            rev = "master";
+            hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
           };
 
           nativeBuildInputs = with pkgs; [
