@@ -19,7 +19,7 @@
             owner = "bobberb";
             repo = "uhexen2";
             rev = "master";
-            hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            hash = "sha256-zCbs3DUQTeofN2nUdgRJJXydvQ+zuH4mLHqfsSP1eBA=";
           };
 
           nativeBuildInputs = with pkgs; [
@@ -200,7 +200,7 @@
             owner = "bobberb";
             repo = "uhexen2";
             rev = "master";
-            hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            hash = "sha256-zCbs3DUQTeofN2nUdgRJJXydvQ+zuH4mLHqfsSP1eBA=";
           };
 
           nativeBuildInputs = with pkgs; [
