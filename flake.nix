@@ -15,11 +15,10 @@
           pname = "uhexen2";
           version = "1.5.9";
 
-          src = pkgs.fetchFromGitHub {
-            owner = "Shanjaq";
-            repo = "uhexen2";
-            rev = "dev";
-            hash = "sha256-okudrZPVFNpQ7sLJlXJiDXwXV0dFu06KIulXOfipgc0=";
+          src = pkgs.fetchgit {
+            url = "https://git.half-done.org/josh/uhexen2-shajaq";
+            rev = "refs/heads/master";
+            hash = "sha256-HiUkyBDgrk9bz6F76B8+hs3gflhpHlq5z5ZTIgVKSSQ=";
           };
 
           nativeBuildInputs = with pkgs; [
@@ -196,11 +195,10 @@
           pname = "uhexen2-windows";
           version = "1.5.9";
 
-          src = pkgs.fetchFromGitHub {
-            owner = "Shanjaq";
-            repo = "uhexen2";
-            rev = "dev";
-            hash = "sha256-okudrZPVFNpQ7sLJlXJiDXwXV0dFu06KIulXOfipgc0=";
+          src = pkgs.fetchgit {
+            url = "https://git.half-done.org/josh/uhexen2-shajaq";
+            rev = "refs/heads/master";
+            hash = "sha256-HiUkyBDgrk9bz6F76B8+hs3gflhpHlq5z5ZTIgVKSSQ=";
           };
 
           nativeBuildInputs = with pkgs; [
