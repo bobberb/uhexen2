@@ -759,7 +759,20 @@ static void M_Difficulty_Key (int key)
 			return;
 		}
 		Cbuf_AddText ("wait\n"); /* make m_none to really work */
-		Cbuf_AddText ("map demo1\n");
+
+		//Launch the old mission (on a custom map if so specificied in the command line)
+		int i = COM_CheckParm("-startold");
+		if (i && i < com_argc - 1)
+		{
+			Cbuf_AddText("map ");
+			Cbuf_AddText(com_argv[i + 1]);
+			Cbuf_AddText("\n");
+		}
+		else
+		{
+			Cbuf_AddText("map demo1\n");
+		}
+
 		break;
 	default:
 		Key_SetDest (key_game);
