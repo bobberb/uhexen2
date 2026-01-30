@@ -1199,10 +1199,9 @@ void CL_ParseServerMessage (void)
 			if (cmd >= 80)
 			{
 				// SoT protocol 21 messages - unknown format
-				// WARNING: Skipping with wrong payload size causes stream desync!
-				// This is a temporary workaround - proper implementation needed
-				Con_DPrintf ("FIXME: Skipped msg %d (unknown payload, may cause desync)\n", cmd);
-				break;
+				// Skip rest of packet to resync at next packet boundary
+				Con_DPrintf ("FIXME: Unknown proto21 msg %d - skipping rest of packet\n", cmd);
+				return;	// Abort this packet, next one should be fresh
 			}
 			Host_Error ("%s: Illegible server message %d", __thisfunc__, cmd);
 			break;
