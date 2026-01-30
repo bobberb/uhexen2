@@ -13,7 +13,7 @@
 
         uhexen2 = pkgs.stdenv.mkDerivation rec {
           pname = "uhexen2";
-          version = "1.5.10-sot-win";
+          version = "1.5.11-sot";
 
           src = ./.;
 
@@ -189,7 +189,7 @@
 
         uhexen2-windows = pkgsWindows.stdenv.mkDerivation rec {
           pname = "uhexen2-windows";
-          version = "1.5.10-sot-win";
+          version = "1.5.11-sot-win";
 
           src = ./.;
 
@@ -201,7 +201,7 @@
           ];
 
           buildInputs = with pkgsWindows; [
-            windows.mingw_w64_pthreads
+            windows.pthreads
           ];
 
           preBuild = ''
