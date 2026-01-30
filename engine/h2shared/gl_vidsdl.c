@@ -1677,8 +1677,41 @@ void	VID_Init (const unsigned char *palette)
 		i = COM_CheckParm("-height");
 		if (i && i < com_argc-1)
 			height = atoi(com_argv[i+1]);
-		else	// proceed with 4/3 ratio
-			height = 3 * width / 4;
+		else
+		{
+			// Use desktop aspect ratio if available, otherwise 4:3
+			if (vid_info && vid_info->current_w > 0)
+				height = width * vid_info->current_h / vid_info->current_w;
+			else	// proceed with 4/3 ratio
+				height = 3 * width / 4;
+		}
+	}
+
+	// Allow explicit aspect ratio override (e.g., -aspect 21:9 for ultrawide)
+	i = COM_CheckParm("-aspect");
+	if (i && i < com_argc-1)
+	{
+		const char *aspect_str = com_argv[i+1];
+		float aspect_ratio = 0.0f;
+		// Parse "XX:YY" format or decimal value
+		if (strchr(aspect_str, ':'))
+		{
+			int w, h;
+			if (sscanf(aspect_str, "%d:%d", &w, &h) == 2 && h > 0)
+				aspect_ratio = (float)w / h;
+		}
+		else
+		{
+			aspect_ratio = atof(aspect_str);
+		}
+		if (aspect_ratio > 0.5f && aspect_ratio < 5.0f)
+		{
+			// Adjust height to match requested aspect ratio
+			height = (int)(width / aspect_ratio + 0.5f);
+			Con_SafePrintf ("Aspect ratio override: %.2f:1 (resolution %dx%d)\n", aspect_ratio, width, height);
+		}
+		else
+			Con_SafePrintf ("Invalid aspect ratio, using default\n");
 	}
 
 	// user requested a mode either from the config or from the

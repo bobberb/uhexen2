@@ -275,11 +275,12 @@ static void CL_ParseServerInfo (void)
 	case PROTOCOL_RAVEN_111:
 	case PROTOCOL_RAVEN_112:
 	case PROTOCOL_UQE_113:
+	case PROTOCOL_SOT_21:
 		Con_DPrintf ("\nServer using protocol %i\n", cl_protocol);
 		break;
 	default:
-		Con_Printf ("\nServer returned version %i, not %i or %i\n",
-				cl_protocol, PROTOCOL_RAVEN_112, PROTOCOL_UQE_113);
+		Con_Printf ("\nServer returned version %i, not %i, %i, or %i\n",
+				cl_protocol, PROTOCOL_RAVEN_112, PROTOCOL_UQE_113, PROTOCOL_SOT_21);
 		return;
 	}
 

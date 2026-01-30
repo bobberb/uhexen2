@@ -113,6 +113,23 @@ void SV_Init (void)
 	i = COM_CheckParm ("-protocol");
 	if (i && i < com_argc - 1)
 		sv_protocol = atoi (com_argv[i + 1]);
+
+	/* Auto-detect SoT mod and enable protocol 21 */
+	if (sv_protocol == PROTOCOL_VERSION)  /* only if not explicitly set */
+	{
+		i = COM_CheckParm ("-mod");
+		if (i && i < com_argc - 1)
+		{
+			const char *moddir = com_argv[i + 1];
+			if (!q_strcasecmp(moddir, "sot") ||
+			    !q_strcasecmp(moddir, "karma2"))
+			{
+				sv_protocol = PROTOCOL_SOT_21;
+				Con_DPrintf ("Auto-enabled protocol %i for SoT mod\n", sv_protocol);
+			}
+		}
+	}
+
 	switch (sv_protocol)
 	{
 	case PROTOCOL_RAVEN_111:
@@ -124,9 +141,12 @@ void SV_Init (void)
 	case PROTOCOL_UQE_113:
 		p = "UQE/1.13";
 		break;
+	case PROTOCOL_SOT_21:
+		p = "SoT/2.1";
+		break;
 	default:
-		Sys_Error ("Bad protocol version request %i. Accepted values: %i, %i, %i.",
-				sv_protocol, PROTOCOL_RAVEN_111, PROTOCOL_RAVEN_112, PROTOCOL_UQE_113);
+		Sys_Error ("Bad protocol version request %i. Accepted values: %i, %i, %i, %i.",
+				sv_protocol, PROTOCOL_RAVEN_111, PROTOCOL_RAVEN_112, PROTOCOL_UQE_113, PROTOCOL_SOT_21);
 		return; /* silence compiler */
 	}
 	Sys_Printf ("Server using protocol %i (%s)\n", sv_protocol, p);

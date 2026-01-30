@@ -599,6 +599,7 @@ static const char *help_strings[] = {
 	"     [-f | -fullscreen]      Run the game fullscreen",
 #endif
 	"     [-width X [-height Y]]  Select screen size",
+	"     [-aspect X:Y]           Set aspect ratio (e.g. 21:9, 16:9, 1.78)",
 #ifdef GLQUAKE
 	"     [-bpp]                  Depth for GL fullscreen mode",
 	"     [-vsync]                Enable sync with monitor refresh",

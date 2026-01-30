@@ -188,7 +188,7 @@ endif
 # Overrides for the default CPUFLAGS
 CPUFLAGS=$(CPU_X86)
 
-CFLAGS += -Wall
+CFLAGS += -Wall -std=gnu99
 CFLAGS += $(CPUFLAGS)
 ifdef DEBUG
 CFLAGS += -g

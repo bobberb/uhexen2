@@ -1942,8 +1942,8 @@ void PR_LoadProgs (void)
 		progvstr = "SoT/1.13";
 		break;
 	case PROGS_SOT_CRC2:
-		def = globals_v112;	/* Alternate SoT/ROS progs.dat */
-		progvstr = "SoT/ROS";
+		def = globals_v112;	/* Alternate SoT progs.dat */
+		progvstr = "SoT/alt";
 		break;
 	case PROGS_SOT_CRC3:
 		def = globals_v112;	/* Wheel of Karma (karma2) progs.dat */
