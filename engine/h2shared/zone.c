@@ -30,12 +30,12 @@
  * commands. see in Memory_Init()	*/
 #define	Z_DEBUG_COMMANDS	0
 
-#define	ZONE_MINSIZE	0x40000
-#define	ZONE_MAXSIZE	0x200000
+#define	ZONE_MINSIZE	0x40000		/* 256 KB minimum */
+#define	ZONE_MAXSIZE	0x800000		/* 8 MB maximum (increased from 2 MB for SoT mod) */
 #if defined(SERVERONLY)
-#define	ZONE_DEFSIZE	0x40000
+#define	ZONE_DEFSIZE	0x200000		/* 2 MB default for server (increased from 256 KB for SoT mod) */
 #else
-#define	ZONE_DEFSIZE	0x60000
+#define	ZONE_DEFSIZE	0x200000		/* 2 MB default for client (increased from 384 KB for SoT mod) */
 #endif	/* SERVERONLY */
 #define	ZMAGIC		0x1d4a11
 #define	ZMAGIC2		0xf382da

@@ -25,8 +25,8 @@
 #include "debuglog.h"
 
 
-#define MIN_MEM_ALLOC	0x1000000
-#define STD_MEM_ALLOC	0x2000000
+#define MIN_MEM_ALLOC	0x1000000	/* minimum 16 MB */
+#define STD_MEM_ALLOC	0x4000000	/* default 64 MB (increased from 32 MB for SoT mod) */
 
 #define CONSOLE_ERROR_TIMEOUT	60.0	/* # of seconds to wait on Sys_Error running dedicated before exiting */
 #define PAUSE_SLEEP		50	/* sleep time on pause or minimization		*/

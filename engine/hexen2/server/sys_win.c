@@ -26,8 +26,8 @@
 #include <mmsystem.h>
 
 
-#define MIN_MEM_ALLOC	0x0800000
-#define STD_MEM_ALLOC	0x1000000
+#define MIN_MEM_ALLOC	0x1000000	/* minimum 16 MB (increased from 8 MB for SoT mod) */
+#define STD_MEM_ALLOC	0x2000000	/* default 32 MB (increased from 16 MB for SoT mod) */
 
 cvar_t		sys_nostdout = {"sys_nostdout", "0", CVAR_NONE};
 

@@ -49,8 +49,8 @@
 #endif
 
 
-#define MIN_MEM_ALLOC	0x1000000
-#define STD_MEM_ALLOC	0x2000000
+#define MIN_MEM_ALLOC	0x1000000	/* minimum 16 MB */
+#define STD_MEM_ALLOC	0x4000000	/* default 64 MB (increased from 32 MB for SoT mod) */
 
 cvar_t		sys_nostdout = {"sys_nostdout", "0", CVAR_NONE};
 cvar_t		sys_throttle = {"sys_throttle", "0.02", CVAR_ARCHIVE};
