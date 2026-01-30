@@ -23,6 +23,9 @@
 #include "quakedef.h"
 #include "bgmusic.h"
 #include "cdaudio.h"
+#ifdef DEBUG
+#include <execinfo.h>
+#endif
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
@@ -112,6 +115,12 @@ This is also called on Host_Error, so it shouldn't cause any errors
 */
 void CL_Disconnect (void)
 {
+// Debug: Track disconnects
+#ifdef DEBUG
+	Con_Printf ("CL_Disconnect: state=%d, demonum=%d, demoplayback=%d\n",
+		cls.state, cls.demonum, cls.demoplayback);
+#endif
+
 // don't get stuck in chat mode
 	if (Key_GetDest() == key_message)
 		Key_EndChat ();
@@ -147,6 +156,13 @@ void CL_Disconnect (void)
 		NET_SendUnreliableMessage (cls.netcon, &cls.message);
 		SZ_Clear (&cls.message);
 		NET_Close (cls.netcon);
+
+#ifdef DEBUG
+		// Print call stack to trace who triggered disconnect
+		void *array[10];
+		size_t size = backtrace(array, 10);
+		backtrace_symbols_fd(STDOUT_FILENO, size, 0);
+#endif
 
 		cls.state = ca_disconnected;
 		if (sv.active)

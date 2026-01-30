@@ -453,7 +453,7 @@ typedef struct
 	int	movechain;
 	func_t	chainmoved;
 	float	string_index;
-	/* ROS/SoT mod fields */
+	/* SoT mod fields */
 	string_t	fog;
 	string_t	sky;
 } entvars_t;
@@ -470,7 +470,7 @@ typedef struct
 
 /* crc for Storm Over Thyrion (SoT) mod progs.dat	*/
 #define	PROGS_SOT_CRC		159856
-#define	PROGS_SOT_CRC2		28154		/* Alternate SoT/ROS progs.dat */
+#define	PROGS_SOT_CRC2		28154		/* Alternate SoT progs.dat */
 #define	PROGS_SOT_CRC3		22850		/* Wheel of Karma (karma2) progs.dat */
 #define	PROGS_SOT_CRC4		45360		/* SoT alternate progs.dat (protocol 21) */
 

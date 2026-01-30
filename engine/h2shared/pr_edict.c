@@ -1309,7 +1309,7 @@ void ED_ParseGlobals (const char *data)
 		key = ED_FindGlobal (keyname);
 		if (!key)
 		{
-			Con_Printf ("'%s' is not a global\n", keyname);
+			Con_DPrintf ("'%s' is not a global\n", keyname);
 			continue;
 		}
 
@@ -1524,7 +1524,7 @@ const char *ED_ParseEdict (const char *data, edict_t *ent)
 		key = ED_FindField (keyname);
 		if (!key)
 		{
-			Con_Printf ("'%s' is not a field\n", keyname);
+			Con_DPrintf ("'%s' is not a field\n", keyname);
 			continue;
 		}
 
