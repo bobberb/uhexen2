@@ -1327,6 +1327,8 @@ void FS_Init (void)
 		}
 
 		/* Now add mod directory AFTER portals (so mod takes precedence) */
+		Sys_Printf ("Loading mod directory: %s\n", moddir);
+		Con_Printf ("Loading mod directory: %s\n", moddir);
 		FS_AddGameDirectory (moddir, false);
 		/* Skip the normal portals addition below since we already did it */
 		check_portals = false;
