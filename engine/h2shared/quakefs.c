@@ -1186,6 +1186,8 @@ void FS_Init (void)
 	qboolean check_portals = false;
 	int	i;
 
+	Sys_Printf ("=== FS_Init called ===\n");
+
 	Cvar_RegisterVariable (&oem);
 	Cvar_RegisterVariable (&registered);
 
