@@ -1276,17 +1276,17 @@ void FS_Init (void)
 
 /* step 2: portals directory (mission pack) */
 #if defined(H2MP)
+	Sys_Printf ("FS_Init: H2MP branch\n");
 	if (! COM_CheckParm ("-noportals"))
 		check_portals = true;
 	if (check_portals && !(gameflags & (GAME_REGISTERED|GAME_REGISTERED_OLD)))
 		Sys_Error ("Portal of Praevus requires registered version of Hexen II");
 #elif defined(H2W)
+	Sys_Printf ("FS_Init: H2W branch\n");
 	if (! COM_CheckParm ("-noportals") && gameflags & (GAME_REGISTERED|GAME_REGISTERED_OLD))
 		check_portals = true;
 #else
-	/* Check for -mod flag first (Portals-based mod like karma2)
-	 * -mod <dir> : Loads mod directory with portals assets, mod's progs.dat takes precedence
-	 */
+	Sys_Printf ("FS_Init: CLIENT branch (-mod code path)\n");
 	Sys_Printf ("FS_Init: Checking for -mod flag...\n");
 	i = COM_CheckParm ("-mod");
 	Sys_Printf ("FS_Init: COM_CheckParm returned %d, com_argc=%d\n", i, com_argc);
