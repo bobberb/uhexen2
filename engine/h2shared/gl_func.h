@@ -70,6 +70,11 @@ GL_FUNCTION(void, glColor3ubv, (const GLubyte *))
 GL_FUNCTION(void, glColor3f, (GLfloat,GLfloat,GLfloat))
 GL_FUNCTION(void, glClearColor, (GLclampf,GLclampf,GLclampf,GLclampf))
 
+GL_FUNCTION(void, glFogf, (GLenum,GLfloat))
+GL_FUNCTION(void, glFogfv, (GLenum, const GLfloat *))
+GL_FUNCTION(void, glFogi, (GLenum,GLint))
+GL_FUNCTION(void, glFogiv, (GLenum, const GLint *))
+
 GL_FUNCTION(void, glAlphaFunc, (GLenum,GLclampf))
 GL_FUNCTION(void, glBlendFunc, (GLenum,GLenum))
 GL_FUNCTION(void, glShadeModel, (GLenum))
@@ -144,6 +149,11 @@ GL_FUNCTION(void, glClearStencil, (GLint))
 #define glColor3ubv_fp		glColor3ubv
 #define glColor3f_fp		glColor3f
 #define glClearColor_fp		glClearColor
+
+#define glFogf_fp		glFogf
+#define glFogfv_fp		glFogfv
+#define glFogi_fp		glFogi
+#define glFogiv_fp		glFogiv
 
 #define glAlphaFunc_fp		glAlphaFunc
 #define glBlendFunc_fp		glBlendFunc

@@ -44,6 +44,8 @@ mplane_t	*mirror_plane;
 
 static float	model_constant_alpha;
 
+static GLfloat	fog_colours[4];
+
 static float	r_time1;
 static float	r_lasttime1 = 0;
 
@@ -104,6 +106,17 @@ cvar_t	gl_waterripple = {"gl_waterripple", "2", CVAR_ARCHIVE};
 cvar_t	gl_glows = {"gl_glows", "0", CVAR_ARCHIVE};	// torch glows
 cvar_t	gl_other_glows = {"gl_other_glows", "0", CVAR_ARCHIVE};
 cvar_t	gl_missile_glows = {"gl_missile_glows", "1", CVAR_ARCHIVE};
+cvar_t	gl_fogenable = {"gl_fog", "0", CVAR_ARCHIVE};
+cvar_t	gl_fogstart = {"gl_fogstart", "400.0", CVAR_ARCHIVE};
+cvar_t	gl_fogend = {"gl_fogend", "2000.0", CVAR_ARCHIVE};
+cvar_t	gl_fogdensity = {"gl_fogdensity", "0.2", CVAR_ARCHIVE};
+cvar_t	gl_fogred = {"gl_fogred", "0.5", CVAR_ARCHIVE};
+cvar_t	gl_foggreen = {"gl_foggreen", "0.5", CVAR_ARCHIVE};
+cvar_t	gl_fogblue = {"gl_fogblue", "0.5", CVAR_ARCHIVE};
+cvar_t	gl_fogalpha = {"gl_fogalpha", "0.5", CVAR_ARCHIVE};
+/* SoT mod compatibility - aliases for fog cvars */
+cvar_t	fog = {"fog", "0", CVAR_ARCHIVE};       /* Alias for gl_fog */
+cvar_t	r_skyfog = {"r_skyfog", "0", CVAR_ARCHIVE};  /* Sky fog (SoT mod) */
 
 cvar_t	gl_coloredlight = {"gl_coloredlight", "0", CVAR_ARCHIVE};
 cvar_t	gl_colored_dynamic_lights = {"gl_colored_dynamic_lights", "0", CVAR_ARCHIVE};
@@ -1338,6 +1351,9 @@ static void R_DrawAllGlows (void)
 	if (!r_drawentities.integer)
 		return;
 
+	if (gl_fogenable.integer)
+		glDisable_fp(GL_FOG);
+
 	glDepthMask_fp (0);
 	glDisable_fp (GL_TEXTURE_2D);
 	glShadeModel_fp (GL_SMOOTH);
@@ -1351,6 +1367,9 @@ static void R_DrawAllGlows (void)
 		if (e->model->type == mod_alias)
 			R_DrawGlow (e);
 	}
+
+	if (gl_fogenable.integer)
+		glEnable_fp(GL_FOG);
 
 	glDisable_fp (GL_BLEND);
 	glEnable_fp (GL_TEXTURE_2D);
@@ -1778,6 +1797,23 @@ static void R_RenderScene (void)
 
 	R_MarkLeaves ();	// done here so we know if we're in water
 
+#if 0
+/* WHY DID JSHEXEN2 PUT THIS HERE ??!! */
+	if (gl_fogenable.integer)
+	{
+		glFogi_fp(GL_FOG_MODE, GL_LINEAR);
+
+		fog_colours[0] = gl_fogred.value;
+		fog_colours[1] = gl_foggreen.value;
+		fog_colours[2] = gl_fogblue.value;
+
+		glFogfv_fp(GL_FOG_COLOR, fog_colours);
+		glFogf_fp(GL_FOG_START, gl_fogstart.value);
+		glFogf_fp(GL_FOG_END, gl_fogend.value);
+		glEnable_fp(GL_FOG);
+	}
+#endif
+
 	R_DrawWorld ();		// adds static entities to the list
 
 	S_ExtraUpdate ();	// don't let sound get messed up if going slow
@@ -1785,6 +1821,8 @@ static void R_RenderScene (void)
 	R_DrawEntitiesOnList ();
 
 	R_DrawAllGlows();
+
+//	glDisable_fp(GL_FOG);	// already done in R_RenderDlights ()
 
 	R_RenderDlights ();
 }
@@ -1981,6 +2019,39 @@ void R_RenderView (void)
 
 	R_Clear ();
 
+	if (gl_fogenable.integer)
+	{
+		if (gl_fogstart.value < 5)
+			Cvar_SetQuick (&gl_fogstart, "5");
+		if (gl_fogstart.value > 4095)
+			Cvar_SetQuick (&gl_fogstart, "4095");
+		if (gl_fogend.value < 6)
+			Cvar_SetQuick (&gl_fogend, "6");
+		if (gl_fogend.value > 4096)
+			Cvar_SetQuick (&gl_fogend, "4096");
+		if (gl_fogstart.value >= gl_fogend.value)
+			Cvar_SetValueQuick (&gl_fogend, gl_fogstart.value + 1);
+
+		fog_colours[0] = (GLfloat) gl_fogred.value;
+		fog_colours[1] = (GLfloat) gl_foggreen.value;
+		fog_colours[2] = (GLfloat) gl_fogblue.value;
+		fog_colours[3] = (GLfloat) 1;	//gl_fogalpha.value;
+
+		glFogi_fp (GL_FOG_MODE, GL_LINEAR);
+	//	glFogi_fp (GL_FOG_MODE, GL_EXP);
+	//	glFogi_fp (GL_FOG_MODE, GL_EXP2);
+		glFogfv_fp (GL_FOG_COLOR, fog_colours);
+		glFogf_fp (GL_FOG_START, gl_fogstart.value);
+		glFogf_fp (GL_FOG_END, gl_fogend.value);
+		glFogf_fp (GL_FOG_DENSITY, gl_fogdensity.value);
+	//	glHint_fp (GL_FOG_HINT, GL_NICEST);
+		glEnable_fp (GL_FOG);
+	}
+	else
+	{
+		glDisable_fp (GL_FOG);
+	}
+
 	// render normal view
 	R_RenderScene ();
 
@@ -1996,6 +2067,9 @@ void R_RenderView (void)
 
 	R_DrawViewModel();
 
+	if (gl_fogenable.integer)
+		glDisable_fp(GL_FOG);
+
 	// render mirror view
 	R_Mirror ();
 
@@ -2003,5 +2077,7 @@ void R_RenderView (void)
 
 	if (r_speeds.integer)
 		R_PrintTimes ();
+
+	glDepthMask_fp(1);
 }
 

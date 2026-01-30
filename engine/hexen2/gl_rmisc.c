@@ -249,6 +249,19 @@ void R_Init (void)
 	Cvar_RegisterVariable (&gl_missile_glows);
 	Cvar_RegisterVariable (&gl_other_glows);
 
+	Cvar_RegisterVariable (&gl_fogenable);
+	Cvar_RegisterVariable (&gl_fogstart);
+	Cvar_RegisterVariable (&gl_fogend);
+	Cvar_RegisterVariable (&gl_fogdensity);
+	Cvar_RegisterVariable (&gl_fogalpha);
+	Cvar_RegisterVariable (&gl_fogred);
+	Cvar_RegisterVariable (&gl_fogblue);
+	Cvar_RegisterVariable (&gl_foggreen);
+
+	/* SoT mod compatibility - register fog aliases */
+	Cvar_RegisterVariable (&fog);
+	Cvar_RegisterVariable (&r_skyfog);
+
 	Cvar_RegisterVariable (&gl_coloredlight);
 	Cvar_RegisterVariable (&gl_colored_dynamic_lights);
 	Cvar_RegisterVariable (&gl_extra_dynamic_lights);

@@ -260,6 +260,19 @@ extern	cvar_t	gl_glows;
 extern	cvar_t	gl_other_glows;
 extern	cvar_t	gl_missile_glows;
 
+extern	cvar_t	gl_fogenable;
+extern	cvar_t	gl_fogstart;
+extern	cvar_t	gl_fogend;
+extern	cvar_t	gl_fogdensity;
+extern	cvar_t	gl_fogalpha;
+extern	cvar_t	gl_fogred;
+extern	cvar_t	gl_fogblue;
+extern	cvar_t	gl_foggreen;
+extern	cvar_t	gl_underwaterfog;
+/* SoT mod compatibility - fog cvar aliases */
+extern	cvar_t	fog;
+extern	cvar_t	r_skyfog;
+
 extern	cvar_t	gl_coloredlight;
 extern	cvar_t	gl_colored_dynamic_lights;
 extern	cvar_t	gl_extra_dynamic_lights;

@@ -175,6 +175,10 @@ void R_RenderDlights (void)
 
 	r_dlightframecount = r_framecount + 1;	// because the count hasn't
 						//  advanced yet for this frame
+
+	// disable drawing fog on lights
+	if (gl_fogenable.integer)
+		glDisable_fp(GL_FOG);
 	glDepthMask_fp (0);
 	glDisable_fp (GL_TEXTURE_2D);
 	glShadeModel_fp (GL_SMOOTH);
@@ -194,6 +198,9 @@ void R_RenderDlights (void)
 	glEnable_fp (GL_TEXTURE_2D);
 	glBlendFunc_fp (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask_fp (1);
+	// re-enable fog
+	if (gl_fogenable.integer)
+		glEnable_fp(GL_FOG);
 }
 
 
