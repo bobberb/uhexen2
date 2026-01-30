@@ -1,7 +1,14 @@
-result
-result
-result
-AGENTS.md
-result
-result
+# Build artifacts
+*.o
+*.a
+glhexen2
+hexen2
+h2ded
+
+# Test output
 all_output.txt
+*.log
+
+# AI planning docs
+history/
+AGENTS.md
