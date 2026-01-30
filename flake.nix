@@ -187,11 +187,11 @@
             cp server/h2ded.exe $out/bin/
 
             # Install Windows DLLs from oslibs
-            find ${src}/oslibs/windows -name "*.dll" -exec cp {} $out/bin/ \; 2>/dev/null || true
+            find $src/oslibs/windows -name "*.dll" -exec cp {} $out/bin/ \; 2>/dev/null || true
 
             # Install documentation
-            cp -r ${src}/docs/* $out/share/doc/uhexen2/ 2>/dev/null || true
-            cp ${src}/README.txt $out/share/doc/uhexen2/ 2>/dev/null || true
+            cp -r $src/docs/* $out/share/doc/uhexen2/ 2>/dev/null || true
+            cp $src/README.txt $out/share/doc/uhexen2/ 2>/dev/null || true
 
             # Create README for Windows users
             cat > $out/bin/README.txt <<EOF
