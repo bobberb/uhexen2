@@ -628,11 +628,36 @@ Draw_String
 */
 void Draw_String (int x, int y, const char *str)
 {
+	int charset_offset = 256;
+
 	while (*str)
 	{
-		Draw_Character (x, y, *str);
-		str++;
-		x += 8;
+		if (str[0] == '\\' && str[1] == '1')
+		{
+			charset_offset = 0;
+			str += 2;
+		}
+		else if (str[0] == '\\' && str[1] == '2')
+		{
+			charset_offset = 128;
+			str += 2;
+		}
+		else if (str[0] == '\\' && str[1] == '3')
+		{
+			charset_offset = 256;
+			str += 2;
+		}
+		else if (str[0] == '\\' && str[1] == '4')
+		{
+			charset_offset = 384;
+			str += 2;
+		}
+		else
+		{
+			Draw_Character (x, y, ((unsigned char)(*str)) + charset_offset);
+			str++;
+			x += 8;
+		}
 	}
 }
 

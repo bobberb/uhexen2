@@ -1282,7 +1282,7 @@ static void Host_Class_f (void)
 			Con_Printf("That class is only available in the mission pack.\n");
 			return;
 		}
-		if (sv.active && (progs->crc != PROGS_V112_CRC))
+		if (sv.active && (progs->crc != PROGS_V112_CRC && progs->crc != PROGS_SOT_CRC && progs->crc != PROGS_SOT_CRC2 && progs->crc != PROGS_SOT_CRC3))
 		{	/* FIXME: This isn't right!!!  A custom progs can actually
 			 * support 5 classes and can have v1.11 structures at the
 			 * same time.  I don't know a way to detect any such thing,

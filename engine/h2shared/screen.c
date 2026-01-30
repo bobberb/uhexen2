@@ -1149,6 +1149,7 @@ static void I_Print (int cx, int cy, const char *str, int flags)
 {
 	int	num, x, y;
 	const char	*s;
+	int	charset_offset = 256;  /* Default to yellow (charset 3) */
 
 	x = cx + ((vid.width - 320)>>1);
 	y = cy;
@@ -1158,9 +1159,25 @@ static void I_Print (int cx, int cy, const char *str, int flags)
 
 	while (*s)
 	{
+		/* Handle \1-\4 escape sequences for charset switching */
+		if (s[0] == '\\' && s[1] >= '1' && s[1] <= '4')
+		{
+			switch (s[1])
+			{
+			case '1': charset_offset = 0;   break;  /* Charset 1: beige/console */
+			case '2': charset_offset = 128; break;  /* Charset 2: plaque */
+			case '3': charset_offset = 256; break;  /* Charset 3: yellow/default */
+			case '4': charset_offset = 384; break;  /* Charset 4: extra */
+			}
+			s += 2;  /* Skip escape sequence */
+			continue;
+		}
+
 		num = (unsigned char)(*s);
 		if (!(flags & INTERMISSION_PRINT_WHITE))
-			num += 256;
+			num += charset_offset;  /* Use current charset offset */
+		else
+			num = 0;  /* WHITE flag: use charset 1 */
 		Draw_Character (x, y, num);
 		s++;
 		x += 8;

@@ -1187,9 +1187,9 @@ void CL_ParseServerMessage (void)
 		{
 		default:
 		//	CL_DumpPacket ();
-			// FIXME: SoT mod uses custom protocol messages (89, 114, etc.)
-			// Try to handle unknown messages above 80 gracefully
-			if (cmd > 80)
+			// FIXME: SoT mod uses custom protocol messages (80, 89, 114, etc.)
+			// Try to handle unknown messages >= 80 gracefully
+			if (cmd >= 80)
 			{
 				// Try reading 1 byte - many simple messages have just a byte parameter
 				// If this is wrong, the stream will desync, but it's better than crashing

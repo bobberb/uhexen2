@@ -84,10 +84,10 @@
 //
 // per-level limits
 //
-#define	MAX_EDICTS	600		// FIXME: ouch! ouch! ouch!
+#define	MAX_EDICTS	1200		// Increased from 600 for SoT mod
 #define	MAX_LIGHTSTYLES	64
 
-#define	MAX_MODELS	512		/* Sent over the net as a word */
+#define	MAX_MODELS	1024		/* Increased from 512 for ROS/SoT mod */
 #define	MAX_SOUNDS_OLD	256		/* Hexen2 v1.11 (protocol 18) and older: sent as a byte	*/
 #define	MAX_SOUNDS_H2MP	512		/* Mission Pack (protocol 19), messy thing:		*/
 					/* SV_StartSound sends it as a byte, but PF_ambientsound

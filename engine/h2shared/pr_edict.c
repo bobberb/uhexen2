@@ -1937,6 +1937,22 @@ void PR_LoadProgs (void)
 		def = globals_v112;
 		progvstr = "H2MP/v1.12";
 		break;
+	case PROGS_SOT_CRC:
+		def = globals_v112;	/* SoT is based on v1.12 */
+		progvstr = "SoT/1.13";
+		break;
+	case PROGS_SOT_CRC2:
+		def = globals_v112;	/* Alternate SoT/ROS progs.dat */
+		progvstr = "SoT/ROS";
+		break;
+	case PROGS_SOT_CRC3:
+		def = globals_v112;	/* Wheel of Karma (karma2) progs.dat */
+		progvstr = "WoK/karma2";
+		break;
+	case PROGS_SOT_CRC4:
+		def = globals_v112;	/* SoT alternate progs.dat (protocol 21) */
+		progvstr = "SoT/proto21";
+		break;
 	#else /* HEXENWORLD PROGS: */
 	#if 0
 	case PROGS_V009_CRC:

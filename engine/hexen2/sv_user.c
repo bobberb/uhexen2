@@ -169,7 +169,7 @@ static void SV_UserFriction (void)
 // to the AoT solution, the USE_AOT_FRICTION 0  option makes pure hexen2 to
 // feel slightly more slippery.
 #if USE_AOT_FRICTION
-	if (progs->crc != PROGS_V112_CRC)
+	if (progs->crc != PROGS_V112_CRC && progs->crc != PROGS_SOT_CRC && progs->crc != PROGS_SOT_CRC2 && progs->crc != PROGS_SOT_CRC3)
 		friction = 6;
 	else
 	{
@@ -179,7 +179,7 @@ static void SV_UserFriction (void)
 			friction = sv_friction.value*sv_player->v.friction;
 	}
 #else	/* not using AoT friction */
-	if (progs->crc != PROGS_V112_CRC)
+	if (progs->crc != PROGS_V112_CRC && progs->crc != PROGS_SOT_CRC && progs->crc != PROGS_SOT_CRC2 && progs->crc != PROGS_SOT_CRC3)
 		sv_player->v.friction = 1.0f;
 
 	if (trace.fraction == 1.0)

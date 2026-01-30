@@ -22,7 +22,7 @@
 #ifndef __EFFECTS_H
 #define __EFFECTS_H
 
-#define MAX_EFFECTS		256
+#define MAX_EFFECTS		512		/* Increased from 256 for SoT mod */
 
 /* Types for various chunks */
 #define THINGTYPE_GREYSTONE	1

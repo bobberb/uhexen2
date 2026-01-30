@@ -500,6 +500,7 @@ static const char *help_strings[] = {
 	"     [-noportals]            Disable the mission pack support",
 #   else
 	"     [-portals | -h2mp ]     Run the Portal of Praevus mission pack",
+	"     [-mod <gamedir>]        Run a Portals-based mod (e.g., -mod karma2)",
 #   endif
 #endif
 	"     [-heapsize Bytes]       Heapsize (memory to allocate)",

@@ -254,6 +254,7 @@ static void Con_Print (const char *txt)
 	static int	cr;
 	int		mask;
 	qboolean	boundary;
+	static int	charset_mask = 0;	// For Wheel of Karma extended charset support
 
 	if (txt[0] == 1)
 	{
@@ -269,10 +270,28 @@ static void Con_Print (const char *txt)
 	else
 		mask = 0;
 
+	// Reset to default charset (yellow/charset 3) for each new print
+	// Wheel of Karma mods can use \1-\4 to change charsets mid-string
+	charset_mask = 256;
+
 	boundary = true;
 
 	while ( (c = (byte)*txt) )
 	{
+		// Handle Wheel of Karma extended charset escape sequences (\1-\4)
+		if (c == '\\' && txt[1] >= '1' && txt[1] <= '4')
+		{
+			switch (txt[1])
+			{
+			case '1': charset_mask = 0;   break;	// Charset 1: beige/console
+			case '2': charset_mask = 128; break;	// Charset 2: plaque
+			case '3': charset_mask = 256; break;	// Charset 3: yellow/default
+			case '4': charset_mask = 384; break;	// Charset 4: extra
+			}
+			txt += 2;	// Skip the escape sequence
+			continue;
+		}
+
 		if (c <= ' ')
 		{
 			boundary = true;
@@ -320,7 +339,7 @@ static void Con_Print (const char *txt)
 
 		default:	// display character and advance
 			y = con->current % con_totallines;
-			con->text[y*con_linewidth+con->x] = c | mask | con_ormask;
+			con->text[y*con_linewidth+con->x] = c | mask | charset_mask | con_ormask;
 			con->x++;
 			if (con->x >= con_linewidth)
 				con->x = 0;

@@ -1282,15 +1282,67 @@ void FS_Init (void)
 	if (! COM_CheckParm ("-noportals") && gameflags & (GAME_REGISTERED|GAME_REGISTERED_OLD))
 		check_portals = true;
 #else
-	/* see if the user wants mission pack support */
-	check_portals = (COM_CheckParm ("-portals")) ||
-			(COM_CheckParm ("-missionpack")) ||
-			(COM_CheckParm ("-h2mp"));
-	i = COM_CheckParm ("-game");
-	if (i && i < com_argc-1)
+	/* Check for -mod flag first (Portals-based mod like karma2)
+	 * -mod <dir> : Loads mod directory with portals assets, mod's progs.dat takes precedence
+	 */
+	i = COM_CheckParm ("-mod");
+	if (i && i < com_argc - 1)
 	{
-		if (!q_strcasecmp(com_argv[i+1], "portals"))
-			check_portals = true;
+		const char *moddir = com_argv[i + 1];
+		/* only registered versions can do -mod */
+		if (! (gameflags & (GAME_REGISTERED|GAME_REGISTERED_OLD)))
+			Sys_Error ("You must have the full version of Hexen II to play modified games");
+
+		/* Add portals FIRST (so mod will be added after and take precedence) */
+		searchpath_t *mark = fs_searchpaths;
+		FS_AddGameDirectory ("portals", true);
+		if (! (gameflags & GAME_PORTALS))
+		{
+			/* back out searchpaths from invalid mission pack installation */
+			searchpath_t *next;
+			Sys_Printf ("Missing or invalid mission pack installation\n");
+			Con_Printf("Missing or invalid mission pack installation\n");
+			while (fs_searchpaths != mark)
+			{
+				if (fs_searchpaths->pack)
+				{
+					fclose (fs_searchpaths->pack->handle);
+					Z_Free (fs_searchpaths->pack->files);
+					Hash_Free(&fs_searchpaths->pack->hash);
+					Z_Free (fs_searchpaths->pack);
+					Sys_Printf ("Removed packfile %s\n", fs_searchpaths->pack->filename);
+				}
+				else
+				{
+					Sys_Printf ("Removed path %s\n", fs_searchpaths->filename);
+				}
+				next = fs_searchpaths->next;
+				Z_Free (fs_searchpaths);
+				fs_searchpaths = next;
+			}
+			fs_searchpaths = mark;
+			FS_MakePath_BUF (FS_BASEDIR, NULL, fs_gamedir, sizeof(fs_gamedir), "data1");
+			FS_MakePath_BUF (FS_USERBASE,NULL, fs_userdir, sizeof(fs_userdir), "data1");
+			Sys_Error ("Portal of Praevus required for -mod flag\n");
+		}
+
+		/* Now add mod directory AFTER portals (so mod takes precedence) */
+		FS_AddGameDirectory (moddir, false);
+		/* Skip the normal portals addition below since we already did it */
+		check_portals = false;
+	}
+	else
+	{
+		/* see if the user wants mission pack support */
+		check_portals = (COM_CheckParm ("-portals")) ||
+				(COM_CheckParm ("-missionpack")) ||
+				(COM_CheckParm ("-h2mp"));
+		i = COM_CheckParm ("-game");
+		if (i && i < com_argc-1)
+		{
+			if (!q_strcasecmp(com_argv[i+1], "portals"))
+				check_portals = true;
+		}
 	}
 	if (check_portals && !(gameflags & (GAME_REGISTERED|GAME_REGISTERED_OLD)))
 		Sys_Error ("Portal of Praevus requires registered version of Hexen II");

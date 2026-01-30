@@ -73,7 +73,7 @@ typedef struct
 	char		map[MAX_STYLESTRING];
 } lightstyle_t;
 
-#define	MAX_EFRAGS		640
+#define	MAX_EFRAGS		2048		/* Increased from 640 for SoT mod */
 
 #define	MAX_MAPSTRING		2048
 #define	MAX_DEMOS		8

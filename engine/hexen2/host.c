@@ -461,10 +461,21 @@ void SV_BroadcastPrintf (const char *fmt, ...)
 	va_list		argptr;
 	char		string[1024];
 	int			i;
+	static char	last_string[1024] = {0};
+	static float	last_time = 0;
 
 	va_start (argptr,fmt);
 	q_vsnprintf (string, sizeof (string), fmt, argptr);
 	va_end (argptr);
+
+	// Rate-limit duplicate messages (SoT mod spam fix)
+	// Skip if this is the same message as last time within 1 second
+	if (strcmp(string, last_string) == 0 && realtime - last_time < 1.0)
+		return;
+
+	// Update last message tracking
+	q_strlcpy(last_string, string, sizeof(last_string));
+	last_time = realtime;
 
 	for (i = 0; i < svs.maxclients; i++)
 	{
