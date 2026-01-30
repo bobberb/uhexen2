@@ -89,7 +89,8 @@ static const char *svc_strings[] =
 	"svc_toggle_statbar",
 	"svc_sound_update_pos",
 	"svc_mod_name",	// UQE v1.13 by Korax, music file name
-	"svc_skybox"	// UQE v1.13 by Korax, skybox name
+	"svc_skybox",		// UQE v1.13 by Korax, skybox name
+	"svc_fog"		// Fog density and color
 };
 #define	NUM_SVC_STRINGS	(sizeof(svc_strings) / sizeof(svc_strings[0]))
 
@@ -1775,6 +1776,20 @@ void CL_ParseServerMessage (void)
 			if ((sc1 & SC1_INV) || (sc2 & SC2_INV))
 				SB_InvChanged();
 			break;
+
+		case svc_fog:
+			{
+				// [byte] density [byte] red [byte] green [byte] blue [float] time
+				byte density = MSG_ReadByte();
+				byte red = MSG_ReadByte();
+				byte green = MSG_ReadByte();
+				byte blue = MSG_ReadByte();
+				float time = MSG_ReadFloat();
+				Con_DPrintf ("Fog: density=%d RGB=%d,%d,%d time=%.1f\n",
+					density, red, green, blue, time);
+				// TODO: Implement timed fog changes
+				break;
+			}
 
 		case svc_mod_name:
 		case svc_skybox:
