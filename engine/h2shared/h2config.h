@@ -115,8 +115,10 @@
    to activate it.  If you want direct activation, change the below
    undef to a define :  in that case, player must use the -noportals
    command line argument to disable mission pack support.
+
+   NOTE: -mod flag requires H2MP to be undefined for the code path.
    ================================================================== */
-#define	H2MP 1
+/* #define	H2MP 1 */  /* Disabled to allow -mod flag for Portals-based mods */
 /* When building HexenWorld or demo-specific, H2MP mustn't be defined */
 #if defined(H2W) || defined(DEMOBUILD)
 #undef	H2MP
