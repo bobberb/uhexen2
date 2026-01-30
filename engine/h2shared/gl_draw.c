@@ -519,13 +519,15 @@ void Draw_Init (void)
 	chars = FS_LoadTempFile ("gfx/menu/conchars.lmp", NULL);
 	Draw_PicCheckError (chars, "gfx/menu/conchars.lmp");
 
-	// Handle both old format (no header, 32768 bytes) and new format (qpic header, 32776 bytes)
-	if (fs_filesize == 256*128 + 8) {
-		// SoT mod format: skip qpic header (width + height)
-		chars += 8;
-	} else if (fs_filesize != 256*128) {
-		Sys_Error ("gfx/menu/conchars.lmp: bad size (%d bytes, expected %d or %d).",
-			fs_filesize, 256*128, 256*128 + 8);
+	// SoT/karma2 mods have larger charset (32776 bytes) but it's raw data, not a qpic
+	// Accept both standard 32768 and extended 32768+ sizes as raw character data
+	if (fs_filesize < 256*128) {
+		Sys_Error ("gfx/menu/conchars.lmp: bad size (%d bytes, expected at least %d).",
+			fs_filesize, 256*128);
+	}
+	// Only process the first 256*128 bytes to avoid buffer overruns
+	if (fs_filesize > 256*128) {
+		Con_DPrintf ("conchars.lmp: larger file (%d bytes), using first 32768\n", fs_filesize);
 	}
 
 	for (i = 0; i < 256*128; i++)
