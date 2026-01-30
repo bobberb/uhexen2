@@ -1285,7 +1285,9 @@ void FS_Init (void)
 	/* Check for -mod flag first (Portals-based mod like karma2)
 	 * -mod <dir> : Loads mod directory with portals assets, mod's progs.dat takes precedence
 	 */
+	Sys_Printf ("FS_Init: Checking for -mod flag...\n");
 	i = COM_CheckParm ("-mod");
+	Sys_Printf ("FS_Init: COM_CheckParm returned %d, com_argc=%d\n", i, com_argc);
 	if (i && i < com_argc - 1)
 	{
 		const char *moddir = com_argv[i + 1];
