@@ -572,6 +572,127 @@ static void PF_print_indexed (void)
 }
 #endif /* H2W */
 
+#ifndef H2W
+/*
+=================
+PF_print_indexed
+
+print string from strings.txt (non-H2W version for SoT mod compatibility)
+
+print_indexed(to, level, index)
+=================
+*/
+static void PF_print_indexed (void)
+{
+	int idx, style;
+
+	idx = (int) G_FLOAT(OFS_PARM2);
+	style = (int) G_FLOAT(OFS_PARM1);
+
+	// Support both 0-based (SoT mod) and 1-based (original) indexing
+	// Negative indices may be used as sentinel values (e.g., 0x80000000 = "clear message")
+	if (idx < 0)
+	{
+		// Silently ignore negative indices - they might mean "no message" or "clear"
+		return;
+	}
+	if (idx > host_string_count)
+	{
+		PR_RunError ("%s: unexpected index %d (host_string_count: %d)",
+					__thisfunc__, idx, host_string_count);
+	}
+
+	// Convert 1-based index to 0-based (0 stays 0 for SoT mod compatibility)
+	int string_idx = (idx == 0) ? 0 : idx - 1;
+
+	if ((int)G_FLOAT(OFS_PARM0) == MSG_BROADCAST)
+	{
+		client_t	*cl;
+		int			i;
+
+		Sys_Printf("%s", Host_GetString(string_idx));
+
+		for (i = 0, cl = svs.clients; i < SV_MAXCLIENTS; i++, cl++)
+		{
+			if (!cl->active)
+				continue;
+			MSG_WriteByte (&SV_NETMSG(cl), svc_print);
+			MSG_WriteByte (&SV_NETMSG(cl), style);
+			MSG_WriteString (&SV_NETMSG(cl), Host_GetString(string_idx));
+		}
+		return;
+	}
+
+	// For non-broadcast, send to specific client
+	// Simplified version for SoT mod compatibility
+	if ((int)G_FLOAT(OFS_PARM0) != MSG_BROADCAST)
+	{
+		int entnum = (int)G_FLOAT(OFS_PARM0);
+		if (entnum >= 1 && entnum <= SV_MAXCLIENTS)
+		{
+			client_t *cl = &svs.clients[entnum - 1];
+			if (cl->active)
+			{
+				MSG_WriteByte (&SV_NETMSG(cl), svc_print);
+				MSG_WriteByte (&SV_NETMSG(cl), style);
+				MSG_WriteString (&SV_NETMSG(cl), Host_GetString(string_idx));
+			}
+		}
+	}
+}
+
+/*
+=================
+PF_name_print
+
+print player's name (non-H2W version for SoT mod compatibility)
+
+name_print(to, level, who)
+=================
+*/
+static void PF_name_print (void)
+{
+	int idx, style;
+
+	idx = (int) G_EDICTNUM(OFS_PARM2);
+	style = (int) G_FLOAT(OFS_PARM1);
+
+	if (idx < 1 || idx > SV_MAXCLIENTS)
+		PR_RunError ("%s: unexpected index %d", __thisfunc__, idx);
+
+	if ((int)G_FLOAT(OFS_PARM0) == MSG_BROADCAST)
+	{
+		client_t	*cl;
+		int			i;
+
+		Sys_Printf("%s", svs.clients[idx - 1].name);
+
+		for (i = 0, cl = svs.clients; i < SV_MAXCLIENTS; i++, cl++)
+		{
+			if (!cl->active)
+				continue;
+			MSG_WriteByte (&SV_NETMSG(cl), svc_print);
+			MSG_WriteByte (&SV_NETMSG(cl), style);
+			MSG_WriteString (&SV_NETMSG(cl), svs.clients[idx - 1].name);
+		}
+		return;
+	}
+
+	// For non-broadcast, send to specific client
+	int entnum = (int)G_FLOAT(OFS_PARM0);
+	if (entnum >= 1 && entnum <= SV_MAXCLIENTS)
+	{
+		client_t *cl = &svs.clients[entnum - 1];
+		if (cl->active)
+		{
+			MSG_WriteByte (&SV_NETMSG(cl), svc_print);
+			MSG_WriteByte (&SV_NETMSG(cl), style);
+			MSG_WriteString (&SV_NETMSG(cl), svs.clients[idx - 1].name);
+		}
+	}
+}
+#endif /* !H2W */
+
 /*
 =================
 PF_centerprint
@@ -3032,7 +3153,8 @@ static void PF_sqrt (void)
 
 static void PF_Fixme (void)
 {
-	PR_RunError ("unimplemented builtin");
+	// Print which builtin number is unimplemented
+	PR_RunError ("unimplemented builtin #%d", pr_xbuiltin);
 }
 
 
@@ -3987,13 +4109,13 @@ static builtin_t pr_builtin[] =
 	PF_etos,
 	PF_WaterMove,
 #else
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
+	PF_Fixme,		// 107
+	PF_Fixme,		// 108
+	PF_Fixme,		// 109
+	PF_Fixme,		// 110
+	PF_print_indexed,	// 111 (for SoT mod compatibility)
+	PF_Fixme,		// 112
+	PF_Fixme,		// 113
 #endif
 
 #else  /* H2W: */

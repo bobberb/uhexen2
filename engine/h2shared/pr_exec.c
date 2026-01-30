@@ -68,6 +68,7 @@ static void PrintCallHistory(void);
 qboolean	pr_trace;
 dfunction_t	*pr_xfunction;
 int		pr_xstatement;
+int		pr_xbuiltin;	// Current builtin number being executed
 int		pr_argc;
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
@@ -547,6 +548,7 @@ void PR_ExecuteProgram (func_t fnum)
 			{
 				PR_RunError("Bad builtin call number %d", i);
 			}
+			pr_xbuiltin = i;	// Track which builtin is being executed
 			pr_builtins[i]();
 			break;
 		}

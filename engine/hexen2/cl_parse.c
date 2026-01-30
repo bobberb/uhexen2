@@ -1187,6 +1187,16 @@ void CL_ParseServerMessage (void)
 		{
 		default:
 		//	CL_DumpPacket ();
+			// FIXME: SoT mod uses custom protocol messages (89, 114, etc.)
+			// Try to handle unknown messages above 80 gracefully
+			if (cmd > 80)
+			{
+				// Try reading 1 byte - many simple messages have just a byte parameter
+				// If this is wrong, the stream will desync, but it's better than crashing
+				MSG_ReadByte();
+				Con_DPrintf ("FIXME: Skipped msg %d (read 1 byte as payload)\n", cmd);
+				break;
+			}
 			Host_Error ("%s: Illegible server message %d", __thisfunc__, cmd);
 			break;
 

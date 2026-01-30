@@ -13,13 +13,9 @@
 
         uhexen2 = pkgs.stdenv.mkDerivation rec {
           pname = "uhexen2";
-          version = "1.5.9";
+          version = "1.5.10-sot-win";
 
-          src = pkgs.fetchgit {
-            url = "https://git.half-done.org/josh/uhexen2-shajaq";
-            rev = "refs/heads/master";
-            hash = "sha256-HiUkyBDgrk9bz6F76B8+hs3gflhpHlq5z5ZTIgVKSSQ=";
-          };
+          src = ./.;
 
           nativeBuildInputs = with pkgs; [
             gnumake
@@ -130,7 +126,7 @@
             fi
 
             # Install documentation (from source root)
-            cd $NIX_BUILD_TOP/source
+            cd ${src}
             mkdir -p $out/share/doc/uhexen2
             cp -r docs/* $out/share/doc/uhexen2/ 2>/dev/null || true
             cp README.txt $out/share/doc/uhexen2/ 2>/dev/null || true
@@ -193,13 +189,9 @@
 
         uhexen2-windows = pkgsWindows.stdenv.mkDerivation rec {
           pname = "uhexen2-windows";
-          version = "1.5.9";
+          version = "1.5.10-sot-win";
 
-          src = pkgs.fetchgit {
-            url = "https://git.half-done.org/josh/uhexen2-shajaq";
-            rev = "refs/heads/master";
-            hash = "sha256-HiUkyBDgrk9bz6F76B8+hs3gflhpHlq5z5ZTIgVKSSQ=";
-          };
+          src = ./.;
 
           nativeBuildInputs = with pkgs; [
             gnumake
@@ -264,7 +256,7 @@
             cp server/h2ded.exe $out/bin/
 
             # Install required Windows DLLs from oslibs
-            cd $NIX_BUILD_TOP/source
+            cd ${src}
             cp oslibs/windows/codecs/x64/*.dll $out/bin/ || echo "Warning: codec DLLs not found"
             cp oslibs/windows/SDL/lib64/SDL.dll $out/bin/ || echo "Warning: SDL.dll not found"
 

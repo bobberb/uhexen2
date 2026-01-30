@@ -276,7 +276,7 @@ void Draw_Init (void)
 
 	// Handle both old format (no header, 32768 bytes) and new format (qpic header, 32776 bytes)
 	if (fs_filesize == 256*128 + 8) {
-		// ROS mod format: skip qpic header (width + height)
+		// SoT mod format: skip qpic header (width + height)
 		draw_chars = (byte *)draw_chars + 8;
 	} else if (fs_filesize != 256*128) {
 		Sys_Error ("gfx/menu/conchars.lmp: bad size (%d bytes, expected %d or %d).",

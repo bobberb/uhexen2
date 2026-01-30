@@ -56,7 +56,7 @@
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
 					// normalizing factor so player model works
 					// out to about 1 pixel per triangle
-#define MAX_SKIN_HEIGHT		480
+#define MAX_SKIN_HEIGHT		2048
 
 #define BACKFACE_EPSILON	0.01
 

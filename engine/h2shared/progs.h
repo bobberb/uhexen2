@@ -144,6 +144,7 @@ extern	int		pr_argc;
 extern	qboolean	pr_trace;
 extern	dfunction_t	*pr_xfunction;
 extern	int		pr_xstatement;
+extern	int		pr_xbuiltin;	// Current builtin number being executed
 
 extern	unsigned short	pr_crc;
 

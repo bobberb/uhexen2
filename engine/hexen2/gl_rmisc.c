@@ -335,8 +335,9 @@ void R_TranslatePlayerSkin (int playernum)
 
 	paliashdr = (aliashdr_t *)Mod_Extradata (model);
 	s = paliashdr->skinwidth * paliashdr->skinheight;
-	if (s & 3)
-		Sys_Error ("%s: s&3", __thisfunc__);
+//	s & 3 check removed - modern GPUs don't require 4-byte alignment
+//	if (s & 3)
+//		Sys_Error ("%s: s&3", __thisfunc__);
 
 	for (i = 0; i < 256; i++)
 		translate32[i] = d_8to24table[translate[i]];

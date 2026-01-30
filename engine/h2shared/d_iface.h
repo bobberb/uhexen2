@@ -26,7 +26,7 @@
 #define WARP_WIDTH		320
 #define WARP_HEIGHT		200
 
-#define MAX_SKIN_HEIGHT		480
+#define MAX_SKIN_HEIGHT		2048
 
 typedef struct
 {

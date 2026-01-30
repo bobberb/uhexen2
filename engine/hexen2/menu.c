@@ -1,5 +1,6 @@
 /*
  * menu.c
+ * $Id$
  *
  * Copyright (C) 1996-1997  Id Software, Inc.
  * Copyright (C) 1997-1998  Raven Software Corp.
@@ -212,11 +213,36 @@ void M_DrawCharacter (int cx, int line, int num)
 
 void M_Print (int cx, int cy, const char *str)
 {
+	int charset_offset = 256; 
+	
 	while (*str)
 	{
-		M_DrawCharacter (cx, cy, ((unsigned char)(*str))+256);
-		str++;
-		cx += 8;
+		if (str[0] == '\\' && str[1] == '1')
+		{
+			charset_offset = 0;
+			str += 2;
+		}
+		else if (str[0] == '\\' && str[1] == '2')
+		{
+			charset_offset = 128;
+			str += 2;
+		}
+		else if (str[0] == '\\' && str[1] == '3')
+		{
+			charset_offset = 256;
+			str += 2;
+		}
+		else if (str[0] == '\\' && str[1] == '4')
+		{
+			charset_offset = 384;
+			str += 2;
+		}
+		else
+		{
+			M_DrawCharacter(cx, cy, ((unsigned char)(*str)) + charset_offset);
+			str++;
+			cx += 8;
+		}
 	}
 }
 
@@ -759,20 +785,7 @@ static void M_Difficulty_Key (int key)
 			return;
 		}
 		Cbuf_AddText ("wait\n"); /* make m_none to really work */
-
-		//Launch the old mission (on a custom map if so specificied in the command line)
-		int i = COM_CheckParm("-startold");
-		if (i && i < com_argc - 1)
-		{
-			Cbuf_AddText("map ");
-			Cbuf_AddText(com_argv[i + 1]);
-			Cbuf_AddText("\n");
-		}
-		else
-		{
-			Cbuf_AddText("map demo1\n");
-		}
-
+		Cbuf_AddText ("map demo1\n");
 		break;
 	default:
 		Key_SetDest (key_game);
@@ -2213,6 +2226,7 @@ enum
 	OGL_COLOREDEXTRA,
 	OGL_TEXFILTER,
 	OGL_ANISOTROPY,
+	OGL_SHADOWS,
 	OGL_ITEMS
 };
 
@@ -2301,6 +2315,9 @@ static void M_OpenGL_Draw (void)
 	M_Print (32 + (5 * 8), 90 + 8*OGL_ANISOTROPY,	"Anisotropy level:");
 	M_Print (232, 90 + 8*OGL_ANISOTROPY, (gl_max_anisotropy < 2) ? "N/A" :
 				Cvar_VariableString("gl_texture_anisotropy"));
+
+	M_Print (32 + (15 * 8), 90 + 8*OGL_SHADOWS,	"Shadows");
+	M_DrawCheckbox (232, 90 + 8*OGL_SHADOWS, r_shadows.integer);
 
 	// cursor
 	M_DrawCharacter (216, 90 + opengl_cursor*8, 12+((int)(realtime*4)&1));
@@ -2464,6 +2481,10 @@ static void M_OpenGL_Key (int k)
 				return;
 			}
 			Cvar_SetValue ("gl_texture_anisotropy", tex_mode);
+			break;
+
+		case OGL_SHADOWS:	// shadows
+			Cvar_Set ("r_shadows", r_shadows.integer ? "0" : "1");
 			break;
 
 		default:
@@ -3300,7 +3321,7 @@ static const char *CreditTextMP[MAX_LINES_MP] =
    "making of this game!"
 };
 
-#define	MAX_LINES2_MP	151
+#define	MAX_LINES2_MP	150
 
 static const char *Credit2TextMP[MAX_LINES2_MP] =
 {
@@ -3385,7 +3406,7 @@ static const char *Credit2TextMP[MAX_LINES2_MP] =
    "   Chad Bordwell,",
    "   David 'Spice Girl' Baker,",
    "   Error Casillas, Damien Fischer,",
-   "   Winnie Lee,",
+   "   Winnie Lee,"
    "   Ygor Krynytyskyy,",
    "   Samantha (Crusher) Lee, John Park",
    "   Ian Stevens, Chris Toft",
@@ -4985,12 +5006,12 @@ void M_Init (void)
 		M_BuildBigCharWidth();
 	else
 	{
-		if (fs_filesize == (long) sizeof(BigCharWidth))
+		if (fs_filesize == sizeof(BigCharWidth))
 			memcpy (BigCharWidth, ptr, sizeof(BigCharWidth));
 		else
 		{
-			Con_Printf ("Unexpected file size (%ld) for %s\n",
-					fs_filesize, BIGCHAR_WIDTH_FILE);
+			Con_Printf ("Unexpected file size (%lu) for %s\n",
+					(unsigned long)fs_filesize, BIGCHAR_WIDTH_FILE);
 			M_BuildBigCharWidth();
 		}
 	}
