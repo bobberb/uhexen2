@@ -13,7 +13,7 @@
 
         uhexen2 = pkgs.stdenv.mkDerivation rec {
           pname = "uhexen2";
-          version = "1.5.11-sot-fhs";
+          version = "1.5.11-sot";
 
           src = ./.;
 
@@ -164,6 +164,68 @@
           };
         };
 
+        # FHS-compatible build for non-Nix Linux systems
+        # Patches the binary to use standard Linux library paths
+        uhexen2-fhs = pkgs.stdenv.mkDerivation {
+          pname = "uhexen2-fhs";
+          version = "1.5.11-sot";
+
+          src = ./.;
+
+          nativeBuildInputs = with pkgs; [ gnumake pkg-config nasm patchelf ];
+
+          buildInputs = with pkgs; [
+            SDL libGL libGLU flac libogg libvorbis libmad libmikmod
+            opusfile timidity wildmidi
+            alsa-lib xorg.libX11 xorg.libXext
+          ];
+
+          preBuild = ''
+            export SDL_CONFIG=${pkgs.SDL}/bin/sdl-config
+            export CFLAGS="$CFLAGS -std=gnu99 -fcommon -Wno-incompatible-pointer-types -Wno-int-conversion -Wno-implicit-function-declaration"
+          '';
+
+          buildPhase = ''
+            cd engine/hexen2
+            make glh2
+          '';
+
+          installPhase = ''
+            mkdir -p $out/bin
+            mkdir -p $out/share/doc/uhexen2
+
+            # Copy and patch the binary
+            install -m755 glhexen2 $out/bin/glhexen2
+
+            # Patch for FHS compatibility (standard Linux paths)
+            patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 $out/bin/glhexen2 2>/dev/null || \
+            patchelf --set-interpreter /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 $out/bin/glhexen2
+            patchelf --remove-rpath $out/bin/glhexen2
+
+            # Create README
+            cat > $out/README-FHS.txt <<EOF
+Hexen II: Hammer of Thyrion - FHS-Compatible Build
+
+This binary is patched to run on non-Nix Linux systems (Ubuntu, Debian, Arch, etc.)
+
+Required libraries:
+  sudo apt install libsdl1.2 libvorbisfile3 libmad0   # Ubuntu/Debian
+  sudo pacman -S sdl1.2-compat libvorbis libmad      # Arch
+
+Run from game directory:
+  ./glhexen2 -mod sot
+EOF
+          '';
+
+          meta = with pkgs.lib; {
+            description = "Hexen II: Hammer of Thyrion - FHS-compatible binary for non-Nix Linux";
+            homepage = "https://hexenworld.org";
+            license = licenses.gpl2Plus;
+            platforms = platforms.linux;
+            mainProgram = "glhexen2";
+          };
+        };
+
         # Wrapper script to help users run the game
         uhexen2-launcher = pkgs.writeShellScriptBin "uhexen2-launcher" ''
           #!/bin/sh
@@ -305,6 +367,7 @@ EOF
         packages = {
           default = uhexen2;
           uhexen2 = uhexen2;
+          fhs = uhexen2-fhs;
           launcher = uhexen2-launcher;
           windows = uhexen2-windows;
         };
