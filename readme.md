@@ -52,7 +52,7 @@ nix run .
 # Or run directly
 nix run .#uhexen2               # OpenGL renderer
 nix run .#uhexen2 -- -game sot  # Play SoT mod
-nix run .#uhexen2 -- -mod wok   # Play Wheel of Karma mod
+nix run .#uhexen2 -- -portals -game wok   # Play Wheel of Karma mod
 ```
 
 ### Linux64 (Ubuntu/Debian/Arch)
@@ -108,25 +108,25 @@ flatpak build-bundle flatpak-repo com.github.bobberb.uhexen2.flatpak com.github.
 
 ### Storm Over Thyrion (SoT)
 
-The SoT mod requires launching with `-game sot` to load Portals assets:
+The SoT mod requires the Portal of Praevus expansion. Use both flags:
 
 ```bash
-nix run .#uhexen2 -- -game sot
+nix run .#uhexen2 -- -portals -game sot
 ```
 
 ### Wheel of Karma and other Portals-based Mods
 
-Use the `-mod` flag for Portals-based mods like Wheel of Karma:
+For mods that require the Portal of Praevus expansion assets, use both flags:
 
 ```bash
-nix run .#uhexen2 -- -mod wok
+nix run .#uhexen2 -- -portals -game wok
 ```
 
-This automatically loads Portals assets before the mod directory.
+This loads Portals first, then the mod directory.
 
 ### Other Mods
 
-For mods that don't require Portals assets, use `-game`:
+For mods that don't require Portals assets (standalone), use `-game` only:
 
 ```bash
 nix run .#uhexen2 -- -game modname
@@ -165,7 +165,13 @@ The game data should include:
 
 ### For SoT Mod
 
-The SoT mod requires the Portal of Praevus expansion (pak3.pak) to be installed. The `-game sot` flag will automatically load Portals assets along with the SoT mod files.
+The SoT mod requires the Portal of Praevus expansion (pak3.pak) to be installed. Launch with both flags:
+
+```bash
+glhexen2 -portals -game sot
+```
+
+This loads Portals first, then the SoT mod files.
 
 ## Package Contents
 
