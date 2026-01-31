@@ -384,7 +384,21 @@ static void CL_ParseServerInfo (void)
 		// old demos recorded with different engine versions or mod setups
 		if (cls.demoplayback)
 		{
-			Con_Printf("Warning: Demo has corrupt model list, skipping to next demo\n");
+			Con_Printf("Warning: Demo has corrupt model list, skipping rest of serverinfo\n");
+			// Must read and discard the rest of serverinfo message to stay in sync
+			// Read sound list
+			while ((str = MSG_ReadString ())[0])
+				; /* discard */
+			// Read cdtrack (byte + byte)
+			MSG_ReadByte (); MSG_ReadByte ();
+			// Read midi name (if protocol >= UQE 1.13)
+			if (cl_protocol >= PROTOCOL_UQE_113)
+			{
+				MSG_ReadString ();
+				// Read mod_name and skybox (protocol 21)
+				MSG_ReadString ();
+				MSG_ReadString ();
+			}
 			CL_StopPlayback();  // Stop this demo
 			CL_NextDemo();      // Try next demo
 			return;
