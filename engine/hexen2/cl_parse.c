@@ -319,29 +319,19 @@ static void CL_ParseServerInfo (void)
 
 // precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
-	if (developer.integer >= 2)
-		Con_DPrintf("Starting model precache loop\n");
 	for (nummodels = 1 ; ; nummodels++)
 	{
 		str = MSG_ReadString ();
 		if (!str || !str[0])
-		{
-			if (developer.integer >= 2)
-				Con_DPrintf("Model precache: end of list at nummodels=%d\n", nummodels);
 			break;
-		}
 		if (nummodels == MAX_MODELS)
 		{
 			Con_Printf ("Server sent too many model precaches\n");
 			return;
 		}
 		q_strlcpy (model_precache[nummodels], str, MAX_QPATH);
-		if (developer.integer >= 2)
-			Con_DPrintf("Model precache[%d] = '%s' (len=%zu)\n", nummodels, str, strlen(str));
 		Mod_TouchModel (str);
 	}
-	if (developer.integer >= 2)
-		Con_DPrintf("After model precache loop: nummodels=%d, model_precache[1]='%s'\n", nummodels, model_precache[1]);
 
 // precache sounds
 	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
@@ -371,13 +361,9 @@ static void CL_ParseServerInfo (void)
 	}
 
 	// copy the naked name of the map file to the cl structure
-	if (developer.integer >= 2)
-		Con_DPrintf("About to call COM_FileBase with model_precache[1]='%s'\n", model_precache[1]);
 	COM_FileBase (model_precache[1], cl.mapname, sizeof(cl.mapname));
 
 	//always precache the world!!!
-	if (developer.integer >= 2)
-		Con_DPrintf("About to load world model: '%s'\n", model_precache[1]);
 	if (!model_precache[1][0])
 	{
 		// Demo file has corrupt/missing model data - this can happen with
@@ -411,13 +397,7 @@ static void CL_ParseServerInfo (void)
 	{
 		// Skip empty model names to prevent Mod_FindName crashes
 		if (!model_precache[i][0])
-		{
-			Con_DPrintf("Warning: Empty model name at index %d (nummodels=%d), skipping\n", i, nummodels);
 			continue;
-		}
-
-		if (developer.integer >= 2)
-			Con_DPrintf("Loading model %d: %s\n", i, model_precache[i]);
 
 		if (precache.integer)
 		{

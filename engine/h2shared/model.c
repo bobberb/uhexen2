@@ -204,11 +204,7 @@ qmodel_t *Mod_FindName (const char *name)
 	qmodel_t	*mod;
 
 	if (!name[0])
-	{
-		Con_Printf ("FATAL ERROR: Mod_FindName called with NULL/empty name\n");
-		Con_Printf ("name pointer: %p\n", (void*)name);
 		Sys_Error ("%s: NULL name", __thisfunc__);
-	}
 
 //
 // search the currently loaded models
