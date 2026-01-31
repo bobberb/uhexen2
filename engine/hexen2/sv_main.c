@@ -2001,8 +2001,8 @@ void SV_SpawnServer (const char *server, const char *startspot)
 //
 // set up the new server
 //
-	//memset (&sv, 0, sizeof(sv));
-	Host_ClearMemory ();
+	memset (&sv, 0, sizeof(sv));
+	/* Host_ClearMemory() is too aggressive - it also clears client state */
 
 	q_strlcpy (sv.name, server, sizeof(sv.name));
 	if (startspot)
