@@ -254,6 +254,10 @@ static void CL_ParseServerInfo (void)
 	int		nummodels, numsounds;
 	char	model_precache[MAX_MODELS][MAX_QPATH];
 	char	sound_precache[MAX_SOUNDS][MAX_QPATH];
+
+	// Initialize arrays to prevent crashes on bad data
+	memset(model_precache, 0, sizeof(model_precache));
+	memset(sound_precache, 0, sizeof(sound_precache));
 // rjr	edict_t		*ent;
 
 	Con_DPrintf ("Serverinfo packet received.\n");
@@ -363,6 +367,13 @@ static void CL_ParseServerInfo (void)
 	cl.model_precache[1] = Mod_ForName (model_precache[1], false);
 	for (i = 2; i < nummodels; i++)
 	{
+		// Skip empty model names to prevent Mod_FindName crashes
+		if (!model_precache[i][0])
+		{
+			Con_DPrintf("Warning: Empty model name at index %d, skipping\n", i);
+			continue;
+		}
+
 		if (precache.integer)
 		{
 			cl.model_precache[i] = Mod_ForName (model_precache[i], false);
