@@ -103,7 +103,8 @@
             runHook preInstall
 
             mkdir -p $out/bin
-            mkdir -p $out/share/uhexen2
+            mkdir -p $out/share/doc/uhexen2
+            mkdir -p $out/share/licenses/uhexen2
 
             # Install hexen2 OpenGL binary
             # After buildPhase, we should still be in engine/hexen2
@@ -126,11 +127,26 @@
               exit 1
             fi
 
-            # Install documentation (from source root)
+            # Install documentation and licenses (from source root)
             cd ${src}
-            mkdir -p $out/share/doc/uhexen2
-            cp -r docs/* $out/share/doc/uhexen2/ 2>/dev/null || true
-            cp README.txt $out/share/doc/uhexen2/ 2>/dev/null || true
+            echo "Installing documentation from: $(pwd)"
+
+            # Copy documentation
+            cp -r docs/* $out/share/doc/uhexen2/ 2>/dev/null || echo "No docs/ directory found"
+            cp README.txt $out/share/doc/uhexen2/ 2>/dev/null || echo "No README.txt found"
+            cp readme.md $out/share/doc/uhexen2/ 2>/dev/null || echo "No readme.md found"
+            cp RELEASE_NOTES_1.5.11.md $out/share/doc/uhexen2/ 2>/dev/null || echo "No release notes found"
+
+            # Copy licenses (legal requirement)
+            # COPYING is in docs/ directory, copy to licenses/ for standard location
+            cp docs/COPYING $out/share/licenses/uhexen2/ 2>/dev/null || echo "No docs/COPYING found"
+            cp COPYING $out/share/licenses/uhexen2/ 2>/dev/null || true
+            cp LICENSE $out/share/licenses/uhexen2/ 2>/dev/null || true
+
+            echo "Installed files:"
+            ls -la $out/bin/
+            ls -la $out/share/doc/uhexen2/ 2>/dev/null || echo "No docs installed"
+            ls -la $out/share/licenses/uhexen2/ 2>/dev/null || echo "No licenses installed"
 
             runHook postInstall
           '';
@@ -157,10 +173,10 @@
           };
         };
 
-        # FHS-compatible build for non-Nix Linux systems
+        # Linux64 build for non-Nix Linux systems
         # Patches the binary to use standard Linux library paths
-        uhexen2-fhs = pkgs.stdenv.mkDerivation {
-          pname = "uhexen2-fhs";
+        uhexen2-linux64 = pkgs.stdenv.mkDerivation {
+          pname = "uhexen2-linux64";
           version = "1.5.11-sot";
 
           src = ./.;
@@ -186,6 +202,7 @@
           installPhase = ''
             mkdir -p $out/bin
             mkdir -p $out/share/doc/uhexen2
+            mkdir -p $out/share/licenses/uhexen2
 
             # Copy and patch the binary
             install -m755 glhexen2 $out/bin/glhexen2
@@ -195,9 +212,21 @@
             patchelf --set-interpreter /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 $out/bin/glhexen2
             patchelf --remove-rpath $out/bin/glhexen2
 
+            # Install documentation (from source root)
+            cd ${src}
+            cp -r docs/* $out/share/doc/uhexen2/ 2>/dev/null || true
+            cp README.txt $out/share/doc/uhexen2/ 2>/dev/null || true
+            cp readme.md $out/share/doc/uhexen2/ 2>/dev/null || true
+            cp RELEASE_NOTES_1.5.11.md $out/share/doc/uhexen2/ 2>/dev/null || true
+
+            # Copy licenses (legal requirement)
+            cp docs/COPYING $out/share/licenses/uhexen2/ 2>/dev/null || true
+            cp COPYING $out/share/licenses/uhexen2/ 2>/dev/null || true
+            cp LICENSE $out/share/licenses/uhexen2/ 2>/dev/null || true
+
             # Create README
-            cat > $out/README-FHS.txt <<EOF
-Hexen II: Hammer of Thyrion - FHS-Compatible Build
+            cat > $out/README-LINUX64.txt <<EOF
+Hexen II: Hammer of Thyrion - Linux64 Build
 
 This binary is patched to run on non-Nix Linux systems (Ubuntu, Debian, Arch, etc.)
 
@@ -211,7 +240,7 @@ EOF
           '';
 
           meta = with pkgs.lib; {
-            description = "Hexen II: Hammer of Thyrion - FHS-compatible binary for non-Nix Linux";
+            description = "Hexen II: Hammer of Thyrion - Linux64 binary for non-Nix Linux";
             homepage = "https://hexenworld.org";
             license = licenses.gpl2Plus;
             platforms = platforms.linux;
@@ -372,17 +401,17 @@ EOF
             BUILD_DIR="$out/$RELEASE_DIR"
 
             # Create directory structure
-            mkdir -p "$BUILD_DIR/linux"
-            mkdir -p "$BUILD_DIR/fhs"
+            mkdir -p "$BUILD_DIR/nix"
+            mkdir -p "$BUILD_DIR/linux64"
             mkdir -p "$BUILD_DIR/windows"
 
-            # Copy Linux build (Nix version)
-            rsync -a ${uhexen2}/bin/ "$BUILD_DIR/linux/"
-            cp -r ${uhexen2}/share/ "$BUILD_DIR/linux/" 2>/dev/null || true
+            # Copy Nix build
+            rsync -a ${uhexen2}/bin/ "$BUILD_DIR/nix/"
+            cp -r ${uhexen2}/share/ "$BUILD_DIR/nix/" 2>/dev/null || true
 
-            # Copy FHS build (for non-Nix Linux)
-            rsync -a ${uhexen2-fhs}/bin/ "$BUILD_DIR/fhs/"
-            cp ${uhexen2-fhs}/README-FHS.txt "$BUILD_DIR/fhs/" 2>/dev/null || true
+            # Copy Linux64 build (for non-Nix Linux)
+            rsync -a ${uhexen2-linux64}/bin/ "$BUILD_DIR/linux64/"
+            cp ${uhexen2-linux64}/README-LINUX64.txt "$BUILD_DIR/linux64/" 2>/dev/null || true
 
             # Copy Windows build
             rsync -a ${uhexen2-windows}/bin/ "$BUILD_DIR/windows/"
@@ -397,15 +426,15 @@ Built from: uHexen2 sakabato branch
 
 Contents:
 --------
-linux/   - NixOS/Nix build
-fhs/     - FHS-compatible Linux (Ubuntu/Debian/Arch)
-windows/ - Windows x64 build
+nix/      - NixOS/Nix build
+linux64/  - Linux64 build (Ubuntu/Debian/Arch)
+windows/  - Windows x64 build
 
 Usage:
 ------
-Linux (Nix):    nix run .#uhexen2 -- -game sot
-Linux (FHS):   Requires: libsdl1.2 libvorbisfile3 libmad0
-Windows:       Copy glh2.exe + DLLs to game dir
+Nix:       nix run .#uhexen2 -- -game sot
+Linux64:   Requires: libsdl1.2 libvorbisfile3 libmad0
+Windows:   Copy glh2.exe + DLLs to game dir
 
 Game Data:
 ----------
@@ -432,7 +461,7 @@ EOF
         packages = {
           default = uhexen2;
           uhexen2 = uhexen2;
-          fhs = uhexen2-fhs;
+          linux64 = uhexen2-linux64;
           launcher = uhexen2-launcher;
           windows = uhexen2-windows;
           release = release;

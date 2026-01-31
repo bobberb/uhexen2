@@ -15,8 +15,8 @@ A Nix flake for building [Hexen II: Hammer of Thyrion (uHexen2)](https://hexenwo
 
 | Package | Description |
 |---------|-------------|
-| `default` / `uhexen2` | Main OpenGL client for NixOS/Nix |
-| `fhs` | FHS-compatible build for non-Nix Linux (Ubuntu, Debian, Arch) |
+| `default` / `uhexen2` | Main OpenGL client for Nix |
+| `linux64` | Linux64 build for non-Nix Linux (Ubuntu, Debian, Arch) |
 | `windows` | Windows x64 cross-compiled build |
 | `flatpak` | Universal Linux package (Steam Deck compatible) |
 | `release` | Multi-platform release bundle |
@@ -25,11 +25,11 @@ A Nix flake for building [Hexen II: Hammer of Thyrion (uHexen2)](https://hexenwo
 ## Building
 
 ```bash
-# Build for NixOS/Nix (default)
+# Build for Nix (default)
 nix build .#uhexen2
 
-# Build FHS version (for non-Nix Linux)
-nix build .#fhs
+# Build Linux64 version (for non-Nix Linux)
+nix build .#linux64
 
 # Build Windows version
 nix build .#windows
@@ -43,7 +43,7 @@ nix build .#release
 
 ## Running
 
-### NixOS/Nix
+### Nix
 
 ```bash
 # Use the launcher (checks for game data)
@@ -55,19 +55,19 @@ nix run .#uhexen2 -- -game sot  # Play SoT mod
 nix run .#uhexen2 -- -mod wok   # Play Wheel of Karma mod
 ```
 
-### Non-Nix Linux (Ubuntu/Debian/Arch)
+### Linux64 (Ubuntu/Debian/Arch)
 
 ```bash
-# Build the FHS version
-nix build .#fhs
+# Build the Linux64 version
+nix build .#linux64
 
-# The binary will be in result-fhs/bin/glhexen2
+# The binary will be in result-linux64/bin/glhexen2
 # Install required libraries:
 # Ubuntu/Debian: sudo apt install libsdl1.2 libvorbisfile3 libmad0
 # Arch:          sudo pacman -S sdl1.2-compat libvorbis libmad
 
 # Run from your game directory
-./result-fhs/bin/glhexen2 -game sot
+./result-linux64/bin/glhexen2 -game sot
 ```
 
 ### Windows
@@ -172,6 +172,7 @@ The SoT mod requires the Portal of Praevus expansion (pak3.pak) to be installed.
 The `uhexen2` package includes:
 - `/bin/glhexen2` - OpenGL renderer (recommended)
 - `/share/doc/uhexen2/` - Documentation
+- `/share/licenses/uhexen2/` - GPL license and legal files
 
 The `windows` package includes:
 - `glh2.exe` - OpenGL renderer (with full codec support)
@@ -189,7 +190,7 @@ The `flatpak` package includes:
 | Output | Description |
 |--------|-------------|
 | `packages.default` / `packages.uhexen2` | Main game engine |
-| `packages.fhs` | FHS-compatible Linux build |
+| `packages.linux64` | Linux64 build for non-Nix Linux |
 | `packages.windows` | Windows x64 build |
 | `packages.release` | Multi-platform release bundle |
 | `packages.launcher` | Wrapper script with game data detection |
@@ -215,4 +216,4 @@ This is version **1.5.11-sot** based on the sakabato branch with:
 - SoT mod compatibility
 - Arbitrary resolution support
 - Enhanced protocol handling
-- Multi-platform build support (Nix, FHS, Windows, Flatpak)
+- Multi-platform build support (Nix, Linux64, Windows, Flatpak)
