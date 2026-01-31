@@ -1195,17 +1195,20 @@ void CL_ParseServerMessage (void)
 			if (cmd == 0 || cmd == 33)
 			{
 				// These have no payload - just ignore them
-				Con_DPrintf ("FIXME: Skipped msg %d (no payload)\n", cmd);
+				Con_DPrintf ("Skipped msg %d (no payload)\n", cmd);
 				break;
 			}
 			if (cmd >= 80)
 			{
 				// SoT protocol 21 messages - unknown format
 				// Skip rest of packet to resync at next packet boundary
-				Con_DPrintf ("FIXME: Unknown proto21 msg %d - skipping rest of packet\n", cmd);
+				Con_DPrintf ("Unknown proto21 msg %d - skipping rest of packet\n", cmd);
 				return;	// Abort this packet, next one should be fresh
 			}
-			Host_Error ("%s: Illegible server message %d", __thisfunc__, cmd);
+			// For undefined messages in the range 34-79, also abort packet to prevent crash
+			// These are likely custom protocol extensions that we don't understand
+			Con_DPrintf ("Unknown msg %d (undefined range) - skipping rest of packet\n", cmd);
+			return;
 			break;
 
 		case svc_nop:
