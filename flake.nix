@@ -362,6 +362,80 @@ EOF
           };
         };
 
+        # Release bundle with all builds
+        release = pkgs.stdenv.mkDerivation {
+          pname = "uhexen2-release";
+          version = "1.5.11-sot";
+
+          src = ./.;
+
+          nativeBuildInputs = with pkgs; [ rsync ];
+          dontUnpack = true;
+
+          buildCommand = ''
+            mkdir -p $out
+
+            # Get current date
+            DATE=$(date +%Y-%m-%d)
+            RELEASE_DIR="uhexen2-shanjaq-$DATE"
+            BUILD_DIR="$out/$RELEASE_DIR"
+
+            # Create directory structure
+            mkdir -p "$BUILD_DIR/linux"
+            mkdir -p "$BUILD_DIR/fhs"
+            mkdir -p "$BUILD_DIR/windows"
+
+            # Copy Linux build (Nix version)
+            rsync -a ${uhexen2}/bin/ "$BUILD_DIR/linux/"
+            cp -r ${uhexen2}/share/ "$BUILD_DIR/linux/" 2>/dev/null || true
+
+            # Copy FHS build (for non-Nix Linux)
+            rsync -a ${uhexen2-fhs}/bin/ "$BUILD_DIR/fhs/"
+            cp ${uhexen2-fhs}/README-FHS.txt "$BUILD_DIR/fhs/" 2>/dev/null || true
+
+            # Copy Windows build
+            rsync -a ${uhexen2-windows}/bin/ "$BUILD_DIR/windows/"
+            cp ${uhexen2-windows}/bin/README-WINDOWS.txt "$BUILD_DIR/windows/" 2>/dev/null || true
+
+            # Create release README
+            cat > "$BUILD_DIR/README.txt" <<'EOF'
+Hexen II: Hammer of Thyrion - Release Bundle
+============================================
+
+Built from: uHexen2 sakabato branch
+
+Contents:
+--------
+linux/   - NixOS/Nix build
+fhs/     - FHS-compatible Linux (Ubuntu/Debian/Arch)
+windows/ - Windows x64 build
+
+Usage:
+------
+Linux (Nix):    nix run .#uhexen2 -- -mod sot
+Linux (FHS):   Requires: libsdl1.2 libvorbisfile3 libmad0
+Windows:       Copy glh2.exe + DLLs to game dir
+
+Game Data:
+----------
+Need Hexen II data files (pak0.pak, pak1.pak) in data1/
+For Portal expansion, also need pak3.pak in portals/
+EOF
+
+            # Create symlink for easy access
+            ln -sf "$RELEASE_DIR" "$out/latest"
+
+            echo "Release bundle: $BUILD_DIR"
+          '';
+
+          meta = with pkgs.lib; {
+            description = "Hexen II: Hammer of Thyrion - Multi-platform release bundle";
+            homepage = "https://hexenworld.org";
+            license = licenses.gpl2Plus;
+            platforms = platforms.linux;
+          };
+        };
+
       in
       {
         packages = {
@@ -370,6 +444,7 @@ EOF
           fhs = uhexen2-fhs;
           launcher = uhexen2-launcher;
           windows = uhexen2-windows;
+          release = release;
         };
 
         apps = {
