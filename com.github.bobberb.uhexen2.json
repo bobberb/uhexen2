@@ -1,0 +1,155 @@
+{
+    "app-id": "com.github.bobberb.uhexen2",
+    "runtime": "org.freedesktop.Platform",
+    "runtime-version": "23.08",
+    "sdk": "org.freedesktop.Sdk",
+    "command": "glhexen2",
+    "finish-args": [
+        "--share=ipc",
+        "--socket=x11",
+        "--socket=pulseaudio",
+        "--device=dri",
+        "--share=network",
+        "--filesystem=host:ro",
+        "--env=SDL_AUDIODRIVER=pulseaudio"
+    ],
+    "cleanup": [
+        "/include",
+        "/lib/pkgconfig",
+        "/man",
+        "/share/doc",
+        "/share/gtk-doc",
+        "*.la",
+        "*.a"
+    ],
+    "modules": [
+        {
+            "name": "SDL",
+            "buildsystem": "autotools",
+            "config-opts": [
+                "--disable-video-opengl",
+                "--disable-esd",
+                "--disable-arts",
+                "--disable-nasm",
+                "--enable-alsa",
+                "--disable-alsa-shared",
+                "--disable-pulseaudio-shared",
+                "--disable-x11-shared"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://www.libsdl.org/release/SDL-1.2.15.tar.gz",
+                    "sha256": "d6d316a793e5e348159f0f9e8219e9d8143debc5c9e005b201b5bdfbb57b309d"
+                }
+            ]
+        },
+        {
+            "name": "libogg",
+            "buildsystem": "autotools",
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://downloads.xiph.org/releases/ogg/libogg-1.3.5.tar.xz",
+                    "sha256": "c4d91be36fc8e54deae7575240e4e694fc9e760dd7d7dcb2e1cbbcmc5afd0b76"
+                }
+            ]
+        },
+        {
+            "name": "libvorbis",
+            "buildsystem": "autotools",
+            "config-opts": [
+                "--disable-docs",
+                "--disable-examples",
+                "--disable-oggtest"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.xz",
+                    "sha256": "b33cc49c41964dc11fcede5efd9e4c5644f3244b2f4cc903d9e93910b59b8e6d"
+                }
+            ]
+        },
+        {
+            "name": "libmad",
+            "buildsystem": "autotools",
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://ftp.marsaille.org/mad/libmad-0.15.1b.tar.gz",
+                    "sha256": "bbfac3ed6d8fa4ad1c3599fa601b5b3d9c37e00e36134b9f5f0556b0f04c90e6"
+                }
+            ]
+        },
+        {
+            "name": "flac",
+            "buildsystem": "autotools",
+            "config-opts": [
+                "--disable-doxygen-docs",
+                "--disable-xmms-plugin",
+                "--disable-cpplibs"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://downloads.xiph.org/releases/flac/flac-1.4.3.tar.xz",
+                    "sha256": "6c58e8cd798c9f82eb8371a2a658f0a83fefd8df60c608f2681cf4e15e8e13e7"
+                }
+            ]
+        },
+        {
+            "name": "opus",
+            "buildsystem": "autotools",
+            "config-opts": [
+                "--disable-doc",
+                "--disable-extra-programs"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz",
+                    "sha256": "9492c7794a01fc24c3a0a24b4074bb1f782616472aa4b44f8c22c41ffbf05c46"
+                }
+            ]
+        },
+        {
+            "name": "libmikmod",
+            "buildsystem": "autotools",
+            "config-opts": [
+                "--disable-esd"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://sourceforge.net/projects/mikmod/files/libmikmod/3.3.11.1/libmikmod-3.3.11.1.tar.gz",
+                    "sha256": "ad9d64dfc8f83684821a4d7b1c2162e75de512eaa59b511c1b0251be7c974659"
+                }
+            ]
+        },
+        {
+            "name": "uhexen2",
+            "buildsystem": "simple",
+            "build-commands": [
+                "cd engine/hexen2",
+                "make glh2",
+                "install -Dm755 glhexen2 /app/bin/glhexen2",
+                "mkdir -p /app/share/doc/uhexen2",
+                "cp -r ../../docs/* /app/share/doc/uhexen2/ 2>/dev/null || true",
+                "cp ../../README.txt /app/share/doc/uhexen2/ 2>/dev/null || true",
+                "mkdir -p /app/share/applications",
+                "cat > /app/share/applications/com.github.bobberb.uhexen2.desktop <<'DESKTOP'\n[Desktop Entry]\nType=Application\nName=Hexen II: Hammer of Thyrion\nComment=Cross-platform Hexen II game engine\nExec=glhexen2\nIcon=com.github.bobberb.uhexen2\nTerminal=true\nCategories=Game;ActionGame;\nDESKTOP\n",
+                "mkdir -p /app/share/metainfo",
+                "cat > /app/share/metainfo/com.github.bobberb.uhexen2.metainfo.xml <<'METAINFO'\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<component type=\"desktop-application\">\n  <id>com.github.bobberb.uhexen2</id>\n  <name>Hexen II: Hammer of Thyrion</name>\n  <summary>Open source Hexen II game engine</summary>\n  <developer_name>uHexen2 team</developer_name>\n  <launchable type=\"desktop-id\">com.github.bobberb.uhexen2.desktop</launchable>\n  <description>\n    <p>uHexen2 is a cross-platform port of Raven Software's Hexen II game engine.</p>\n    <p>This package includes the game engine only. You need the original Hexen II game data files to play.</p>\n  </description>\n  <url type=\"homepage\">https://hexenworld.org</url>\n  <url type=\"bugtracker\">https://github.com/bobberb/uhexen2/issues</url>\n  <url type=\"vcs-browser\">https://github.com/bobberb/uhexen2</url>\n  <metadata_license>CC0-1.0</metadata_license>\n  <project_license>GPL-2.0-or-later</project_license>\n  <releases>\n    <release version=\"1.5.11-sot\" date=\"2026-01-31\"/>\n  </releases>\n</component>\nMETAINFO\n",
+                "mkdir -p /app/share/icons/hicolor/256x256/apps",
+                "cat > /app/share/icons/hicolor/256x256/apps/com.github.bobberb.uhexen2.png <<'ICON'\nPLACEHOLDER_ICON\nICON\n"
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "."
+                }
+            ]
+        }
+    ]
+}

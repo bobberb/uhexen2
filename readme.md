@@ -9,7 +9,7 @@ A Nix flake for building [Hexen II: Hammer of Thyrion (uHexen2)](https://hexenwo
 - ALSA and OSS audio support (Linux)
 - X11 and SDL integration
 - **SoT mod compatibility** - Storm Over Thyrion and related Portals-based mods
-- Multi-platform builds (Linux, Windows)
+- Multi-platform builds (Linux, Windows, Flatpak/Steam Deck)
 
 ## Available Packages
 
@@ -18,6 +18,7 @@ A Nix flake for building [Hexen II: Hammer of Thyrion (uHexen2)](https://hexenwo
 | `default` / `uhexen2` | Main OpenGL client for NixOS/Nix |
 | `fhs` | FHS-compatible build for non-Nix Linux (Ubuntu, Debian, Arch) |
 | `windows` | Windows x64 cross-compiled build |
+| `flatpak` | Universal Linux package (Steam Deck compatible) |
 | `release` | Multi-platform release bundle |
 | `launcher` | Helper script with game data detection |
 
@@ -32,6 +33,9 @@ nix build .#fhs
 
 # Build Windows version
 nix build .#windows
+
+# Build Flatpak (for Steam Deck / universal Linux)
+cd flatpak && ./build.sh
 
 # Build release bundle (all platforms)
 nix build .#release
@@ -75,6 +79,30 @@ nix build .#windows
 # Copy contents of result-windows/bin/ to your game directory
 # Includes: glh2.exe, h2.exe, h2ded.exe, and required DLLs
 ```
+
+### Flatpak (Steam Deck / Universal Linux)
+
+```bash
+# Build Flatpak package
+cd flatpak
+./build.sh
+
+# Run the Flatpak
+flatpak run com.github.bobberb.uhexen2
+
+# Run with SoT mod
+flatpak run com.github.bobberb.uhexen2 -- -game sot
+
+# Create distributable bundle
+flatpak build-bundle flatpak-repo com.github.bobberb.uhexen2.flatpak com.github.bobberb.uhexen2
+```
+
+**For Steam Deck:**
+1. Switch to Desktop mode
+2. Open terminal and run build script
+3. Add as Non-Steam Game in Steam:
+   - Games → Add a Non-Steam Game → Browse → select Flatpak
+4. Switch back to Gaming mode
 
 ## Mod Support
 
@@ -151,6 +179,11 @@ The `windows` package includes:
 - `h2ded.exe` - Dedicated server
 - `*.dll` - Required runtime libraries (SDL, FLAC, MP3, Vorbis, Opus, MikMod)
 
+The `flatpak` package includes:
+- `/app/bin/glhexen2` - OpenGL renderer (with full codec support)
+- `/app/share/doc/uhexen2/` - Documentation
+- Desktop integration (application entry, metainfo)
+
 ## Outputs
 
 | Output | Description |
@@ -160,6 +193,7 @@ The `windows` package includes:
 | `packages.windows` | Windows x64 build |
 | `packages.release` | Multi-platform release bundle |
 | `packages.launcher` | Wrapper script with game data detection |
+| `flatpak/` | Flatpak manifest and build script |
 | `apps.default` | Runs the launcher |
 | `apps.glhexen2` | Runs OpenGL version directly |
 | `devShells.default` | Development environment |
@@ -181,4 +215,4 @@ This is version **1.5.11-sot** based on the sakabato branch with:
 - SoT mod compatibility
 - Arbitrary resolution support
 - Enhanced protocol handling
-- Multi-platform build support
+- Multi-platform build support (Nix, FHS, Windows, Flatpak)
