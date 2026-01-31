@@ -482,8 +482,13 @@ static void SV_SendServerinfo (client_t *client)
 // send full levelname
 	MSG_WriteString(&client->message, SV_GetLevelname ());
 
+	Con_DPrintf("SV_SendServerinfo: Sending model list, sv.model_precache[1]='%s'\n", sv.model_precache[1] ? sv.model_precache[1] : "(null)");
 	for (i = 1, s = sv.model_precache + 1; i < MAX_MODELS && *s; s++)
+	{
+		if (i == 1 && developer.integer >= 2)
+			Con_DPrintf("  Sending model[%d]='%s'\n", i, *s);
 		MSG_WriteString (&client->message, *s);
+	}
 	MSG_WriteByte (&client->message, 0);
 
 	for (i = 1, s = sv.sound_precache + 1; i < MAX_SOUNDS && *s; s++)
@@ -2060,6 +2065,8 @@ void SV_SpawnServer (const char *server, const char *startspot)
 
 	q_strlcpy (sv.name, server, sizeof(sv.name));
 	q_snprintf (sv.modelname, sizeof(sv.modelname), "maps/%s.bsp", server);
+
+	Con_DPrintf("SV_SpawnServer: server='%s', modelname='%s'\n", sv.name, sv.modelname);
 
 	sv.worldmodel = Mod_ForName (sv.modelname, false);
 	if (!sv.worldmodel)
