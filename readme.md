@@ -51,8 +51,8 @@ nix run .
 
 # Or run directly
 nix run .#uhexen2                    # OpenGL renderer
-nix run .#uhexen2 -- -game sot       # Play SoT mod (if you have Portals installed)
-nix run .#uhexen2 -- -portals -game wok   # Play Wheel of Karma with Portals
+nix run .#uhexen2 -- -mod sot        # Play SoT mod (recommended)
+nix run .#uhexen2 -- -portals -game sot  # Or use explicit flags
 ```
 
 ### Linux64 (Ubuntu/Debian/Arch)
@@ -106,14 +106,22 @@ flatpak build-bundle flatpak-repo com.github.bobberb.uhexen2.flatpak com.github.
 
 ## Mod Support
 
-### For mods requiring Portals expansion (SoT, karma2, etc.)
+### For Portals-based mods (SoT, karma2, etc.)
 
-Use both flags to load Portals assets plus the mod:
+**Option 1: Use `-mod` flag (recommended)**
+```bash
+-mod sot
+-mod wok
+-mod ros
+```
+Automatically loads Portals first, then the mod directory.
 
+**Option 2: Use explicit flags**
 ```bash
 -portals -game sot
 -portals -game wok
 ```
+Manually specify both Portals and the mod.
 
 ### For standalone mods
 
