@@ -322,14 +322,20 @@ static void CL_ParseServerInfo (void)
 	for (nummodels = 1 ; ; nummodels++)
 	{
 		str = MSG_ReadString ();
-		if (!str[0])
+		if (!str || !str[0])
+		{
+			if (developer.integer >= 2)
+				Con_DPrintf("Model precache: end of list at nummodels=%d\n", nummodels);
 			break;
+		}
 		if (nummodels == MAX_MODELS)
 		{
 			Con_Printf ("Server sent too many model precaches\n");
 			return;
 		}
 		q_strlcpy (model_precache[nummodels], str, MAX_QPATH);
+		if (developer.integer >= 2)
+			Con_DPrintf("Model precache[%d] = %s\n", nummodels, str);
 		Mod_TouchModel (str);
 	}
 
@@ -370,9 +376,12 @@ static void CL_ParseServerInfo (void)
 		// Skip empty model names to prevent Mod_FindName crashes
 		if (!model_precache[i][0])
 		{
-			Con_DPrintf("Warning: Empty model name at index %d, skipping\n", i);
+			Con_DPrintf("Warning: Empty model name at index %d (nummodels=%d), skipping\n", i, nummodels);
 			continue;
 		}
+
+		if (developer.integer >= 2)
+			Con_DPrintf("Loading model %d: %s\n", i, model_precache[i]);
 
 		if (precache.integer)
 		{
