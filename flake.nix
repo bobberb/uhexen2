@@ -128,7 +128,7 @@
             fi
 
             # Install documentation and licenses (from source root)
-            cd ${src}
+            cd "$src"
             echo "Installing documentation from: $(pwd)"
 
             # Copy documentation
@@ -213,7 +213,7 @@
             patchelf --remove-rpath $out/bin/glhexen2
 
             # Install documentation (from source root)
-            cd ${src}
+            cd "$src"
             cp -r docs/* $out/share/doc/uhexen2/ 2>/dev/null || true
             cp README.txt $out/share/doc/uhexen2/ 2>/dev/null || true
             cp readme.md $out/share/doc/uhexen2/ 2>/dev/null || true
