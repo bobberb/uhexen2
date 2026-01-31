@@ -13,7 +13,7 @@
 
         uhexen2 = pkgs.stdenv.mkDerivation rec {
           pname = "uhexen2";
-          version = "1.5.11-sot";
+          version = "1.5.11-sot-fhs";
 
           src = ./.;
 
@@ -21,6 +21,7 @@
             gnumake
             pkg-config
             nasm
+            patchelf
           ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
             alsa-lib.dev
           ];
@@ -124,6 +125,13 @@
               ls -la engine/hexen2/ 2>&1 || echo "engine/hexen2 doesn't exist"
               exit 1
             fi
+
+            # Patch binary for FHS compatibility (non-Nix Linux)
+            echo "Patching binary for FHS compatibility..."
+            patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 $out/bin/glhexen2 2>/dev/null || \
+            patchelf --set-interpreter /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 $out/bin/glhexen2
+            patchelf --remove-rpath $out/bin/glhexen2
+            echo "Binary patched for non-Nix Linux systems"
 
             # Install documentation (from source root)
             cd ${src}
