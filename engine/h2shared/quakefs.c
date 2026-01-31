@@ -1343,12 +1343,20 @@ void FS_Init (void)
 		check_portals = (COM_CheckParm ("-portals")) ||
 				(COM_CheckParm ("-missionpack")) ||
 				(COM_CheckParm ("-h2mp"));
-		i = COM_CheckParm ("-game");
-		if (i && i < com_argc-1)
-		{
-			if (!q_strcasecmp(com_argv[i+1], "portals"))
-				check_portals = true;
-		}
+	}
+
+	/* Check for -game flag (independent of -mod)
+	 * Used to enable check_portals for specific game directories
+	 */
+	i = COM_CheckParm ("-game");
+	if (i && i < com_argc-1)
+	{
+		const char *gamedir = com_argv[i+1];
+		/* Enable portals for Portals-based game directories */
+		if (!q_strcasecmp(gamedir, "portals") ||
+		    !q_strcasecmp(gamedir, "sot") ||
+		    !q_strcasecmp(gamedir, "karma2"))
+			check_portals = true;
 	}
 	if (check_portals && !(gameflags & (GAME_REGISTERED|GAME_REGISTERED_OLD)))
 		Sys_Error ("Portal of Praevus requires registered version of Hexen II");

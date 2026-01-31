@@ -126,13 +126,6 @@
               exit 1
             fi
 
-            # Patch binary for FHS compatibility (non-Nix Linux)
-            echo "Patching binary for FHS compatibility..."
-            patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 $out/bin/glhexen2 2>/dev/null || \
-            patchelf --set-interpreter /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 $out/bin/glhexen2
-            patchelf --remove-rpath $out/bin/glhexen2
-            echo "Binary patched for non-Nix Linux systems"
-
             # Install documentation (from source root)
             cd ${src}
             mkdir -p $out/share/doc/uhexen2
@@ -213,7 +206,7 @@ Required libraries:
   sudo pacman -S sdl1.2-compat libvorbis libmad      # Arch
 
 Run from game directory:
-  ./glhexen2 -mod sot
+  ./glhexen2 -game sot
 EOF
           '';
 
@@ -232,12 +225,8 @@ EOF
           echo "Hexen II: Hammer of Thyrion Launcher"
           echo "====================================="
           echo ""
-          echo "Available executables:"
-          echo "  glhexen2 - OpenGL renderer (recommended)"
-          echo "  hexen2   - Software renderer"
-          echo "  glhwcl   - HexenWorld client (OpenGL)"
-          echo "  hwcl     - HexenWorld client (software)"
-          echo "  hwsv     - HexenWorld server"
+          echo "Available executable:"
+          echo "  glhexen2 - OpenGL renderer"
           echo ""
           echo "You need the game data files in your current directory or ~/.hexen2/"
           echo "See ${uhexen2}/share/doc/uhexen2/ for more information"
@@ -283,14 +272,16 @@ EOF
             export WINDRES=${pkgsWindows.stdenv.cc.bintools.targetPrefix}windres
             export NASM=${pkgs.nasm}/bin/nasm
 
-            # Disable codecs that require external libraries for now
+            # Enable audio codecs
             export USE_CODEC_WAVE=yes
-            export USE_CODEC_FLAC=no
-            export USE_CODEC_MP3=no
-            export USE_CODEC_VORBIS=no
-            export USE_CODEC_OPUS=no
-            export USE_CODEC_MIKMOD=no
-            export USE_CODEC_TIMIDITY=no
+            export USE_CODEC_FLAC=yes
+            export USE_CODEC_MP3=yes
+            export USE_CODEC_VORBIS=yes
+            export USE_CODEC_OPUS=yes
+            export USE_CODEC_MIKMOD=yes
+            export USE_CODEC_TIMIDITY=yes
+            export MP3LIB=mad
+            export VORBISLIB=vorbis
 
             # Compiler flags for old C code
             export CFLAGS="-std=gnu99 -fcommon -Wno-incompatible-pointer-types -Wno-int-conversion -Wno-implicit-function-declaration"
@@ -412,7 +403,7 @@ windows/ - Windows x64 build
 
 Usage:
 ------
-Linux (Nix):    nix run .#uhexen2 -- -mod sot
+Linux (Nix):    nix run .#uhexen2 -- -game sot
 Linux (FHS):   Requires: libsdl1.2 libvorbisfile3 libmad0
 Windows:       Copy glh2.exe + DLLs to game dir
 

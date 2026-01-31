@@ -21,9 +21,9 @@ This release adds compatibility for the **Storm Over Thyrion (SoT)** mod, along 
 - Updated to use modern dependencies and compilers (GCC 15 compatible)
 
 ### Compatibility Notes
-- SoT mod requires launching with `-game sot` or `-game ros`
+- SoT mod requires launching with `-game sot`
 - Some SoT custom protocol messages (89, 114) are handled gracefully; full implementation pending
-- Text display works best when using `-game ros` to load the correct conchars.lmp
+- Text display works best when using `-game sot` to load the correct conchars.lmp
 
 ### Technical Changes
 - Engine: `MAX_SKIN_HEIGHT` is 2048 (preventing some mod crashes)

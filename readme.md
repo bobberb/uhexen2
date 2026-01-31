@@ -5,29 +5,103 @@ A Nix flake for building [Hexen II: Hammer of Thyrion (uHexen2)](https://hexenwo
 ## Features
 
 - Software and OpenGL rendering
-- Enhanced audio codec support (Ogg Vorbis, MP3, FLAC, MIDI, MikMod)
+- Enhanced audio codec support (Ogg Vorbis, MP3, FLAC, Opus, MIDI, MikMod)
 - ALSA and OSS audio support (Linux)
 - X11 and SDL integration
+- **SoT mod compatibility** - Storm Over Thyrion and related Portals-based mods
+- Multi-platform builds (Linux, Windows)
+
+## Available Packages
+
+| Package | Description |
+|---------|-------------|
+| `default` / `uhexen2` | Main OpenGL client for NixOS/Nix |
+| `fhs` | FHS-compatible build for non-Nix Linux (Ubuntu, Debian, Arch) |
+| `windows` | Windows x64 cross-compiled build |
+| `release` | Multi-platform release bundle |
+| `launcher` | Helper script with game data detection |
 
 ## Building
 
 ```bash
-# Build the default package
+# Build for NixOS/Nix (default)
 nix build .#uhexen2
 
-# Or from the flake directly
-nix build github:USER/REPO#uhexen2
+# Build FHS version (for non-Nix Linux)
+nix build .#fhs
+
+# Build Windows version
+nix build .#windows
+
+# Build release bundle (all platforms)
+nix build .#release
 ```
 
 ## Running
 
+### NixOS/Nix
+
 ```bash
 # Use the launcher (checks for game data)
-nix run .#default
+nix run .
 
 # Or run directly
-nix run .#glhexen2  # OpenGL renderer
-nix run .#hexen2    # Software renderer
+nix run .#uhexen2               # OpenGL renderer
+nix run .#uhexen2 -- -game sot  # Play SoT mod
+nix run .#uhexen2 -- -mod wok   # Play Wheel of Karma mod
+```
+
+### Non-Nix Linux (Ubuntu/Debian/Arch)
+
+```bash
+# Build the FHS version
+nix build .#fhs
+
+# The binary will be in result-fhs/bin/glhexen2
+# Install required libraries:
+# Ubuntu/Debian: sudo apt install libsdl1.2 libvorbisfile3 libmad0
+# Arch:          sudo pacman -S sdl1.2-compat libvorbis libmad
+
+# Run from your game directory
+./result-fhs/bin/glhexen2 -game sot
+```
+
+### Windows
+
+```bash
+# Build Windows version
+nix build .#windows
+
+# Copy contents of result-windows/bin/ to your game directory
+# Includes: glh2.exe, h2.exe, h2ded.exe, and required DLLs
+```
+
+## Mod Support
+
+### Storm Over Thyrion (SoT)
+
+The SoT mod requires launching with `-game sot` to load Portals assets:
+
+```bash
+nix run .#uhexen2 -- -game sot
+```
+
+### Wheel of Karma and other Portals-based Mods
+
+Use the `-mod` flag for Portals-based mods like Wheel of Karma:
+
+```bash
+nix run .#uhexen2 -- -mod wok
+```
+
+This automatically loads Portals assets before the mod directory.
+
+### Other Mods
+
+For mods that don't require Portals assets, use `-game`:
+
+```bash
+nix run .#uhexen2 -- -game modname
 ```
 
 ## Development
@@ -37,39 +111,58 @@ nix run .#hexen2    # Software renderer
 nix develop
 
 # Build manually
-cd $src/engine/hexen2
-make glh2
-make h2
+cd engine/hexen2
+make glh2    # OpenGL renderer
+make h2      # Software renderer
+
+# Build Windows cross-compile
+make -C ../..
+nix build .#windows
 ```
 
 ## Game Data
 
 **Important:** This package only builds the game engine. You need the original Hexen II game data files to play.
 
+### Required Files
+
 Place your game data in one of these locations:
 - `./data1/` (current directory)
 - `~/.hexen2/data1/`
 
-The game data should include files like:
-- `pak0.pak`
-- `pak1.pak`
-- Various `.pak` files from the original game
+The game data should include:
+- `pak0.pak`, `pak1.pak` - Base game files
+- `pak2.pak` - OEM version (if applicable)
+- `pak3.pak` - Portal of Praevus expansion (optional)
+
+### For SoT Mod
+
+The SoT mod requires the Portal of Praevus expansion (pak3.pak) to be installed. The `-game sot` flag will automatically load Portals assets along with the SoT mod files.
 
 ## Package Contents
 
-The built package includes:
+The `uhexen2` package includes:
 - `/bin/glhexen2` - OpenGL renderer (recommended)
-- `/bin/hexen2` - Software renderer
 - `/share/doc/uhexen2/` - Documentation
+
+The `windows` package includes:
+- `glh2.exe` - OpenGL renderer (with full codec support)
+- `h2.exe` - Software renderer
+- `h2ded.exe` - Dedicated server
+- `*.dll` - Required runtime libraries (SDL, FLAC, MP3, Vorbis, Opus, MikMod)
 
 ## Outputs
 
-- `packages.default` / `packages.uhexen2` - Main game engine
-- `packages.launcher` - Wrapper script with game data detection
-- `apps.default` - Runs the launcher
-- `apps.glhexen2` - Runs OpenGL version directly
-- `apps.hexen2` - Runs software version directly
-- `devShells.default` - Development environment
+| Output | Description |
+|--------|-------------|
+| `packages.default` / `packages.uhexen2` | Main game engine |
+| `packages.fhs` | FHS-compatible Linux build |
+| `packages.windows` | Windows x64 build |
+| `packages.release` | Multi-platform release bundle |
+| `packages.launcher` | Wrapper script with game data detection |
+| `apps.default` | Runs the launcher |
+| `apps.glhexen2` | Runs OpenGL version directly |
+| `devShells.default` | Development environment |
 
 ## License
 
@@ -79,12 +172,13 @@ The built package includes:
 ## Links
 
 - Project homepage: https://hexenworld.org
-- GitHub mirror: https://github.com/Shanjaq/uhexen2
+- GitHub: https://github.com/bobberb/uhexen2
 - Original SourceForge: http://uhexen2.sourceforge.net/
 
-## Notes
+## Version Information
 
-- The package uses SDL 1.2 compatibility layer
-- ALSA is enabled by default on Linux
-- All audio codecs are included for maximum compatibility
-- The engine supports mission packs when the corresponding data files are present
+This is version **1.5.11-sot** based on the sakabato branch with:
+- SoT mod compatibility
+- Arbitrary resolution support
+- Enhanced protocol handling
+- Multi-platform build support
