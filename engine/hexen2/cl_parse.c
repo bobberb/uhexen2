@@ -319,6 +319,8 @@ static void CL_ParseServerInfo (void)
 
 // precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
+	if (developer.integer >= 2)
+		Con_DPrintf("Starting model precache loop\n");
 	for (nummodels = 1 ; ; nummodels++)
 	{
 		str = MSG_ReadString ();
@@ -335,9 +337,11 @@ static void CL_ParseServerInfo (void)
 		}
 		q_strlcpy (model_precache[nummodels], str, MAX_QPATH);
 		if (developer.integer >= 2)
-			Con_DPrintf("Model precache[%d] = %s\n", nummodels, str);
+			Con_DPrintf("Model precache[%d] = '%s' (len=%zu)\n", nummodels, str, strlen(str));
 		Mod_TouchModel (str);
 	}
+	if (developer.integer >= 2)
+		Con_DPrintf("After model precache loop: nummodels=%d, model_precache[1]='%s'\n", nummodels, model_precache[1]);
 
 // precache sounds
 	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
@@ -367,9 +371,18 @@ static void CL_ParseServerInfo (void)
 	}
 
 	// copy the naked name of the map file to the cl structure
+	if (developer.integer >= 2)
+		Con_DPrintf("About to call COM_FileBase with model_precache[1]='%s'\n", model_precache[1]);
 	COM_FileBase (model_precache[1], cl.mapname, sizeof(cl.mapname));
 
 	//always precache the world!!!
+	if (developer.integer >= 2)
+		Con_DPrintf("About to load world model: '%s'\n", model_precache[1]);
+	if (!model_precache[1][0])
+	{
+		Con_Printf("ERROR: World model name is empty! Cannot load map.\n");
+		return;
+	}
 	cl.model_precache[1] = Mod_ForName (model_precache[1], false);
 	for (i = 2; i < nummodels; i++)
 	{
