@@ -87,7 +87,7 @@
 #define	MAX_EDICTS	2048		// FIXME: ouch! ouch! ouch!
 #define	MAX_LIGHTSTYLES	256
 
-#define	MAX_MODELS	512		/* Sent over the net as a word */
+#define	MAX_MODELS	2048		/* Sent over the net as a word */
 #define	MAX_SOUNDS_OLD	256		/* Hexen2 v1.11 (protocol 18) and older: sent as a byte	*/
 #define	MAX_SOUNDS_H2MP	512		/* Mission Pack (protocol 19), messy thing:		*/
 					/* SV_StartSound sends it as a byte, but PF_ambientsound
