@@ -26,7 +26,7 @@
    COMMON DEFINITIONS
    ================================================================== */
 
-#define MAX_GLTEXTURES		2048
+#define MAX_GLTEXTURES		8192
 #define MAX_EXTRA_TEXTURES	156	/* 255-100+1 */
 #define	MAX_CACHED_PICS		256
 #define	MAX_LIGHTMAPS		128
