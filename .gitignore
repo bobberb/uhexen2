@@ -19,3 +19,4 @@ result-*
 *.o
 engine/hexen2/glhexen2
 engine/hexen2/h2ded
+utils/progs_dump.c
