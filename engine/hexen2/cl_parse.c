@@ -260,6 +260,8 @@ static void CL_ParseServerInfo (void)
 // rjr	edict_t		*ent;
 
 	Con_DPrintf ("Serverinfo packet received.\n");
+	Con_DPrintf("CL_ParseServerInfo: Message size=%d, readcount=%d\n",
+		net_message.cursize, msg_readcount);
 
 // bring up loading plaque for map changes within a demo.
 // it will be hidden in CL_SignonReply() -- ericw
@@ -318,9 +320,13 @@ static void CL_ParseServerInfo (void)
 
 // precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
+	Con_DPrintf("CL_ParseServerInfo: Starting model precache loop (demo=%d)\n", cls.demoplayback);
 	for (nummodels = 1 ; ; nummodels++)
 	{
 		str = MSG_ReadString ();
+		if (developer.integer >= 2)
+			Con_DPrintf("CL_ParseServerInfo: Read model #%d: '%s' (len=%zu)\n",
+				nummodels, str[0] ? str : "(empty)", strlen(str));
 		if (!str[0])
 			break;
 		if (nummodels == MAX_MODELS)
@@ -331,6 +337,8 @@ static void CL_ParseServerInfo (void)
 		q_strlcpy (model_precache[nummodels], str, MAX_QPATH);
 		Mod_TouchModel (str);
 	}
+	Con_DPrintf("CL_ParseServerInfo: Model precache done: nummodels=%d, model[1]='%s'\n",
+		nummodels, model_precache[1]);
 
 // precache sounds
 	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
