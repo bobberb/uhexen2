@@ -1,0 +1,18 @@
+# Nix flake outputs
+result
+result-*
+.direnv
+
+# Nix flake lock file is optional - include it for reproducibility
+# flake.lock
+
+# Beads runtime files (database, locks, logs)
+.beads/*.db
+.beads/*.db-shm
+.beads/*.db-wal
+.beads/*.lock
+.beads/*.pid
+.beads/*.log
+.beads/.local_version
+.beads/last-touched
+.beads/sync_base.jsonl
