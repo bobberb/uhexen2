@@ -139,7 +139,7 @@ typedef struct
 	char		map[MAX_STYLESTRING];
 } lightstyle_t;
 
-#define	MAX_EFRAGS		512
+#define	MAX_EFRAGS		8192
 
 #define	MAX_DEMOS		8
 #define	MAX_DEMONAME		16
