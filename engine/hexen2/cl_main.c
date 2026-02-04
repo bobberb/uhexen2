@@ -255,11 +255,17 @@ void CL_NextDemo (void)
 {
 	char	str[1024];
 
+	Con_DPrintf("CL_NextDemo: demonum=%d\n", cls.demonum);
+
 	if (cls.demonum == -1)
+	{
+		Con_DPrintf("CL_NextDemo: demonum == -1, not playing demos\n");
 		return;		// don't play demos
+	}
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS)
 	{
+		Con_DPrintf("CL_NextDemo: Reached end of demo list, wrapping to start\n");
 		cls.demonum = 0;
 		if (!cls.demos[cls.demonum][0])
 		{
@@ -269,6 +275,8 @@ void CL_NextDemo (void)
 			return;
 		}
 	}
+
+	Con_DPrintf("CL_NextDemo: Playing demo #%d: '%s'\n", cls.demonum, cls.demos[cls.demonum]);
 
 	SCR_BeginLoadingPlaque ();
 
