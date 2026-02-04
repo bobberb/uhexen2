@@ -231,9 +231,6 @@ int MSG_ReadByte (void)
 
 	if (msg_readcount+1 > net_message.cursize)
 	{
-		if (developer.integer >= 2)
-			Con_DPrintf("MSG_ReadByte: OVERFLOW (readcount=%d, cursize=%d)\n",
-				msg_readcount, net_message.cursize);
 		msg_badread = true;
 		return -1;
 	}
@@ -319,9 +316,6 @@ const char *MSG_ReadString (void)
 	} while (l < sizeof(string) - 1);
 
 	string[l] = 0;
-
-	if (developer.integer >= 2 && l == 0)
-		Con_DPrintf("MSG_ReadString: Read empty string (first byte=%d)\n", c);
 
 	return string;
 }
