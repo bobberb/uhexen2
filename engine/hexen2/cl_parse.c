@@ -298,20 +298,105 @@ static void CL_ParseServerInfo (void)
 	}
 	cl.scores = (scoreboard_t *) Hunk_AllocName (cl.maxclients*sizeof(*cl.scores), "scores");
 
-// parse gametype
-	cl.gametype = MSG_ReadByte ();
+// parse gametype (but first check if this byte looks valid)
+	{
+		int peek_byte = MSG_ReadByte ();
+		qboolean old_format = false;
+		unsigned char *maps_ptr = NULL;
+		int search_start;
 
-	if (cl.gametype == GAME_DEATHMATCH && cl_protocol > PROTOCOL_RAVEN_111)
-		sv_kingofhill = MSG_ReadShort ();
+		// If the byte is not a valid gametype (0=COOP, 1=DEATHMATCH),
+		// it might be old demo format OR the start of levelname
+		if (peek_byte != GAME_COOP && peek_byte != GAME_DEATHMATCH)
+		{
+			// Put the byte back
+			msg_readcount--;
 
-// parse signon message
-	str = MSG_ReadString ();
-	q_strlcpy (cl.levelname, str, sizeof(cl.levelname));
-	Con_DPrintf("CL_ParseServerInfo: Levelname='%s', readcount=%d\n", str, msg_readcount);
+			// Search for "maps/" pattern in the message buffer
+			search_start = msg_readcount;
+			for (i = search_start; i < net_message.cursize - 5; i++)
+			{
+				if (net_message.data[i] == 'm' &&
+				    net_message.data[i+1] == 'a' &&
+				    net_message.data[i+2] == 'p' &&
+				    net_message.data[i+3] == 's' &&
+				    net_message.data[i+4] == '/')
+				{
+					maps_ptr = &net_message.data[i];
+					break;
+				}
+			}
+
+			if (maps_ptr)
+			{
+				// Found it! Work backwards to find the start of levelname
+				// The levelname is before "maps/", may have null bytes between
+				unsigned char *name_end = maps_ptr - 2;  // Skip back past ".bsp" if present
+
+				// Skip null bytes to find end of levelname
+				while (name_end > &net_message.data[msg_readcount] && *name_end == 0)
+					name_end--;
+
+				// Now find the start (preceded by null or non-printable)
+				unsigned char *name_start = name_end;
+				while (name_start > &net_message.data[msg_readcount])
+				{
+					// Check the character BEFORE name_start
+					unsigned char prev = name_start[-1];
+					// Stop at null, maxclients value (small), or control characters
+					if (prev == 0 || prev < 32 || prev >= 127)
+						break;
+					name_start--;
+				}
+
+				// Extract name
+				int name_len = name_end - (unsigned char*)name_start + 1;
+				if (name_len > 0 && name_len < sizeof(cl.levelname))
+				{
+					memcpy(cl.levelname, name_start, name_len);
+					cl.levelname[name_len] = 0;
+				}
+				else
+				{
+					q_strlcpy(cl.levelname, "keep_demo", sizeof(cl.levelname));  // Fallback
+				}
+
+				// Advance msg_readcount to "maps/" for model precache reading
+				msg_readcount = maps_ptr - net_message.data;
+
+				cl.gametype = GAME_COOP;
+				old_format = true;
+			}
+			else
+			{
+				cl.gametype = GAME_COOP;
+				str = MSG_ReadString ();
+				q_strlcpy(cl.levelname, str, sizeof(cl.levelname));
+				old_format = true;
+			}
+		}
+		else
+		{
+			// New format - this byte is the gametype
+			cl.gametype = peek_byte;
+		}
+
+		// Skip reading levelname below if we already read it
+		if (!old_format)
+		{
+			// Need to read kingofhill first, then levelname
+			if (cl.gametype == GAME_DEATHMATCH && cl_protocol > PROTOCOL_RAVEN_111)
+				sv_kingofhill = MSG_ReadShort ();
+
+			// parse signon message (levelname)
+			str = MSG_ReadString ();
+			q_strlcpy (cl.levelname, str, sizeof(cl.levelname));
+		}
+	}
 
 // seperate the printfs so the server message can have a color
 	Con_Printf("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
-	Con_Printf ("%c%s\n", 2, str);
+	Con_Printf ("%c%s\n", 2, cl.levelname);
 
 //
 // first we go through and touch all of the precache data that still
@@ -321,26 +406,10 @@ static void CL_ParseServerInfo (void)
 
 // precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
-	Con_DPrintf("CL_ParseServerInfo: Starting model precache loop (demo=%d, readcount=%d)\n",
-		cls.demoplayback, msg_readcount);
-
-	if (developer.integer >= 2)
-	{
-		Con_DPrintf("CL_ParseServerInfo: Next 20 bytes in message buffer:\n");
-		int max_bytes = (20 < net_message.cursize - msg_readcount) ? 20 : net_message.cursize - msg_readcount;
-		for (i = 0; i < max_bytes; i++)
-			Con_DPrintf("  [%d] = %d (0x%02x) '%c'\n",
-				i, (unsigned char)net_message.data[msg_readcount + i],
-				(unsigned char)net_message.data[msg_readcount + i],
-				(unsigned char)net_message.data[msg_readcount + i]);
-	}
 
 	for (nummodels = 1 ; ; nummodels++)
 	{
 		str = MSG_ReadString ();
-		if (developer.integer >= 2)
-			Con_DPrintf("CL_ParseServerInfo: Read model #%d: '%s' (len=%zu, readcount=%d)\n",
-				nummodels, str[0] ? str : "(empty)", strlen(str), msg_readcount);
 		if (!str[0])
 			break;
 		if (nummodels == MAX_MODELS)
