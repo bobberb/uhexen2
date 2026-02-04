@@ -1786,14 +1786,10 @@ static void GL_Upload8 (byte *data, gltexture_t *glt)
 	}
 	else
 	{
-		if (s&3)
-			Sys_Error ("%s: s&3", __thisfunc__);
-		for (i = 0; i < s; i += 4)
+		// Handle non-multiple-of-4 texture sizes (for SoT mod compatibility)
+		for (i = 0; i < s; i++)
 		{
 			trans[i] = d_8to24table[data[i]];
-			trans[i+1] = d_8to24table[data[i+1]];
-			trans[i+2] = d_8to24table[data[i+2]];
-			trans[i+3] = d_8to24table[data[i+3]];
 		}
 	}
 
