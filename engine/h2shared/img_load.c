@@ -383,6 +383,41 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 
 	*has_alpha = false;
 
+	// For model skins (names starting with "models/"), try direct path first
+	if (!strncmp(name, "models/", 7))
+	{
+		// Try PNG first
+		q_snprintf (path, sizeof(path), "%s.png", name);
+		data = IMG_LoadPNG (path, width, height, &alpha);
+		if (data)
+		{
+			*has_alpha = alpha;
+			Con_Printf ("Loaded external skin: %s\n", path);
+			return data;
+		}
+
+		// Try TGA
+		q_snprintf (path, sizeof(path), "%s.tga", name);
+		data = IMG_LoadTGA (path, width, height, &alpha);
+		if (data)
+		{
+			*has_alpha = alpha;
+			Con_Printf ("Loaded external skin: %s\n", path);
+			return data;
+		}
+
+		// Try PCX
+		q_snprintf (path, sizeof(path), "%s.pcx", name);
+		data = IMG_LoadPCX (path, width, height);
+		if (data)
+		{
+			*has_alpha = true;	// PCX uses index 255 for transparency
+			Con_Printf ("Loaded external skin: %s\n", path);
+			return data;
+		}
+	}
+
+	// For world textures, try textures/ directory
 	// Try PNG first (best quality with alpha)
 	q_snprintf (path, sizeof(path), "textures/%s.png", name);
 	data = IMG_LoadPNG (path, width, height, &alpha);
@@ -409,9 +444,13 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 	if (data)
 	{
 		*has_alpha = true;	// PCX uses index 255 for transparency
-		Con_DPrintf ("Loaded external texture: %s\n", path);
+		Con_Printf ("Loaded external texture: %s\n", path);
 		return data;
 	}
+
+	// Debug: show when chain texture lookup fails
+	if (!strcmp(name, "chain"))
+		Con_Printf ("DEBUG: chain texture not found as external file\n");
 
 	return NULL;
 }

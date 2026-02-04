@@ -2332,11 +2332,35 @@ static void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int md
 #endif
 
 		q_snprintf (name, sizeof(name), "%s_%i", loadmodel->name, i);
-		pheader->gl_texturenum[i][0] =
-		pheader->gl_texturenum[i][1] =
-		pheader->gl_texturenum[i][2] =
-		pheader->gl_texturenum[i][3] = GL_LoadTexture (name, (byte *)(pskintype + 1),
-						pheader->skinwidth, pheader->skinheight, tex_mode);
+
+		// Try external skin file first (PNG, TGA, PCX)
+		byte	*external_skin;
+		int		ext_width, ext_height;
+		qboolean	has_alpha;
+
+		external_skin = IMG_LoadExternalTexture(name, &ext_width, &ext_height, &has_alpha);
+		if (external_skin)
+		{
+			// External skin loaded successfully
+			int skin_tex_mode = TEX_MIPMAP | TEX_RGBA;
+			if (has_alpha)
+				skin_tex_mode |= TEX_ALPHA;
+			pheader->gl_texturenum[i][0] =
+			pheader->gl_texturenum[i][1] =
+			pheader->gl_texturenum[i][2] =
+			pheader->gl_texturenum[i][3] = GL_LoadTexture (name, external_skin,
+							ext_width, ext_height, skin_tex_mode);
+			free(external_skin);
+		}
+		else
+		{
+			// Fall back to embedded skin from MDL file
+			pheader->gl_texturenum[i][0] =
+			pheader->gl_texturenum[i][1] =
+			pheader->gl_texturenum[i][2] =
+			pheader->gl_texturenum[i][3] = GL_LoadTexture (name, (byte *)(pskintype + 1),
+							pheader->skinwidth, pheader->skinheight, tex_mode);
+		}
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 
 	    } else /*if (k == ALIAS_SKIN_GROUP)*/
@@ -2351,8 +2375,29 @@ static void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int md
 		{
 			Mod_FloodFillSkin (skin, pheader->skinwidth, pheader->skinheight);
 			q_snprintf (name, sizeof(name), "%s_%i_%i", loadmodel->name, i, j);
-			pheader->gl_texturenum[i][j&3] = GL_LoadTexture (name, (byte *)(pskintype),
-						pheader->skinwidth, pheader->skinheight, tex_mode);
+
+			// Try external skin file first (PNG, TGA, PCX)
+			byte	*external_skin;
+			int		ext_width, ext_height;
+			qboolean	has_alpha;
+
+			external_skin = IMG_LoadExternalTexture(name, &ext_width, &ext_height, &has_alpha);
+			if (external_skin)
+			{
+				// External skin loaded successfully
+				int skin_tex_mode = TEX_MIPMAP | TEX_RGBA;
+				if (has_alpha)
+					skin_tex_mode |= TEX_ALPHA;
+				pheader->gl_texturenum[i][j&3] = GL_LoadTexture (name, external_skin,
+							ext_width, ext_height, skin_tex_mode);
+				free(external_skin);
+			}
+			else
+			{
+				// Fall back to embedded skin from MDL file
+				pheader->gl_texturenum[i][j&3] = GL_LoadTexture (name, (byte *)(pskintype),
+							pheader->skinwidth, pheader->skinheight, tex_mode);
+			}
 			pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 		}
 		for (k = j; j < 4; j++)
