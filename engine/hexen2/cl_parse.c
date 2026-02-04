@@ -362,6 +362,22 @@ static void CL_ParseServerInfo (void)
 	COM_FileBase (model_precache[1], cl.mapname, sizeof(cl.mapname));
 
 	//always precache the world!!!
+	if (developer.integer >= 2)
+		Con_DPrintf("About to load world model: '%s'\n", model_precache[1]);
+	if (!model_precache[1][0])
+	{
+		// Demo file has corrupt/missing model data - this can happen with
+		// old demos recorded with different engine versions or mod setups
+		if (cls.demoplayback)
+		{
+			Con_Printf("Warning: Demo has corrupt model list, skipping to next demo\n");
+			CL_StopPlayback();  // Stop this demo
+			CL_NextDemo();      // Try next demo
+			return;
+		}
+		Con_Printf("ERROR: World model name is empty! Cannot load map.\n");
+		return;
+	}
 	cl.model_precache[1] = Mod_ForName (model_precache[1], false);
 	for (i = 2; i < nummodels; i++)
 	{
