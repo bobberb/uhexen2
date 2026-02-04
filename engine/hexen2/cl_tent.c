@@ -277,8 +277,13 @@ void CL_ParseTEnt(void)
 		pos[2] = MSG_ReadCoord ();
 		R_TeleportSplash (pos);
 		break;
+
+	// SoT mod uses additional effect types beyond the standard range
+	// For now, skip unknown types gracefully to prevent crashes
 	default:
-		Sys_Error ("%s: bad type", __thisfunc__);
+		Con_DPrintf ("%s: Unknown effect type %d, skipping\n", __thisfunc__, type);
+		// Don't crash, just skip this effect
+		break;
 	}
 }
 

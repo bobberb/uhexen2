@@ -274,14 +274,13 @@ void Draw_Init (void)
 	draw_chars = FS_LoadZoneFile ("gfx/menu/conchars.lmp", Z_SECZONE, NULL);
 	Draw_PicCheckError (draw_chars, "gfx/menu/conchars.lmp");
 
-	// Handle both old format (no header, 32768 bytes) and new format (qpic header, 32776 bytes)
-	if (fs_filesize == 256*128 + 8) {
-		// ROS mod format: skip qpic header (width + height)
-		draw_chars = (byte *)draw_chars + 8;
-	} else if (fs_filesize != 256*128) {
-		Sys_Error ("gfx/menu/conchars.lmp: bad size (%d bytes, expected %d or %d).",
-			fs_filesize, 256*128, 256*128 + 8);
+	// SoT/karma2 mods have larger charset but it's raw data, NOT a qpic with header
+	// Accept both standard 32768 and larger sizes as raw character data
+	if (fs_filesize < 256*128) {
+		Sys_Error ("gfx/menu/conchars.lmp: bad size (%d bytes, expected at least %d).",
+			fs_filesize, 256*128);
 	}
+	Con_DPrintf("conchars.lmp: loaded %d bytes (raw charset data)\n", fs_filesize);
 
 	draw_smallchars = (byte *) W_GetLumpName("tinyfont");
 

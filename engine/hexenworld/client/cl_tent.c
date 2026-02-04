@@ -3419,8 +3419,12 @@ void CL_ParseTEnt (void)
 			}
 		  }	break;
 
-		default:
-			Sys_Error ("%s: bad type", __thisfunc__);
+	// SoT mod uses additional effect types beyond the standard range
+	// For now, skip unknown types gracefully to prevent crashes
+	default:
+		Con_DPrintf ("%s: Unknown effect type %d, skipping\n", __thisfunc__, type);
+		// Don't crash, just skip this effect
+		break;
 	}
 }
 
