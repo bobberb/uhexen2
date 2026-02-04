@@ -1001,7 +1001,18 @@ void Key_Event (int key, qboolean down)
 
 	if (cl.intermission == 12 && down)
 	{
-		Cbuf_AddText ("map keep1\n");
+		//Launch the new mission (on a custom map if so specificied in the command line)
+		int i = COM_CheckParm("-startnew");
+		if (i && i < com_argc - 1)
+		{
+			Cbuf_AddText("map ");
+			Cbuf_AddText(com_argv[i + 1]);
+			Cbuf_AddText("\n");
+		}
+		else
+		{
+			Cbuf_AddText("map keep1\n");
+		}
 	}
 
 // if not a consolekey, send to the interpreter no matter what mode is
