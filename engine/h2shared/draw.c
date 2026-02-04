@@ -273,8 +273,14 @@ void Draw_Init (void)
 		Z_Free (draw_chars);
 	draw_chars = FS_LoadZoneFile ("gfx/menu/conchars.lmp", Z_SECZONE, NULL);
 	Draw_PicCheckError (draw_chars, "gfx/menu/conchars.lmp");
-	if (fs_filesize != 256*128) {
-		Sys_Error ("gfx/menu/conchars.lmp: bad size.");
+
+	// Handle both old format (no header, 32768 bytes) and new format (qpic header, 32776 bytes)
+	if (fs_filesize == 256*128 + 8) {
+		// ROS mod format: skip qpic header (width + height)
+		draw_chars = (byte *)draw_chars + 8;
+	} else if (fs_filesize != 256*128) {
+		Sys_Error ("gfx/menu/conchars.lmp: bad size (%d bytes, expected %d or %d).",
+			fs_filesize, 256*128, 256*128 + 8);
 	}
 
 	draw_smallchars = (byte *) W_GetLumpName("tinyfont");
