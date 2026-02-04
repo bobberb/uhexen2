@@ -307,6 +307,7 @@ static void CL_ParseServerInfo (void)
 // parse signon message
 	str = MSG_ReadString ();
 	q_strlcpy (cl.levelname, str, sizeof(cl.levelname));
+	Con_DPrintf("CL_ParseServerInfo: Levelname='%s', readcount=%d\n", str, msg_readcount);
 
 // seperate the printfs so the server message can have a color
 	Con_Printf("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
@@ -320,13 +321,26 @@ static void CL_ParseServerInfo (void)
 
 // precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
-	Con_DPrintf("CL_ParseServerInfo: Starting model precache loop (demo=%d)\n", cls.demoplayback);
+	Con_DPrintf("CL_ParseServerInfo: Starting model precache loop (demo=%d, readcount=%d)\n",
+		cls.demoplayback, msg_readcount);
+
+	if (developer.integer >= 2)
+	{
+		Con_DPrintf("CL_ParseServerInfo: Next 20 bytes in message buffer:\n");
+		int max_bytes = (20 < net_message.cursize - msg_readcount) ? 20 : net_message.cursize - msg_readcount;
+		for (i = 0; i < max_bytes; i++)
+			Con_DPrintf("  [%d] = %d (0x%02x) '%c'\n",
+				i, (unsigned char)net_message.data[msg_readcount + i],
+				(unsigned char)net_message.data[msg_readcount + i],
+				(unsigned char)net_message.data[msg_readcount + i]);
+	}
+
 	for (nummodels = 1 ; ; nummodels++)
 	{
 		str = MSG_ReadString ();
 		if (developer.integer >= 2)
-			Con_DPrintf("CL_ParseServerInfo: Read model #%d: '%s' (len=%zu)\n",
-				nummodels, str[0] ? str : "(empty)", strlen(str));
+			Con_DPrintf("CL_ParseServerInfo: Read model #%d: '%s' (len=%zu, readcount=%d)\n",
+				nummodels, str[0] ? str : "(empty)", strlen(str), msg_readcount);
 		if (!str[0])
 			break;
 		if (nummodels == MAX_MODELS)
