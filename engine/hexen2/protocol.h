@@ -29,7 +29,7 @@
 #define	PROTOCOL_UQE_113		20	/* Korax UQE patch 1.13 */
 #define	PROTOCOL_UH2_114		21	/* Shanjaq uHexen 1.14 update */
 /* the default protocol: */
-#define	PROTOCOL_VERSION		(PROTOCOL_UH2_114)
+#define	PROTOCOL_VERSION		(PROTOCOL_RAVEN_112)
 
 //=========================================
 
