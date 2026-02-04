@@ -1297,10 +1297,10 @@ static void R_DrawGlow (entity_t *e)
 			}
 
 			intensity *= ((float)j / 255.0f);
-			glColor4f_fp (clmodel->glow_color[0]*intensity,
-					clmodel->glow_color[1]*intensity,
-					clmodel->glow_color[2]*intensity,
-					clmodel->glow_color[3]);
+			glColor4f_fp (clmodel->glow_settings[COLOR_R]*intensity,
+					clmodel->glow_settings[COLOR_G]*intensity,
+					clmodel->glow_settings[COLOR_B]*intensity,
+					clmodel->glow_settings[COLOR_A]);
 
 			for (i = 0; i < 3; i++)
 				glow_vect[i] = lightorigin[i] - vp2[i]*radius;

@@ -384,6 +384,98 @@ static void PF_setpuzzlemodel (void)
 
 /*
 =================
+PF_pimpmodel
+
+Modify model properties at runtime (Inky's extension)
+pimpmodel(entity reference, vector glow_color)
+
+Returns: float (1 on success, 0 on failure)
+=================
+*/
+#ifndef H2W
+static void PF_pimpmodel (void)
+{
+	edict_t	*ref_ent;
+	qmodel_t	*mod;
+	const char	*model_name;
+	float	*glow_color;
+	float	abslight, health, max_health;
+	float	*view_ofs;
+	int		new_flags;
+	int		spawnflags;
+
+	ref_ent = G_EDICT(OFS_PARM0);
+	glow_color = G_VECTOR(OFS_PARM1);
+
+	/* Get model name from the entity */
+	if (ref_ent->v.model == 0)
+	{
+		G_INT(OFS_RETURN) = 0;
+		return;
+	}
+	model_name = PR_GetString(ref_ent->v.model);
+
+	/* Find the model */
+	mod = Mod_FindName(model_name);
+	if (!mod)
+	{
+		Con_Printf("%s: model %s not found\n", __thisfunc__, model_name);
+		G_INT(OFS_RETURN) = 0;
+		return;
+	}
+
+	/* Get entity properties */
+	new_flags = (int)ref_ent->v.flags;	/* preset effects to override mdl flags */
+	abslight = ref_ent->v.abslight;		/* glow alpha */
+	health = ref_ent->v.health;		/* glow radius */
+	max_health = ref_ent->v.max_health;	/* light radius */
+	view_ofs = ref_ent->v.view_ofs;		/* glow offset (x y z) */
+	spawnflags = (int)ref_ent->v.spawnflags;
+
+	/* Apply spawnflags (Spin, Float, Glow orb, Cast light) */
+	if (spawnflags & 1)	/* Spin */
+		mod->flags = (mod->flags & ~EF_ROTATE) | EF_SPIN;
+	if (spawnflags & 2)	/* Float */
+		mod->flags = (mod->flags & ~EF_ROTATE) | EF_FLOAT;
+	if (spawnflags & 4)	/* Glow orb */
+		mod->flags |= EF_GLOW;
+	if (spawnflags & 8)	/* Cast light */
+		mod->flags |= EF_ILLUMINATE;
+
+	/* Apply custom flags (overrides mdl hardcoded flags) */
+	if (new_flags != 0)
+	{
+		/* Clear the effect flags that can be overridden */
+		mod->flags &= ~(EF_ROCKET | EF_GRENADE | EF_GIB | EF_ROTATE |
+				EF_TRACER | EF_ZOMGIB | EF_TRACER2 | EF_TRACER3 |
+				EF_FIREBALL | EF_ICE | EF_MIP_MAP | EF_SPIT |
+				EF_TRANSPARENT | EF_SPELL | EF_HOLEY |
+				EF_SPECIAL_TRANS | EF_FACE_VIEW | EF_VORP_MISSILE |
+				EF_SET_STAFF | EF_MAGICMISSILE | EF_BONESHARD |
+				EF_SCARAB | EF_ACIDBALL | EF_BLOODSHOT |
+				EF_MIP_MAP_FAR | EF_SPIN | EF_FLOAT |
+				EF_GLOW | EF_ILLUMINATE);
+		mod->flags |= (new_flags & 0x01ffffff);	/* mask of valid EF_ flags */
+	}
+
+	/* Apply glow settings */
+	mod->glow_settings[COLOR_R] = glow_color[0];
+	mod->glow_settings[COLOR_G] = glow_color[1];
+	mod->glow_settings[COLOR_B] = glow_color[2];
+	mod->glow_settings[COLOR_A] = abslight;
+	mod->glow_settings[ORB_OFFSET_X] = view_ofs[0];
+	mod->glow_settings[ORB_OFFSET_Y] = view_ofs[1];
+	mod->glow_settings[ORB_OFFSET_Z] = view_ofs[2];
+	mod->glow_settings[ORB_RADIUS] = health;
+	mod->glow_settings[LIGHT_RADIUS] = max_health;
+	mod->glow_settings[LIGHT_STYLE] = 0;	/* default style */
+
+	G_INT(OFS_RETURN) = 1;
+}
+#endif
+
+/*
+=================
 PF_bprint
 
 broadcast print to everyone on server
@@ -3977,6 +4069,11 @@ static builtin_t pr_builtin[] =
 	PF_doWhiteFlash,	// 104
 	PF_UpdateSoundPos,	// 105
 	PF_StopSound,		// 106
+	PF_Fixme,		// 107
+	PF_Fixme,		// 108
+	PF_Fixme,		// 109
+	PF_Fixme,		// 110
+	PF_pimpmodel,		// 111 (Inky's model effects extension)
 
 #ifdef QUAKE2
 	PF_sin,
@@ -3987,7 +4084,6 @@ static builtin_t pr_builtin[] =
 	PF_etos,
 	PF_WaterMove,
 #else
-	PF_Fixme,
 	PF_Fixme,
 	PF_Fixme,
 	PF_Fixme,
