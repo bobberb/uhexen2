@@ -1608,7 +1608,8 @@ GLOBJS = \
 	$(SYSOBJ_GL_VID) \
 	gl_draw.o \
 	gl_mesh.o \
-	gl_model.o
+	gl_model.o \
+	img_load.o
 
 COMMONOBJS = \
 	$(SYSOBJ_INPUT) \

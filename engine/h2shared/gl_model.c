@@ -25,6 +25,7 @@
 #include "quakedef.h"
 #include "hashindex.h"
 #include "hwal.h"
+#include "img_load.h"
 
 static qmodel_t*	loadmodel;
 static char	loadname[MAX_QPATH];	/* for hunk tags */
@@ -508,7 +509,29 @@ bsp_tex_internal:
 		if (!strncmp(mt->name,"sky",3))
 			R_InitSky (tx);
 		else
-			tx->gl_texturenum = GL_LoadTexture (mt->name, (byte *)(tx+1), tx->width, tx->height, TEX_MIPMAP);
+		{
+			// Try external texture file (PNG, TGA, PCX) first
+			byte	*external_data;
+			int		ext_width, ext_height;
+			qboolean	has_alpha;
+			int		tex_flags;
+
+			external_data = IMG_LoadExternalTexture(mt->name, &ext_width, &ext_height, &has_alpha);
+			if (external_data)
+			{
+				// External texture loaded successfully
+				tex_flags = TEX_MIPMAP | TEX_RGBA;
+				if (has_alpha)
+					tex_flags |= TEX_ALPHA;
+				tx->gl_texturenum = GL_LoadTexture(mt->name, external_data, ext_width, ext_height, tex_flags);
+				free(external_data);
+			}
+			else
+			{
+				// Fall back to internal BSP texture
+				tx->gl_texturenum = GL_LoadTexture(mt->name, (byte *)(tx+1), tx->width, tx->height, TEX_MIPMAP);
+			}
+		}
 	}
 
 //

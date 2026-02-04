@@ -16,3 +16,6 @@ result-*
 .beads/.local_version
 .beads/last-touched
 .beads/sync_base.jsonl
+*.o
+engine/hexen2/glhexen2
+engine/hexen2/h2ded
