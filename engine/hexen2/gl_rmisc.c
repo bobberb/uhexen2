@@ -21,6 +21,7 @@
 
 #include "quakedef.h"
 #include "hashindex.h"
+#include "img_load.h"
 
 byte			*playerTranslation;
 const int	color_offsets[MAX_PLAYER_CLASS] =
@@ -125,22 +126,43 @@ void R_InitParticleTexture (void)
 {
 	int		x, y;
 	byte	data[TEXSIZE][TEXSIZE][4];
+	byte	*external_data;
+	int		ext_width, ext_height;
+	qboolean	has_alpha;
 
-	//
-	// particle texture
-	//
-	for (x = 0; x < TEXSIZE; x++)
+	// Try external particle texture first
+	// Check common particle texture names
+	Con_DPrintf ("DEBUG: Searching for external particle texture...\n");
+	external_data = IMG_LoadExternalTexture("particle", &ext_width, &ext_height, &has_alpha);
+	if (!external_data)
+		external_data = IMG_LoadExternalTexture("particles/particle", &ext_width, &ext_height, &has_alpha);
+	if (!external_data)
+		external_data = IMG_LoadExternalTexture("particles/blood", &ext_width, &ext_height, &has_alpha);
+
+	if (external_data)
 	{
-		for (y = 0; y < TEXSIZE; y++)
-		{
-			data[y][x][0] = 255;
-			data[y][x][1] = 255;
-			data[y][x][2] = 255;
-			data[y][x][3] = dottexture[x][y]*255;
-		}
+		Con_Printf ("Loaded external particle texture\n");
+		particletexture = GL_LoadTexture("particle", external_data, ext_width, ext_height,
+					TEX_ALPHA | TEX_RGBA | TEX_LINEAR);
+		free(external_data);
 	}
+	else
+	{
+		Con_DPrintf ("Using default procedurally generated particle texture\n");
+		// Fall back to procedurally generated particle texture
+		for (x = 0; x < TEXSIZE; x++)
+		{
+			for (y = 0; y < TEXSIZE; y++)
+			{
+				data[y][x][0] = 255;
+				data[y][x][1] = 255;
+				data[y][x][2] = 255;
+				data[y][x][3] = dottexture[x][y]*255;
+			}
+		}
 
-	particletexture = GL_LoadTexture("", (byte *)data, TEXSIZE, TEXSIZE, TEX_ALPHA | TEX_RGBA | TEX_LINEAR);
+		particletexture = GL_LoadTexture("", (byte *)data, TEXSIZE, TEXSIZE, TEX_ALPHA | TEX_RGBA | TEX_LINEAR);
+	}
 	glTexEnvf_fp(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 

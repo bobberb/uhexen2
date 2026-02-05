@@ -417,35 +417,75 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		}
 	}
 
-	// For world textures, try textures/ directory
-	// Try PNG first (best quality with alpha)
-	q_snprintf (path, sizeof(path), "textures/%s.png", name);
-	data = IMG_LoadPNG (path, width, height, &alpha);
-	if (data)
+	// For world textures and particles, try textures/ and particles/ directories
+	// For particles/ directory (e.g., "particles/blood")
+	if (!strncmp(name, "particles/", 10))
 	{
-		*has_alpha = alpha;
-		Con_DPrintf ("Loaded external texture: %s\n", path);
-		return data;
-	}
+		// Direct path for particles
+		q_snprintf (path, sizeof(path), "%s.png", name);
+		Con_DPrintf ("  trying: %s\n", path);
+		data = IMG_LoadPNG (path, width, height, &alpha);
+		if (data)
+		{
+			*has_alpha = alpha;
+			Con_Printf ("Loaded external texture: %s\n", path);
+			return data;
+		}
 
-	// Try TGA
-	q_snprintf (path, sizeof(path), "textures/%s.tga", name);
-	data = IMG_LoadTGA (path, width, height, &alpha);
-	if (data)
-	{
-		*has_alpha = alpha;
-		Con_DPrintf ("Loaded external texture: %s\n", path);
-		return data;
-	}
+		q_snprintf (path, sizeof(path), "%s.tga", name);
+		Con_DPrintf ("  trying: %s\n", path);
+		data = IMG_LoadTGA (path, width, height, &alpha);
+		if (data)
+		{
+			*has_alpha = alpha;
+			Con_Printf ("Loaded external texture: %s\n", path);
+			return data;
+		}
 
-	// Try PCX
-	q_snprintf (path, sizeof(path), "textures/%s.pcx", name);
-	data = IMG_LoadPCX (path, width, height);
-	if (data)
+		q_snprintf (path, sizeof(path), "%s.pcx", name);
+		Con_DPrintf ("  trying: %s\n", path);
+		data = IMG_LoadPCX (path, width, height);
+		if (data)
+		{
+			*has_alpha = true;
+			Con_Printf ("Loaded external texture: %s\n", path);
+			return data;
+		}
+	}
+	else
 	{
-		*has_alpha = true;	// PCX uses index 255 for transparency
-		Con_Printf ("Loaded external texture: %s\n", path);
-		return data;
+		// Try textures/ directory for world textures
+		q_snprintf (path, sizeof(path), "textures/%s.png", name);
+		Con_DPrintf ("  trying: %s\n", path);
+		data = IMG_LoadPNG (path, width, height, &alpha);
+		if (data)
+		{
+			*has_alpha = alpha;
+			Con_DPrintf ("Loaded external texture: %s\n", path);
+			return data;
+		}
+
+		// Try TGA
+		q_snprintf (path, sizeof(path), "textures/%s.tga", name);
+		Con_DPrintf ("  trying: %s\n", path);
+		data = IMG_LoadTGA (path, width, height, &alpha);
+		if (data)
+		{
+			*has_alpha = alpha;
+			Con_DPrintf ("Loaded external texture: %s\n", path);
+			return data;
+		}
+
+		// Try PCX
+		q_snprintf (path, sizeof(path), "textures/%s.pcx", name);
+		Con_DPrintf ("  trying: %s\n", path);
+		data = IMG_LoadPCX (path, width, height);
+		if (data)
+		{
+			*has_alpha = true;	// PCX uses index 255 for transparency
+			Con_Printf ("Loaded external texture: %s\n", path);
+			return data;
+		}
 	}
 
 	// Debug: show when chain texture lookup fails
