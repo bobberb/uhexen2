@@ -755,12 +755,13 @@ int FS_CreatePath (char *path)
 
 /*
 ===========
-FS_OpenFile
+FS_OpenFile_Internal
 
-Finds the file in the search path, returns fs_filesize.
+Internal function - finds the file in the search path, returns fs_filesize.
+If silent is true, suppresses error messages for missing files.
 ===========
 */
-long FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id)
+static long FS_OpenFile_Internal (const char *filename, FILE **file, unsigned int *path_id, qboolean silent)
 {
 	searchpath_t	*search;
 	pack_t		*pak;
@@ -812,14 +813,40 @@ long FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id)
 		}
 	}
 
-	// Only print "can't find" messages when developer >= 1
+	// Only print "can't find" messages when developer >= 1 and not in silent mode
 	// (suppresses noise from optional external textures and missing assets)
-	if (developer.integer >= 1)
+	if (!silent && developer.integer >= 1)
 		Sys_Printf ("%s: can't find %s\n", __thisfunc__, filename);
 
 	if (file) *file = NULL;
 	fs_filesize = -1;
 	return fs_filesize;
+}
+
+/*
+===========
+FS_OpenFile
+
+Finds the file in the search path, returns fs_filesize.
+===========
+*/
+long FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id)
+{
+	return FS_OpenFile_Internal (filename, file, path_id, false);
+}
+
+/*
+===========
+FS_OpenFile_Silent
+
+Finds the file in the search path, returns fs_filesize.
+Does not print error messages for missing files.
+Use for optional file checks (e.g., external textures).
+===========
+*/
+long FS_OpenFile_Silent (const char *filename, FILE **file, unsigned int *path_id)
+{
+	return FS_OpenFile_Internal (filename, file, path_id, true);
 }
 
 /*
@@ -831,7 +858,7 @@ Returns whether the file is found in the hexen2 filesystem.
 */
 qboolean FS_FileExists (const char *filename, unsigned int *path_id)
 {
-	long ret = FS_OpenFile(filename, NULL, path_id);
+	long ret = FS_OpenFile_Silent(filename, NULL, path_id);
 	return (ret < 0) ? false : true;
 }
 
