@@ -400,7 +400,8 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		if (data)
 		{
 			*has_alpha = alpha;
-			Con_Printf ("Loaded external skin: %s\n", path);
+			if (developer.value >= 2)
+				Con_Printf ("Loaded external skin: %s\n", path);
 			return data;
 		}
 
@@ -419,7 +420,8 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		if (data)
 		{
 			*has_alpha = true;	// PCX uses index 255 for transparency
-			Con_Printf ("Loaded external skin: %s\n", path);
+			if (developer.value >= 2)
+				Con_Printf ("Loaded external skin: %s\n", path);
 			return data;
 		}
 	}
@@ -433,7 +435,8 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		if (data)
 		{
 			*has_alpha = alpha;
-			Con_Printf ("Loaded external texture: %s\n", path);
+			if (developer.value >= 2)
+				Con_Printf ("Loaded external texture: %s\n", path);
 			return data;
 		}
 
@@ -442,7 +445,8 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		if (data)
 		{
 			*has_alpha = alpha;
-			Con_Printf ("Loaded external texture: %s\n", path);
+			if (developer.value >= 2)
+				Con_Printf ("Loaded external texture: %s\n", path);
 			return data;
 		}
 
@@ -451,7 +455,8 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		if (data)
 		{
 			*has_alpha = true;
-			Con_Printf ("Loaded external texture: %s\n", path);
+			if (developer.value >= 2)
+				Con_Printf ("Loaded external texture: %s\n", path);
 			return data;
 		}
 	}
@@ -463,7 +468,8 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		if (data)
 		{
 			*has_alpha = alpha;
-			Con_DPrintf ("Loaded external texture: %s\n", path);
+			if (developer.value >= 2)
+				Con_Printf ("Loaded external texture: %s\n", path);
 			return data;
 		}
 
@@ -473,7 +479,8 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		if (data)
 		{
 			*has_alpha = alpha;
-			Con_DPrintf ("Loaded external texture: %s\n", path);
+			if (developer.value >= 2)
+				Con_Printf ("Loaded external texture: %s\n", path);
 			return data;
 		}
 
@@ -483,7 +490,8 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		if (data)
 		{
 			*has_alpha = true;	// PCX uses index 255 for transparency
-			Con_Printf ("Loaded external texture: %s\n", path);
+			if (developer.value >= 2)
+				Con_Printf ("Loaded external texture: %s\n", path);
 			return data;
 		}
 	}
