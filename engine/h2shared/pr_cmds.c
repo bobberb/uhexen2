@@ -4004,10 +4004,10 @@ static void PF_set_fx_color(void)
 			if (!strcmp(sv.model_precache[i], s))
 			{
 				#if !defined(SERVERONLY) && defined(GLQUAKE)
-				sv.models[i]->glow_color[0] = j;
-				sv.models[i]->glow_color[1] = k;
-				sv.models[i]->glow_color[2] = l;
-				sv.models[i]->glow_color[3] = m;
+				sv.models[i]->glow_settings[COLOR_R] = j;
+				sv.models[i]->glow_settings[COLOR_G] = k;
+				sv.models[i]->glow_settings[COLOR_B] = l;
+				sv.models[i]->glow_settings[COLOR_A] = m;
 				#endif	/* SERVERONLY */
 				return;
 			}
@@ -4252,7 +4252,11 @@ static builtin_t pr_builtin[] =
 	PF_strhash,		// float(string s1) strhash = #109
 	PF_register_ex_item,  // void (string img, float id)
 	PF_update_ex_item,  // float (entity forent, float id, float amount)
+#if !defined(SERVERONLY)
+	PF_pimpmodel,		// float(entity e, vector glow_color) pimpmodel = #111
+#else
 	PF_Fixme,
+#endif
 	PF_Fixme,
 #endif
 

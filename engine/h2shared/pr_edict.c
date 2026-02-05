@@ -1091,6 +1091,45 @@ void ED_Print (edict_t *ed)
 
 /*
 =============
+ED_GetProperty
+
+Get the value of an edict property by name
+=============
+*/
+const char* ED_GetProperty (edict_t *ed, char* propname)
+{
+	static char	ret[1];
+	ddef_t	*d;
+	int		*v;
+	int		i;
+	const char	*name;
+
+	ret[0] = '\0';
+
+	if (ed->free)
+		return ret;
+
+	for (i = 1; i < progs->numfielddefs; i++)
+	{
+		d = &pr_fielddefs[i];
+		name = PR_GetString(d->s_name);
+
+		if (!q_strncasecmp(name, propname, strlen(propname)))
+		{
+			v = (int*)((char*)&ed->v + d->ofs * 4);
+			return PR_ValueString(d->type, (eval_t*)v);
+		}
+		else
+		{
+			continue;
+		}
+	}
+
+	return ret;
+}
+
+/*
+=============
 ED_Write
 
 For savegames
@@ -1710,7 +1749,7 @@ void ED_LoadFromFile (const char *data)
 		}
 
 		*sv_globals.self = EDICT_TO_PROG(ent);
-		PR_ExecuteProgram (func - pr_functions);
+		PR_ExecuteProgram (func - pr_functions, PR_GetString(ent->v.classname));
 		#ifdef H2W
 		SV_FlushSignon();
 		#endif

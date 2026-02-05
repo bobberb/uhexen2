@@ -1361,6 +1361,84 @@ static void R_DrawAllGlows (void)
 
 //=============================================================================
 
+float PimpModel(edict_t* ed, float glow_color[3]) //Returns 1 if everything is ok, 0 otherwise (notably if it comes too early and the precaches are not done)
+{
+	//Get handle on target model
+	int modelnum = atoi(ED_GetProperty(ed, "model"));
+	qmodel_t* targetmodel = cl.model_precache[modelnum];
+
+	if (targetmodel == NULL)
+		return 0;
+
+	//Replace the original mdl flags by those of the entity
+	targetmodel->flags = atoi(ED_GetProperty(ed, "flags"));
+
+	//Retrieve the spawnflags
+	int spawnflags = atoi(ED_GetProperty(ed, "spawnflags"));
+
+	//Spin
+	if (spawnflags & 1)
+		targetmodel->ex_flags |= EF_SPIN;
+	else
+		targetmodel->ex_flags &= ~(EF_SPIN);
+
+	//Float
+	if (spawnflags & 2)
+		targetmodel->ex_flags |= EF_FLOAT;
+	else
+		targetmodel->ex_flags &= ~(EF_FLOAT);
+
+	//Glow
+	if (spawnflags & 4)
+		targetmodel->ex_flags |= EF_GLOW;
+	else
+		targetmodel->ex_flags &= ~(EF_GLOW | XF_TORCH_GLOW| XF_GLOW | XF_MISSILE_GLOW);
+
+	//Illuminate
+	if (spawnflags & 8)
+		targetmodel->ex_flags |= EF_ILLUMINATE;
+	else
+		targetmodel->ex_flags &= ~(EF_ILLUMINATE);
+
+	//Color
+	if (glow_color[COLOR_R] > 1 || glow_color[COLOR_G] > 1 || glow_color[COLOR_B] > 1)
+	{
+		//Color expressed as Byte [0,255]
+		targetmodel->glow_settings[COLOR_R] = glow_color[COLOR_R] / 255;
+		targetmodel->glow_settings[COLOR_G] = glow_color[COLOR_G] / 255;
+		targetmodel->glow_settings[COLOR_B] = glow_color[COLOR_B] / 255;
+	}
+	else if (glow_color[COLOR_R] != 0 || glow_color[COLOR_G] != 0 || glow_color[COLOR_B] != 0)
+	{
+		//Color expressed as Float [0,1]
+		targetmodel->glow_settings[COLOR_R] = glow_color[COLOR_R];
+		targetmodel->glow_settings[COLOR_G] = glow_color[COLOR_G];
+		targetmodel->glow_settings[COLOR_B] = glow_color[COLOR_B];
+	}
+
+	//Alpha
+	float alpha = atof(ED_GetProperty(ed, "abslight"));
+	targetmodel->glow_settings[COLOR_A] = (alpha != 0.0 ? alpha : 0.75);
+
+	//Orb offset
+	targetmodel->glow_settings[ORB_OFFSET_X] = atof(ED_GetProperty(ed, "view_ofs_x"));
+	targetmodel->glow_settings[ORB_OFFSET_Y] = atof(ED_GetProperty(ed, "view_ofs_y"));
+	targetmodel->glow_settings[ORB_OFFSET_Z] = atof(ED_GetProperty(ed, "view_ofs_z"));
+
+	//Orb radius
+	targetmodel->glow_settings[ORB_RADIUS] = atof(ED_GetProperty(ed, "health"));
+
+	//Light style
+	targetmodel->glow_settings[LIGHT_STYLE] = atoi(ED_GetProperty(ed, "style"));
+
+	//Light radius
+	targetmodel->glow_settings[LIGHT_RADIUS] = atoi(ED_GetProperty(ed, "max_health"));
+
+	return 1;
+}
+
+//=============================================================================
+
 
 /*
 =============

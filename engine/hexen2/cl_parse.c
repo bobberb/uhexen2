@@ -522,10 +522,10 @@ static void CL_ParseServerInfo (void)
 				{
 					#ifdef GLQUAKE
 					cl.model_precache[j]->ex_flags = MSG_ReadShort();
-					cl.model_precache[j]->glow_color[0] = MSG_ReadFloat();
-					cl.model_precache[j]->glow_color[1] = MSG_ReadFloat();
-					cl.model_precache[j]->glow_color[2] = MSG_ReadFloat();
-					cl.model_precache[j]->glow_color[3] = MSG_ReadFloat();
+					cl.model_precache[j]->glow_settings[COLOR_R] = MSG_ReadFloat();
+					cl.model_precache[j]->glow_settings[COLOR_G] = MSG_ReadFloat();
+					cl.model_precache[j]->glow_settings[COLOR_B] = MSG_ReadFloat();
+					cl.model_precache[j]->glow_settings[COLOR_A] = MSG_ReadFloat();
 					#endif
 				}
 			}
