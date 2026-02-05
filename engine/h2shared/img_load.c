@@ -264,14 +264,10 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 
 	Con_DPrintf ("  TGA: id_len=%d, cmap_type=%d, image_type=%d\n", id_len, cmap_type, image_type);
 
-	// Skip colormap spec and origin
+	// Skip colormap spec (5 bytes) and origin (4 bytes) = 9 bytes total
 	fseek (f, 9, SEEK_CUR);
-	cmap_first = fgetc (f); cmap_first |= fgetc (f) << 8;
-	cmap_len = fgetc (f); cmap_len |= fgetc (f) << 8;
-	cmap_entry_size = fgetc (f);
 
-	origin_x = fgetc (f); origin_x |= fgetc (f) << 8;
-	origin_y = fgetc (f); origin_y |= fgetc (f) << 8;
+	// Now at byte 12: width, height, bpp, descriptor
 	img_w = fgetc (f); img_w |= fgetc (f) << 8;
 	img_h = fgetc (f); img_h |= fgetc (f) << 8;
 	bpp = fgetc (f);
