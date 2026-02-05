@@ -1603,12 +1603,16 @@ GLOBJS = \
 	gl_rmisc.o \
 	r_part.o \
 	gl_rsurf.o \
+	gl_sky.o \
 	gl_screen.o \
 	gl_warp.o \
 	$(SYSOBJ_GL_VID) \
 	gl_draw.o \
+	gl_fog.o \
 	gl_mesh.o \
 	gl_model.o \
+	gl_texmgr.o \
+	image.o \
 	img_load.o
 
 COMMONOBJS = \
@@ -1706,6 +1710,22 @@ dos/net_ser.o: dos/net_comx.c
 # extra rule for snd_timidity.c because of timidity.h and libtimidity.a
 snd_timidity.o: $(COMMONDIR)/snd_timidity.c
 	$(CC) -c $(INCLUDES) -I$(LIBS_DIR)/timidity $(CPPFLAGS) $(CFLAGS) -DTIMIDITY_STATIC=1 -o $@ $(COMMONDIR)/snd_timidity.c
+
+# extra rule for gl_sky.c from h2shared
+gl_sky.o: $(COMMONDIR)/gl_sky.c
+	$(CC) -c $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -o $@ $(COMMONDIR)/gl_sky.c
+
+# extra rule for gl_fog.c from h2shared
+gl_fog.o: $(COMMONDIR)/gl_fog.c
+	$(CC) -c $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -o $@ $(COMMONDIR)/gl_fog.c
+
+# extra rule for gl_texmgr.c from h2shared
+gl_texmgr.o: $(COMMONDIR)/gl_texmgr.c
+	$(CC) -c $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -o $@ $(COMMONDIR)/gl_texmgr.c
+
+# extra rule for image.c from h2shared
+image.o: $(COMMONDIR)/image.c
+	$(CC) -c $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -o $@ $(COMMONDIR)/image.c
 
 include $(LIBS_DIR)/timidity/_timi.mak
 

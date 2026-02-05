@@ -41,6 +41,9 @@ static inline int IS_NAN (float x) {
 #endif
 int Q_isnan (float x);	/* For 32 bit floats only. */
 
+//johnfitz -- from joequake
+#define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5))
+
 // square root approximation for single precision floats
 // https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Approximations_that_depend_on_the_floating_point_representation
 static inline float Q_sqrt (float x)
