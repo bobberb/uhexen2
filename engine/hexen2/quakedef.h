@@ -31,7 +31,7 @@
 #define	HOT_VERSION_REL_DATE	"2022-10-25"
 #define	HOT_VERSION_STR		STRINGIFY(HOT_VERSION_MAJ) "." STRINGIFY(HOT_VERSION_MID) "." STRINGIFY(HOT_VERSION_MIN)
 #define	GLQUAKE_VERSION		1.00
-#define	ENGINE_VERSION		1.29
+#define	ENGINE_VERSION		1.2901
 #define	ENGINE_NAME		"Hexen2"
 
 #define	MAX_QPATH	64	// max length of a quake game pathname
@@ -120,6 +120,10 @@
 //#define	STAT_EXPERIENCE		17
 
 #define	MAX_INVENTORY		15	/* Max inventory array size */
+#define	MAX_INVENTORY_EX	32	/* Max extended inventory array size */
+#define MAX_INVENTORY_EX_PAGES	8
+#define MAX_ITEMS_EX		MAX_INVENTORY_EX * MAX_INVENTORY_EX_PAGES /* Max item definitions, thus / 8 = max pages */
+//#define MAX_ITEMS_EX		32  // 255
 /* the number of cnt_<artifact_name> members in the entvars_t struct:
    from cnt_torch to cnt_invincibility: 15 total (see in progdefs.h). */
 

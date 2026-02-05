@@ -3937,6 +3937,169 @@ static void PF_weapon_sound(void)
 }
 #endif /* H2W */
 
+/*
+=================
+PF_set_extra_flags
+
+set_extra_flags(string model, int flags)
+=================
+*/
+static void PF_set_extra_flags(void)
+{
+	const char	*s;
+	int		flags;
+	int		i;
+
+	if (sv.state != ss_loading && !ignore_precache)
+		PR_RunError("%s: Model Extra Flags can only be changed in spawn functions", __thisfunc__);
+
+	s = G_STRING(OFS_PARM0);
+	flags = (int)G_FLOAT(OFS_PARM1);
+	PR_CheckEmptyString(s);
+
+	for (i = 0; i < MAX_MODELS; i++)
+	{
+		if (sv.model_precache[i])
+		{
+			if (!strcmp(sv.model_precache[i], s))
+			{
+#if !defined(SERVERONLY) && defined(GLQUAKE)
+				sv.models[i]->ex_flags = flags;
+#endif	/* SERVERONLY */
+				return;
+			}
+		}
+		else
+			return;
+	}
+}
+
+/*
+=================
+PF_set_fx_color
+
+set_fx_color(string model, float r, float g, float b, float a)
+=================
+*/
+static void PF_set_fx_color(void)
+{
+	const char	*s;
+	int		i;
+	float j, k, l, m;
+
+	if (sv.state != ss_loading && !ignore_precache)
+		PR_RunError("%s: Model Effect Color can only be set in spawn functions", __thisfunc__);
+
+	s = G_STRING(OFS_PARM0);
+	j = G_FLOAT(OFS_PARM1);
+	k = G_FLOAT(OFS_PARM2);
+	l = G_FLOAT(OFS_PARM3);
+	m = G_FLOAT(OFS_PARM4);
+	PR_CheckEmptyString(s);
+
+	for (i = 0; i < MAX_MODELS; i++)
+	{
+		if (sv.model_precache[i])
+		{
+			if (!strcmp(sv.model_precache[i], s))
+			{
+				#if !defined(SERVERONLY) && defined(GLQUAKE)
+				sv.models[i]->glow_color[0] = j;
+				sv.models[i]->glow_color[1] = k;
+				sv.models[i]->glow_color[2] = l;
+				sv.models[i]->glow_color[3] = m;
+				#endif	/* SERVERONLY */
+				return;
+			}
+		}
+		else
+			return;
+	}
+}
+
+/*
+=================
+PF_strhash
+
+float(string s) strhash
+=================
+*/
+static void PF_strhash(void)
+{
+	const char	*s;
+	unsigned long hash = 5381;
+	int c;
+
+	s = G_STRING(OFS_PARM0);
+	PR_CheckEmptyString(s);
+
+	//djb2
+	while ((c = *s++))
+		hash = ((hash << 5) + hash) + c;	/* hash * 33 + c */
+
+	G_FLOAT(OFS_RETURN) = (float)hash;
+}
+
+static void PF_register_ex_item(void)
+{
+	const char	*item_img;
+	float item_id;
+	int i;
+
+	if (sv.state != ss_loading && !ignore_precache)
+		PR_RunError("%s: Extended Inventory Items can only be registered in spawn functions", __thisfunc__);
+
+	item_img = G_STRING(OFS_PARM0);
+	item_id = G_FLOAT(OFS_PARM1);
+	PR_CheckEmptyString(item_img);
+
+	for (i = 0; i < MAX_ITEMS_EX; i++)
+	{
+		if (sv.ex_items[i].id != 0)
+		{
+			if (sv.ex_items[i].id == (int)item_id)
+			{
+				q_strlcpy(sv.ex_items[i].icon, item_img, MAX_QPATH);
+				break;
+			}
+		}
+		else
+		{
+			sv.ex_items[i].id = (int)item_id;
+			q_strlcpy(sv.ex_items[i].icon, item_img, MAX_QPATH);
+			sv.num_ex_items += 1;
+			break;
+		}
+	}
+
+	//PR_RunError("%s: overflow", __thisfunc__);
+}
+
+static void PF_update_ex_item(void)
+{
+	edict_t	*ent;
+	client_t	*client;
+	int i;
+
+	float item_id;
+	float item_count;
+	float result = 0.0f;
+
+	ent = G_EDICT(OFS_PARM0);
+	item_id = G_FLOAT(OFS_PARM1);
+	item_count = G_FLOAT(OFS_PARM2);
+
+	i = NUM_FOR_EDICT(ent);
+	if (i < 1 || i > svs.maxclients)
+		PR_RunError("Entity is not a client");
+
+	client = svs.clients + (i - 1);
+	result = INV_UpdateExItem(client->ex_inventory, item_id, item_count, true);
+
+	G_FLOAT(OFS_RETURN) = result;
+	//PR_RunError("%s: overflow", __thisfunc__);
+}
+
 
 static builtin_t pr_builtin[] =
 {
@@ -4084,10 +4247,11 @@ static builtin_t pr_builtin[] =
 	PF_etos,
 	PF_WaterMove,
 #else
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
+	PF_set_extra_flags,	// void(string model, int flags) set_extra_flags	= #107
+	PF_set_fx_color,	// void(string model, float r, float g, float b, float a) set_fx_color	= #108
+	PF_strhash,		// float(string s1) strhash = #109
+	PF_register_ex_item,  // void (string img, float id)
+	PF_update_ex_item,  // float (entity forent, float id, float amount)
 	PF_Fixme,
 	PF_Fixme,
 #endif

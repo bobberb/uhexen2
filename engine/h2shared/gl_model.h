@@ -510,6 +510,7 @@ typedef struct qmodel_s
 // additional model data
 //
 	float		glow_settings[GLOW_SETTINGS_COUNT];
+	float		glow_color[4];		// RGBA color for glow effect
 	cache_user_t	cache;		// only access through Mod_Extradata
 } qmodel_t;
 

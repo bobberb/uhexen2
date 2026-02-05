@@ -249,8 +249,8 @@ CL_ParseServerInfo
 static void CL_ParseServerInfo (void)
 {
 	const char	*str;
-	int		i;
-	int		nummodels, numsounds;
+	int		i, j;
+	int		nummodels, numsounds, numfx, numitems;
 	char	model_precache[MAX_MODELS][MAX_QPATH];
 	char	sound_precache[MAX_SOUNDS][MAX_QPATH];
 
@@ -502,6 +502,76 @@ static void CL_ParseServerInfo (void)
 	player_models[2] = !(gameflags & GAME_OLD_DEMO) ? (qmodel_t *)Mod_FindName ("models/necro.mdl") : NULL;
 	player_models[3] = (qmodel_t *)Mod_FindName ("models/assassin.mdl");
 	player_models[4] = (gameflags & GAME_PORTALS) ? (qmodel_t *)Mod_FindName ("models/succubus.mdl") : NULL;
+
+	if (cl_protocol == PROTOCOL_UH2_114)
+	{
+		// load model fx from server
+		for (numfx = 1; ; numfx++)
+		{
+			str = MSG_ReadString();
+			if (!str[0])
+				break;
+			if (numfx == MAX_MODELS)
+			{
+				Con_Printf("Server sent too many model effects\n");
+				return;
+			}
+			for (j = 2; j < nummodels; j++)
+			{
+				if (!strcmp(cl.model_precache[j]->name, str))
+				{
+					#ifdef GLQUAKE
+					cl.model_precache[j]->ex_flags = MSG_ReadShort();
+					cl.model_precache[j]->glow_color[0] = MSG_ReadFloat();
+					cl.model_precache[j]->glow_color[1] = MSG_ReadFloat();
+					cl.model_precache[j]->glow_color[2] = MSG_ReadFloat();
+					cl.model_precache[j]->glow_color[3] = MSG_ReadFloat();
+					#endif
+				}
+			}
+		}
+
+		if (cl.ex_items == NULL)
+		{
+			cl.ex_items = (ex_item_t *)Hunk_AllocName(MAX_ITEMS_EX * sizeof(ex_item_t), "ex_items_cl");
+			cl.num_ex_items = 0;
+			for (i = 0; i < 15; i++)
+			{
+				cl.num_ex_items += 1;
+				cl.ex_items[i].id = (int)(i + 1);
+				q_strlcpy(cl.ex_items[i].icon, va("gfx/arti%02d.lmp", i), MAX_QPATH);
+			}
+		}
+		//shan check with no ex_items received?
+		for (numitems = 0; ; numitems++)
+		{
+			j = MSG_ReadByte();
+
+			if (j == 0)
+				break;
+
+			str = MSG_ReadString();
+			for (i = 0; i < MAX_ITEMS_EX; i++)
+			{
+				if ((cl.ex_items[i].id == 0) || (cl.ex_items[i].id == j))
+					break;
+			}
+
+			if (i >= MAX_ITEMS_EX)
+			{
+				Con_Printf("Server sent too many item defs\n");
+				return;
+			}
+			cl.ex_items[i].id = j;
+			q_strlcpy(cl.ex_items[i].icon, str, MAX_QPATH);
+			cl.num_ex_items += 1;
+		}
+
+		if (precache.integer)
+		{
+			total_loading_size = nummodels + numsounds + numfx + numitems;
+		}
+	}
 
 	S_BeginPrecaching ();
 	for (i = 1; i < numsounds; i++)
@@ -880,7 +950,7 @@ static void CL_ParseClientdata (int bits)
 		Sbar_Changed();
 		for (j = 0; j < 32; j++)
 			if ((i & (1<<j)) && !(cl.items & (1<<j)))
-				cl.item_gettime[j] = cl.time;
+				cl.ex_inventory[0].item_gettime[j] = cl.time;
 		cl.items = i;
 	}
 
@@ -1244,7 +1314,7 @@ void CL_ParseServerMessage (void)
 	static		double lasttime;
 	static		qboolean packet_loss = false;
 	entity_t	*ent;
-	int		sc1, sc2;
+	int		sc1, sc2, sc3;
 	byte		test;
 	float		compangles[2][3];
 	vec3_t		deltaangles;
@@ -1783,35 +1853,35 @@ void CL_ParseServerMessage (void)
 			if (sc1 & SC1_EXPERIENCE)
 				cl.v.experience = MSG_ReadLong();
 			if (sc1 & SC1_CNT_TORCH)
-				cl.v.cnt_torch = MSG_ReadByte();
+				cl.v.cnt_torch = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 1, (int)cl.v.cnt_torch, false);
 			if (sc1 & SC1_CNT_H_BOOST)
-				cl.v.cnt_h_boost = MSG_ReadByte();
+				cl.v.cnt_h_boost = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 2, (int)cl.v.cnt_h_boost, false);
 			if (sc1 & SC1_CNT_SH_BOOST)
-				cl.v.cnt_sh_boost = MSG_ReadByte();
+				cl.v.cnt_sh_boost = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 3, (int)cl.v.cnt_sh_boost, false);
 			if (sc1 & SC1_CNT_MANA_BOOST)
-				cl.v.cnt_mana_boost = MSG_ReadByte();
+				cl.v.cnt_mana_boost = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 4, (int)cl.v.cnt_mana_boost, false);
 			if (sc1 & SC1_CNT_TELEPORT)
-				cl.v.cnt_teleport = MSG_ReadByte();
+				cl.v.cnt_teleport = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 5, (int)cl.v.cnt_teleport, false);
 			if (sc1 & SC1_CNT_TOME)
-				cl.v.cnt_tome = MSG_ReadByte();
+				cl.v.cnt_tome = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 6, (int)cl.v.cnt_tome, false);
 			if (sc1 & SC1_CNT_SUMMON)
-				cl.v.cnt_summon = MSG_ReadByte();
+				cl.v.cnt_summon = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 7, (int)cl.v.cnt_summon, false);
 			if (sc1 & SC1_CNT_INVISIBILITY)
-				cl.v.cnt_invisibility = MSG_ReadByte();
+				cl.v.cnt_invisibility = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 8, (int)cl.v.cnt_invisibility, false);
 			if (sc1 & SC1_CNT_GLYPH)
-				cl.v.cnt_glyph = MSG_ReadByte();
+				cl.v.cnt_glyph = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 9, (int)cl.v.cnt_glyph, false);
 			if (sc1 & SC1_CNT_HASTE)
-				cl.v.cnt_haste = MSG_ReadByte();
+				cl.v.cnt_haste = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 10, (int)cl.v.cnt_haste, false);
 			if (sc1 & SC1_CNT_BLAST)
-				cl.v.cnt_blast = MSG_ReadByte();
+				cl.v.cnt_blast = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 11, (int)cl.v.cnt_blast, false);
 			if (sc1 & SC1_CNT_POLYMORPH)
-				cl.v.cnt_polymorph = MSG_ReadByte();
+				cl.v.cnt_polymorph = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 12, (int)cl.v.cnt_polymorph, false);
 			if (sc1 & SC1_CNT_FLIGHT)
-				cl.v.cnt_flight = MSG_ReadByte();
+				cl.v.cnt_flight = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 13, (int)cl.v.cnt_flight, false);
 			if (sc1 & SC1_CNT_CUBEOFFORCE)
-				cl.v.cnt_cubeofforce = MSG_ReadByte();
+				cl.v.cnt_cubeofforce = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 14, (int)cl.v.cnt_cubeofforce, false);
 			if (sc1 & SC1_CNT_INVINCIBILITY)
-				cl.v.cnt_invincibility = MSG_ReadByte();
+				cl.v.cnt_invincibility = MSG_ReadByte(), INV_UpdateExItem(cl.ex_inventory, 15, (int)cl.v.cnt_invincibility, false);
 			if (sc1 & SC1_ARTIFACT_ACTIVE)
 				cl.v.artifact_active = MSG_ReadFloat();
 			if (sc1 & SC1_ARTIFACT_LOW)
@@ -1883,10 +1953,71 @@ void CL_ParseServerMessage (void)
 					cl.info_mask2 = MSG_ReadLong();
 			}
 
+			// extended inventory
+			if (sv_protocol == PROTOCOL_UH2_114)
+			{
+				ex_inventory_page_t *page = cl.ex_inventory;
+				qboolean bContinue = true;
+
+				while((bContinue) && (page != NULL))
+				{
+					sc3 = 0;
+					test = MSG_ReadByte();
+					if (test & 1)
+						sc3 |= ((int)MSG_ReadByte());
+					if (test & 2)
+						sc3 |= ((int)MSG_ReadByte()) << 8;
+					if (test & 4)
+						sc3 |= ((int)MSG_ReadByte()) << 16;
+					if (test & 8)
+						sc3 |= ((int)MSG_ReadByte()) << 24;
+					if (test & 16)
+						bContinue = true; //host_client->ex_inventory->next; //shan page?
+					else
+						bContinue = false;
+
+
+					if (sc3)
+					{
+						for (i = 0; i < MAX_INVENTORY_EX; i++)
+						{
+							if (sc3 & (1 << i))
+							{
+								page->item_cnt[i] = MSG_ReadByte();
+								if (page->item_cnt[i] & 128)
+								{
+									page->item_id[i] = MSG_ReadByte();
+									page->item_cnt[i] &= 127;
+									//page->new_items |= (1 << i); //shan sbar notification?
+								}
+							}
+						}
+
+						//cl.ex_inventory->changed_items = sc3; //shan sbar notification?
+					}
+
+					if (bContinue)
+					{
+						if (page->next == NULL)
+						{
+							//find first empty inventory page
+							for (j = 0; ((j < MAX_INVENTORY_EX_PAGES) && (cl.ex_inventory[j].id != 0)); j++);
+							if (j < MAX_INVENTORY_EX_PAGES)
+								page->next = &cl.ex_inventory[j];
+						}
+					}
+
+					if (page->id == 0)
+						page->id = ++cl.next_page_id;
+
+					page = page->next;
+				}
+			}
+
 			if ((sc1 & SC1_STAT_BAR) || (sc2 & SC2_STAT_BAR))
 				Sbar_Changed();
 
-			if ((sc1 & SC1_INV) || (sc2 & SC2_INV))
+			if ((sc1 & SC1_INV) || (sc2 & SC2_INV) || (sc3))
 				SB_InvChanged();
 			break;
 
