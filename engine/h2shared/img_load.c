@@ -396,96 +396,122 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 	{
 		// Try PNG first
 		q_snprintf (path, sizeof(path), "%s.png", name);
-		data = IMG_LoadPNG (path, width, height, &alpha);
-		if (data)
+		if (FS_FileExists(path, NULL))
 		{
-			*has_alpha = alpha;
-			Con_Printf ("Loaded external skin: %s\n", path);
-			return data;
+			data = IMG_LoadPNG (path, width, height, &alpha);
+			if (data)
+			{
+				*has_alpha = alpha;
+				Con_Printf ("Loaded external skin: %s\n", path);
+				return data;
+			}
 		}
 
 		// Try TGA
 		q_snprintf (path, sizeof(path), "%s.tga", name);
-		data = IMG_LoadTGA (path, width, height, &alpha);
-		if (data)
+		if (FS_FileExists(path, NULL))
 		{
-			*has_alpha = alpha;
-			return data;
+			data = IMG_LoadTGA (path, width, height, &alpha);
+			if (data)
+			{
+				*has_alpha = alpha;
+				return data;
+			}
 		}
 
 		// Try PCX
 		q_snprintf (path, sizeof(path), "%s.pcx", name);
-		data = IMG_LoadPCX (path, width, height);
-		if (data)
+		if (FS_FileExists(path, NULL))
 		{
-			*has_alpha = true;	// PCX uses index 255 for transparency
-			Con_Printf ("Loaded external skin: %s\n", path);
-			return data;
+			data = IMG_LoadPCX (path, width, height);
+			if (data)
+			{
+				*has_alpha = true;	// PCX uses index 255 for transparency
+				Con_Printf ("Loaded external skin: %s\n", path);
+				return data;
+			}
 		}
 	}
-
 	// For world textures and particles, try textures/ and particles/ directories
 	// For particles/ directory (e.g., "particles/blood")
-	if (!strncmp(name, "particles/", 10))
+	else if (!strncmp(name, "particles/", 10))
 	{
 		// Direct path for particles
 		q_snprintf (path, sizeof(path), "%s.png", name);
-		data = IMG_LoadPNG (path, width, height, &alpha);
-		if (data)
+		if (FS_FileExists(path, NULL))
 		{
-			*has_alpha = alpha;
-			Con_Printf ("Loaded external texture: %s\n", path);
-			return data;
+			data = IMG_LoadPNG (path, width, height, &alpha);
+			if (data)
+			{
+				*has_alpha = alpha;
+				Con_Printf ("Loaded external texture: %s\n", path);
+				return data;
+			}
 		}
 
 		q_snprintf (path, sizeof(path), "%s.tga", name);
-		data = IMG_LoadTGA (path, width, height, &alpha);
-		if (data)
+		if (FS_FileExists(path, NULL))
 		{
-			*has_alpha = alpha;
-			Con_Printf ("Loaded external texture: %s\n", path);
-			return data;
+			data = IMG_LoadTGA (path, width, height, &alpha);
+			if (data)
+			{
+				*has_alpha = alpha;
+				Con_Printf ("Loaded external texture: %s\n", path);
+				return data;
+			}
 		}
 
 		q_snprintf (path, sizeof(path), "%s.pcx", name);
-		data = IMG_LoadPCX (path, width, height);
-		if (data)
+		if (FS_FileExists(path, NULL))
 		{
-			*has_alpha = true;
-			Con_Printf ("Loaded external texture: %s\n", path);
-			return data;
+			data = IMG_LoadPCX (path, width, height);
+			if (data)
+			{
+				*has_alpha = true;
+				Con_Printf ("Loaded external texture: %s\n", path);
+				return data;
+			}
 		}
 	}
 	else
 	{
 		// Try textures/ directory for world textures
 		q_snprintf (path, sizeof(path), "textures/%s.png", name);
-		data = IMG_LoadPNG (path, width, height, &alpha);
-		if (data)
+		if (FS_FileExists(path, NULL))
 		{
-			*has_alpha = alpha;
-			Con_DPrintf ("Loaded external texture: %s\n", path);
-			return data;
+			data = IMG_LoadPNG (path, width, height, &alpha);
+			if (data)
+			{
+				*has_alpha = alpha;
+				Con_DPrintf ("Loaded external texture: %s\n", path);
+				return data;
+			}
 		}
 
 		// Try TGA
 		q_snprintf (path, sizeof(path), "textures/%s.tga", name);
-		data = IMG_LoadTGA (path, width, height, &alpha);
-		if (data)
+		if (FS_FileExists(path, NULL))
 		{
-			*has_alpha = alpha;
-			Con_DPrintf ("Loaded external texture: %s\n", path);
-			return data;
+			data = IMG_LoadTGA (path, width, height, &alpha);
+			if (data)
+			{
+				*has_alpha = alpha;
+				Con_DPrintf ("Loaded external texture: %s\n", path);
+				return data;
+			}
 		}
 
 		// Try PCX
 		q_snprintf (path, sizeof(path), "textures/%s.pcx", name);
-		data = IMG_LoadPCX (path, width, height);
-		if (data)
+		if (FS_FileExists(path, NULL))
 		{
-			*has_alpha = true;	// PCX uses index 255 for transparency
-			Con_Printf ("Loaded external texture: %s\n", path);
-			return data;
+			data = IMG_LoadPCX (path, width, height);
+			if (data)
+			{
+				*has_alpha = true;	// PCX uses index 255 for transparency
+				Con_Printf ("Loaded external texture: %s\n", path);
+				return data;
+			}
 		}
 	}
 

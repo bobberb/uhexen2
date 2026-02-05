@@ -1216,7 +1216,7 @@ static void DrawBarArtifactIcon(int x, int y, int position)
 		if (cl.ex_items[i].id == page_from->item_id[position & 31])
 		{
 			Sbar_DrawTransPic(x, y, Draw_CachePic(cl.ex_items[i].icon));
-			DrawBarArtifactNumber(x + 20, y + 21, page_from->item_cnt[i]);
+			DrawBarArtifactNumber(x + 20, y + 21, page_from->item_cnt[position & 31]);
 			break;
 		}
 	}

@@ -812,7 +812,10 @@ long FS_OpenFile (const char *filename, FILE **file, unsigned int *path_id)
 		}
 	}
 
-	Sys_DPrintf ("%s: can't find %s\n", __thisfunc__, filename);
+	// Only print "can't find" messages when developer >= 1
+	// (suppresses noise from optional external textures and missing assets)
+	if (developer.integer >= 1)
+		Sys_Printf ("%s: can't find %s\n", __thisfunc__, filename);
 
 	if (file) *file = NULL;
 	fs_filesize = -1;

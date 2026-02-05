@@ -29,3 +29,5 @@ CMakeFiles/
 
 # bv (beads viewer) local config and caches
 .bv/
+all_output.txt
+tree.txt
