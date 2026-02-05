@@ -243,16 +243,10 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 
 	size = FS_OpenFile (filename, &f, NULL);
 	if (!f || size < 0)
-	{
-		Con_DPrintf ("  TGA: FS_OpenFile failed\n");
 		return NULL;
-	}
-
-	Con_DPrintf ("  TGA: FS_OpenFile succeeded, size=%ld\n", size);
 
 	if (size < 18)
 	{
-		Con_DPrintf ("  TGA: file too small (%ld < 18)\n", size);
 		fclose (f);
 		return NULL;
 	}
@@ -261,8 +255,6 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 	id_len = fgetc (f);
 	cmap_type = fgetc (f);
 	image_type = fgetc (f);
-
-	Con_DPrintf ("  TGA: id_len=%d, cmap_type=%d, image_type=%d\n", id_len, cmap_type, image_type);
 
 	// Skip colormap spec (5 bytes) and origin (4 bytes) = 9 bytes total
 	fseek (f, 9, SEEK_CUR);
@@ -273,11 +265,8 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 	bpp = fgetc (f);
 	descriptor = fgetc (f);
 
-	Con_DPrintf ("  TGA: %dx%d, %dbpp\n", img_w, img_h, bpp);
-
 	if (img_w <= 0 || img_h <= 0 || img_w > 4096 || img_h > 4096)
 	{
-		Con_DPrintf ("  TGA: invalid dimensions\n");
 		fclose (f);
 		return NULL;
 	}
@@ -288,14 +277,12 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 	// Check image type - support uncompressed RGB/RGBA
 	if (image_type != 2)	// 2 = uncompressed RGB
 	{
-		Con_DPrintf ("  TGA: unsupported image type %d\n", image_type);
 		fclose (f);
 		return NULL;
 	}
 
 	if (bpp != 24 && bpp != 32)
 	{
-		Con_DPrintf ("  TGA: unsupported bpp %d\n", bpp);
 		fclose (f);
 		return NULL;
 	}
@@ -404,18 +391,11 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 
 	*has_alpha = false;
 
-	// Debug: show what name we received
-	int cmp_result = strncmp(name, "models/", 7);
-	Con_DPrintf ("IMG_LoadExternalTexture: '%s' cmp=%d [%.2x %.2x %.2x %.2x %.2x %.2x %.2x]\n",
-		name, cmp_result, name[0], name[1], name[2], name[3], name[4], name[5], name[6]);
-
 	// For model skins (names starting with "models/"), try direct path first
-	if (!cmp_result)
+	if (!strncmp(name, "models/", 7))
 	{
-		Con_DPrintf ("  --> MODELS BLOCK: trying direct paths\n");
 		// Try PNG first
 		q_snprintf (path, sizeof(path), "%s.png", name);
-		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadPNG (path, width, height, &alpha);
 		if (data)
 		{
@@ -426,18 +406,15 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 
 		// Try TGA
 		q_snprintf (path, sizeof(path), "%s.tga", name);
-		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadTGA (path, width, height, &alpha);
 		if (data)
 		{
 			*has_alpha = alpha;
-			Con_Printf ("Loaded external TGA skin: %s (alpha=%d)\n", path, alpha);
 			return data;
 		}
 
 		// Try PCX
 		q_snprintf (path, sizeof(path), "%s.pcx", name);
-		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadPCX (path, width, height);
 		if (data)
 		{
@@ -445,7 +422,6 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 			Con_Printf ("Loaded external skin: %s\n", path);
 			return data;
 		}
-		Con_DPrintf ("  --> MODELS BLOCK: all formats failed\n");
 	}
 
 	// For world textures and particles, try textures/ and particles/ directories
@@ -454,7 +430,6 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 	{
 		// Direct path for particles
 		q_snprintf (path, sizeof(path), "%s.png", name);
-		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadPNG (path, width, height, &alpha);
 		if (data)
 		{
@@ -464,7 +439,6 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		}
 
 		q_snprintf (path, sizeof(path), "%s.tga", name);
-		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadTGA (path, width, height, &alpha);
 		if (data)
 		{
@@ -474,7 +448,6 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		}
 
 		q_snprintf (path, sizeof(path), "%s.pcx", name);
-		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadPCX (path, width, height);
 		if (data)
 		{
@@ -487,7 +460,6 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 	{
 		// Try textures/ directory for world textures
 		q_snprintf (path, sizeof(path), "textures/%s.png", name);
-		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadPNG (path, width, height, &alpha);
 		if (data)
 		{
@@ -498,7 +470,6 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 
 		// Try TGA
 		q_snprintf (path, sizeof(path), "textures/%s.tga", name);
-		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadTGA (path, width, height, &alpha);
 		if (data)
 		{
@@ -509,7 +480,6 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 
 		// Try PCX
 		q_snprintf (path, sizeof(path), "textures/%s.pcx", name);
-		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadPCX (path, width, height);
 		if (data)
 		{
@@ -518,10 +488,6 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 			return data;
 		}
 	}
-
-	// Debug: show when chain texture lookup fails
-	if (!strcmp(name, "chain"))
-		Con_Printf ("DEBUG: chain texture not found as external file\n");
 
 	return NULL;
 }

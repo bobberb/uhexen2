@@ -2340,9 +2340,6 @@ static void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int md
 			*dot = '\0';  // strip .mdl extension
 		q_snprintf (name, sizeof(name), "%s_%i", skinname, i);
 
-		// Debug: show which model skins are being loaded
-		Con_DPrintf ("Loading model skin: %s\n", name);
-
 		// Try external skin file first (PNG, TGA, PCX)
 		byte	*external_skin;
 		int		ext_width, ext_height;
@@ -2352,11 +2349,9 @@ static void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int md
 		if (external_skin)
 		{
 			// External skin loaded successfully
-			Con_Printf ("Loaded external skin: %s (has_alpha=%d)\n", name, has_alpha);
 			int skin_tex_mode = TEX_MIPMAP | TEX_RGBA;
 			if (has_alpha)
 				skin_tex_mode |= TEX_ALPHA;
-			Con_DPrintf ("  skin_tex_mode = 0x%x (TEX_ALPHA=%s)\n", skin_tex_mode, (skin_tex_mode & TEX_ALPHA) ? "yes" : "no");
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
@@ -2367,7 +2362,6 @@ static void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int md
 		else
 		{
 			// Fall back to embedded skin from MDL file
-			Con_DPrintf ("  Using embedded skin from MDL\n");
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =

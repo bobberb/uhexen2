@@ -132,7 +132,6 @@ void R_InitParticleTexture (void)
 
 	// Try external particle texture first
 	// Check common particle texture names
-	Con_DPrintf ("DEBUG: Searching for external particle texture...\n");
 	external_data = IMG_LoadExternalTexture("particle", &ext_width, &ext_height, &has_alpha);
 	if (!external_data)
 		external_data = IMG_LoadExternalTexture("particles/particle", &ext_width, &ext_height, &has_alpha);
@@ -148,7 +147,6 @@ void R_InitParticleTexture (void)
 	}
 	else
 	{
-		Con_DPrintf ("Using default procedurally generated particle texture\n");
 		// Fall back to procedurally generated particle texture
 		for (x = 0; x < TEXSIZE; x++)
 		{
