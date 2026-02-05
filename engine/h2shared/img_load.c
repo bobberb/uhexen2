@@ -391,8 +391,10 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 	// For model skins (names starting with "models/"), try direct path first
 	if (!cmp_result)
 	{
+		Con_DPrintf ("  --> MODELS BLOCK: trying direct paths\n");
 		// Try PNG first
 		q_snprintf (path, sizeof(path), "%s.png", name);
+		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadPNG (path, width, height, &alpha);
 		if (data)
 		{
@@ -403,6 +405,7 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 
 		// Try TGA
 		q_snprintf (path, sizeof(path), "%s.tga", name);
+		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadTGA (path, width, height, &alpha);
 		if (data)
 		{
@@ -413,6 +416,7 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 
 		// Try PCX
 		q_snprintf (path, sizeof(path), "%s.pcx", name);
+		Con_DPrintf ("  trying: %s\n", path);
 		data = IMG_LoadPCX (path, width, height);
 		if (data)
 		{
@@ -420,6 +424,7 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 			Con_Printf ("Loaded external skin: %s\n", path);
 			return data;
 		}
+		Con_DPrintf ("  --> MODELS BLOCK: all formats failed\n");
 	}
 
 	// For world textures and particles, try textures/ and particles/ directories
