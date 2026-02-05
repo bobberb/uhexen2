@@ -155,8 +155,18 @@ static qboolean S_SDL_Init (dma_t *dma)
 
 	Con_Printf ("SDL audio spec  : %d Hz, %d samples, %d channels\n",
 			obtained.freq, obtained.samples, obtained.channels);
+#if SDL_VERSION_ATLEAST(2,0,0)
+	{
+		const char *driver = SDL_GetCurrentAudioDriver();
+		if (driver)
+			q_strlcpy(drivername, driver, sizeof(drivername));
+		else
+			strcpy(drivername, "(UNKNOWN)");
+	}
+#else
 	if (SDL_AudioDriverName(drivername, sizeof(drivername)) == NULL)
 		strcpy(drivername, "(UNKNOWN)");
+#endif
 	buffersize = shm->samples * (shm->samplebits / 8);
 	Con_Printf ("SDL audio driver: %s, %d bytes buffer\n", drivername, buffersize);
 
