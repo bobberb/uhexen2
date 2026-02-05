@@ -243,10 +243,16 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 
 	size = FS_OpenFile (filename, &f, NULL);
 	if (!f || size < 0)
+	{
+		Con_DPrintf ("  TGA: FS_OpenFile failed\n");
 		return NULL;
+	}
+
+	Con_DPrintf ("  TGA: FS_OpenFile succeeded, size=%ld\n", size);
 
 	if (size < 18)
 	{
+		Con_DPrintf ("  TGA: file too small (%ld < 18)\n", size);
 		fclose (f);
 		return NULL;
 	}
@@ -255,6 +261,8 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 	id_len = fgetc (f);
 	cmap_type = fgetc (f);
 	image_type = fgetc (f);
+
+	Con_DPrintf ("  TGA: id_len=%d, cmap_type=%d, image_type=%d\n", id_len, cmap_type, image_type);
 
 	// Skip colormap spec and origin
 	fseek (f, 9, SEEK_CUR);
@@ -269,8 +277,11 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 	bpp = fgetc (f);
 	descriptor = fgetc (f);
 
+	Con_DPrintf ("  TGA: %dx%d, %dbpp\n", img_w, img_h, bpp);
+
 	if (img_w <= 0 || img_h <= 0 || img_w > 4096 || img_h > 4096)
 	{
+		Con_DPrintf ("  TGA: invalid dimensions\n");
 		fclose (f);
 		return NULL;
 	}
@@ -281,12 +292,14 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 	// Check image type - support uncompressed RGB/RGBA
 	if (image_type != 2)	// 2 = uncompressed RGB
 	{
+		Con_DPrintf ("  TGA: unsupported image type %d\n", image_type);
 		fclose (f);
 		return NULL;
 	}
 
 	if (bpp != 24 && bpp != 32)
 	{
+		Con_DPrintf ("  TGA: unsupported bpp %d\n", bpp);
 		fclose (f);
 		return NULL;
 	}
