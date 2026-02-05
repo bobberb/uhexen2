@@ -34,13 +34,9 @@ byte *IMG_LoadPCX (const char *filename, int *width, int *height)
 	int	run_length;
 	int		src, dst;
 
-	f = fopen (filename, "rb");
-	if (!f)
+	size = FS_OpenFile (filename, &f, NULL);
+	if (!f || size < 0)
 		return NULL;
-
-	fseek (f, 0, SEEK_END);
-	size = ftell (f);
-	fseek (f, 0, SEEK_SET);
 
 	if (size < 128 + 769)	// minimum: header + 1 pixel + palette
 	{
@@ -243,14 +239,11 @@ byte *IMG_LoadTGA (const char *filename, int *width, int *height, int *has_alpha
 	int		bpp, descriptor;
 	int		pixel_size;
 	int		flip_vert;
+	long	size;
 
-	f = fopen (filename, "rb");
-	if (!f)
+	size = FS_OpenFile (filename, &f, NULL);
+	if (!f || size < 0)
 		return NULL;
-
-	fseek (f, 0, SEEK_END);
-	long size = ftell (f);
-	fseek (f, 0, SEEK_SET);
 
 	if (size < 18)
 	{
@@ -357,8 +350,27 @@ byte *IMG_LoadPNG (const char *filename, int *width, int *height, int *has_alpha
 {
 	int		channels;
 	byte	*rgba;
+	FILE	*f;
+	byte	*file_data;
+	long	size;
 
-	rgba = stbi_load (filename, width, height, &channels, 4);
+	size = FS_OpenFile (filename, &f, NULL);
+	if (!f || size < 0)
+		return NULL;
+
+	file_data = (byte *) malloc (size);
+	if (!file_data)
+	{
+		fclose (f);
+		return NULL;
+	}
+
+	fread (file_data, 1, size, f);
+	fclose (f);
+
+	rgba = stbi_load_from_memory (file_data, size, width, height, &channels, 4);
+	free (file_data);
+
 	if (!rgba)
 		return NULL;
 
