@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "image.h"
+#include "img_load.h"
 
 // Don't include gl_texmgr.h because GL_Bind macro in glquake.h conflicts
 // Just declare what we need from it
@@ -300,35 +301,86 @@ void Sky_LoadSkyBox (const char *name)
 	//load textures
 	for (i=0; i<6; i++)
 	{
+		char filepath[MAX_OSPATH];
+		qboolean has_alpha;
+		int alpha;
+
 		mark = Hunk_LowMark ();
+
+		// Construct base filename without extension
 		if (name[namelen-1] == '_')
 			q_snprintf (filename, sizeof(filename), "gfx/env/%s%s", name, suf[i]);
 		else
 			q_snprintf(filename, sizeof(filename), "gfx/env/%s_%s", name, suf[i]);
 
-		data = Image_LoadImage (filename, &width, &height);
+		// Try external files first (PNG, TGA, PCX)
+		// PNG
+		q_snprintf(filepath, sizeof(filepath), "%s.png", filename);
+		data = IMG_LoadPNG(filepath, &width, &height, &alpha);
 		if (data)
 		{
-			skybox_textures[i] = TexMgr_LoadImage (cl.worldmodel, filename, width, height, SRC_RGBA, data, filename, 0, TEXPREF_NONE);
+			if (developer.value >= 2)
+				Con_Printf("Loaded external skybox: %s\n", filepath);
+			skybox_textures[i] = TexMgr_LoadImage (cl.worldmodel, filepath, width, height, SRC_RGBA, data, filepath, 0, TEXPREF_NONE);
+			free(data);
 			nonefound = false;
 		}
 		else
 		{
-			if (name[namelen - 1] == '_')
-				q_snprintf(filename, sizeof(filename), "skies/%s%s", name, suf[i]);
-			else
-				q_snprintf(filename, sizeof(filename), "skies/%s_%s", name, suf[i]);
-
-			data = Image_LoadImage(filename, &width, &height);
+			// TGA
+			q_snprintf(filepath, sizeof(filepath), "%s.tga", filename);
+			data = IMG_LoadTGA(filepath, &width, &height, &alpha);
 			if (data)
 			{
-				skybox_textures[i] = TexMgr_LoadImage(cl.worldmodel, filename, width, height, SRC_RGBA, data, filename, 0, TEXPREF_NONE);
+				if (developer.value >= 2)
+					Con_Printf("Loaded external skybox: %s\n", filepath);
+				skybox_textures[i] = TexMgr_LoadImage (cl.worldmodel, filepath, width, height, SRC_RGBA, data, filepath, 0, TEXPREF_NONE);
+				free(data);
 				nonefound = false;
 			}
 			else
 			{
-				Con_Printf("Couldn't load %s\n", filename);
-				skybox_textures[i] = notexture;
+				// PCX
+				q_snprintf(filepath, sizeof(filepath), "%s.pcx", filename);
+				data = IMG_LoadPCX(filepath, &width, &height);
+				if (data)
+				{
+					if (developer.value >= 2)
+						Con_Printf("Loaded external skybox: %s\n", filepath);
+					skybox_textures[i] = TexMgr_LoadImage (cl.worldmodel, filepath, width, height, SRC_RGBA, data, filepath, 0, TEXPREF_NONE);
+					free(data);
+					nonefound = false;
+				}
+				else
+				{
+					// Fall back to Image_LoadImage for PAK files
+					data = Image_LoadImage (filename, &width, &height);
+					if (data)
+					{
+						skybox_textures[i] = TexMgr_LoadImage (cl.worldmodel, filename, width, height, SRC_RGBA, data, filename, 0, TEXPREF_NONE);
+						nonefound = false;
+					}
+					else
+					{
+						// Try alternate skies/ path
+						if (name[namelen - 1] == '_')
+							q_snprintf(filename, sizeof(filename), "skies/%s%s", name, suf[i]);
+						else
+							q_snprintf(filename, sizeof(filename), "skies/%s_%s", name, suf[i]);
+
+						data = Image_LoadImage(filename, &width, &height);
+						if (data)
+						{
+							skybox_textures[i] = TexMgr_LoadImage(cl.worldmodel, filename, width, height, SRC_RGBA, data, filename, 0, TEXPREF_NONE);
+							nonefound = false;
+						}
+						else
+						{
+							Con_Printf("Couldn't load %s\n", filename);
+							skybox_textures[i] = notexture;
+						}
+					}
+				}
 			}
 		}
 		Hunk_FreeToLowMark (mark);
