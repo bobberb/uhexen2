@@ -2352,10 +2352,11 @@ static void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int md
 		if (external_skin)
 		{
 			// External skin loaded successfully
-			Con_Printf ("Loaded external skin: %s\n", name);
+			Con_Printf ("Loaded external skin: %s (has_alpha=%d)\n", name, has_alpha);
 			int skin_tex_mode = TEX_MIPMAP | TEX_RGBA;
 			if (has_alpha)
 				skin_tex_mode |= TEX_ALPHA;
+			Con_DPrintf ("  skin_tex_mode = 0x%x (TEX_ALPHA=%s)\n", skin_tex_mode, (skin_tex_mode & TEX_ALPHA) ? "yes" : "no");
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =

@@ -405,7 +405,7 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 		if (data)
 		{
 			*has_alpha = alpha;
-			Con_Printf ("Loaded external skin: %s\n", path);
+			Con_Printf ("Loaded external TGA skin: %s (alpha=%d)\n", path, alpha);
 			return data;
 		}
 
