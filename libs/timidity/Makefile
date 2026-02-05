@@ -70,22 +70,8 @@ CFLAGS += -m64
 #INCLUDES += -I$(OSLIBS)/windows/misc/include
 endif
 
-ifeq ($(TARGET_OS),morphos)
-CFLAGS += -noixemul
-endif
 
-ifeq ($(TARGET_OS),aros)
-CFLAGS += -fno-common
-endif
 
-ifeq ($(TARGET_OS),amigaos)
-# use Bebbo's GCC6 toolchain
-BEBBO_TOOLCHAIN=yes
-# crt: libnix or clib2
-USE_CLIB2=yes
-ifeq ($(BEBBO_TOOLCHAIN),yes)
-USE_CLIB2=no
-endif
 ifeq ($(USE_CLIB2),yes)
 CRT_FLAGS=-mcrt=clib2
 else
@@ -100,9 +86,6 @@ endif
 INCLUDES += -I$(OSLIBS)/amigaos/include
 endif
 
-ifeq ($(TARGET_OS),dos)
-# nothing extra is needed
-endif
 
 ifeq ($(TARGET_OS),os2)
 CFLAGS += -Zmt

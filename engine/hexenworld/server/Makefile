@@ -100,19 +100,6 @@ endif
 #############################################################
 # DOS flags/settings
 #############################################################
-ifeq ($(TARGET_OS),dos)
-
-INCLUDES += -I$(OSLIBS)/dos
-
-# WATT-32 is needed for DOS
-CPPFLAGS+= -DUSE_WATT32 -DWATT32_NO_OLDIES
-INCLUDES+= -I$(OSLIBS)/dos/watt32/inc
-LDFLAGS += -L$(OSLIBS)/dos/watt32/lib -lwatt
-
-SYSLIBS += $(OSLIBS)/dos/djtime/djtime.a -lc -lgcc
-#SYSLIBS += -lm
-
-endif
 # End of DOS settings
 #############################################################
 
@@ -235,13 +222,6 @@ endif
 #############################################################
 # MorphOS flags/settings and overrides:
 #############################################################
-ifeq ($(TARGET_OS),morphos)
-
-CFLAGS  += -noixemul
-LDFLAGS += -noixemul
-SYSLIBS += -lm
-
-endif
 # End of MorphOS settings
 #############################################################
 
@@ -249,12 +229,6 @@ endif
 #############################################################
 # AROS flags/settings and overrides:
 #############################################################
-ifeq ($(TARGET_OS),aros)
-
-CFLAGS += -fno-common
-INCLUDES+= -I$(OSLIBS)/aros-$(MACH_TYPE)/misc/include
-
-endif
 # End of AROS settings
 #############################################################
 
@@ -262,16 +236,6 @@ endif
 #############################################################
 # AmigaOS flags/settings and overrides:
 #############################################################
-ifeq ($(TARGET_OS),amigaos)
-
-# use Bebbo's GCC6 toolchain
-BEBBO_TOOLCHAIN=yes
-
-# crt: libnix or clib2:
-USE_CLIB2=yes
-ifeq ($(BEBBO_TOOLCHAIN),yes)
-USE_CLIB2=no
-endif
 
 ifndef DEBUG
 ifneq ($(BEBBO_TOOLCHAIN),yes)
@@ -322,9 +286,6 @@ endif
 ifeq ($(TARGET_OS),win64)
 SYSOBJ_SYS = sys_win.o
 endif
-ifeq ($(TARGET_OS),dos)
-SYSOBJ_SYS := dos_v2.o sys_dos.o
-endif
 ifeq ($(TARGET_OS),os2)
 SYSOBJ_SYS := sys_os2.o
 endif
@@ -333,15 +294,6 @@ SYSOBJ_SYS = sys_unix.o
 endif
 ifeq ($(TARGET_OS),darwin)
 SYSOBJ_SYS = sys_unix.o
-endif
-ifeq ($(TARGET_OS),aros)
-SYSOBJ_SYS = sys_amiga.o
-endif
-ifeq ($(TARGET_OS),morphos)
-SYSOBJ_SYS = sys_amiga.o
-endif
-ifeq ($(TARGET_OS),amigaos)
-SYSOBJ_SYS = sys_amiga.o
 endif
 
 # Final list of objects
@@ -394,10 +346,6 @@ all: default
 $(BINARY): $(OBJECTS)
 	$(LINKER) $(OBJECTS) $(LDFLAGS) $(SYSLIBS) -o $@
 
-ifeq ($(TARGET_OS),amigaos)
-# workaround stupid AmiTCP SDK mess for old aos3
-net_udp.o: INCLUDES+= $(NET_INC)
-endif
 
 clean:
 	rm -f *.o core

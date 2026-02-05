@@ -16,9 +16,6 @@
 # suitable MACH_TYPE=xxx (ppc, x86, x86_64, or ppc64) argument to
 # make. Also see build_cross_osx.sh.
 #
-# To (cross-)compile for DOS: either pass the DOSBUILD=1 argument
-# to make, or export it. Also see build_cross_dos.sh. Requires: a
-# djgpp compiler toolchain.
 #
 # To see valid targets:			make help
 #
@@ -55,10 +52,6 @@ SDL_LIBS   = $(shell $(SDL_CONFIG) --libs 2> /dev/null)
 # use fast x86 assembly on ia32 machines? (auto-disabled for
 # any other cpu.)
 USE_X86_ASM=yes
-
-# use optimized m68k assembly for amiga
-# requires vasm from http://sun.hasenbraten.de/vasm/
-USE_M68K_ASM=yes
 
 # link to the opengl libraries at compile time? (defaults
 # to no, so the binaries will dynamically load the necessary
@@ -109,11 +102,6 @@ WITH_SPLASHES=yes
 # with old Win95 machines.) (enabled for Win64 in the win64 section.)
 USE_WINSOCK2=no
 
-# use Serial driver for DOS networking?
-USE_SERIAL=yes
-# use WatTCP (WATT-32) for DOS UDP networking?
-USE_WATT32=yes
-
 # Enable/disable codecs for streaming music support:
 USE_CODEC_WAVE=yes
 USE_CODEC_FLAC=no
@@ -149,10 +137,6 @@ ifeq ($(TARGET_OS),win64)
 SW_BINARY:=h2$(exe_ext)
 GL_BINARY:=glh2$(exe_ext)
 endif
-ifeq ($(TARGET_OS),dos)
-SW_BINARY:=h2dos$(exe_ext)
-GL_BINARY:=glh2dos$(exe_ext)
-endif
 ifeq ($(TARGET_OS),os2)
 SW_BINARY:=h2$(exe_ext)
 GL_BINARY:=glh2$(exe_ext)
@@ -162,18 +146,6 @@ SW_BINARY:=hexen2$(exe_ext)
 GL_BINARY:=glhexen2$(exe_ext)
 endif
 ifeq ($(TARGET_OS),darwin)
-SW_BINARY:=hexen2$(exe_ext)
-GL_BINARY:=glhexen2$(exe_ext)
-endif
-ifeq ($(TARGET_OS),aros)
-SW_BINARY:=hexen2$(exe_ext)
-GL_BINARY:=glhexen2$(exe_ext)
-endif
-ifeq ($(TARGET_OS),morphos)
-SW_BINARY:=hexen2$(exe_ext)
-GL_BINARY:=glhexen2$(exe_ext)
-endif
-ifeq ($(TARGET_OS),amigaos)
 SW_BINARY:=hexen2$(exe_ext)
 GL_BINARY:=glhexen2$(exe_ext)
 endif
@@ -222,11 +194,6 @@ RC_INC  = -I. -I$(COMMONDIR)
 # disable x86 assembly if it is not an x86.
 ifneq ($(MACH_TYPE),x86)
 USE_X86_ASM=no
-endif
-
-# disable m68k assembly if it is not a m68k.
-ifneq ($(MACH_TYPE),m68k)
-USE_M68K_ASM=no
 endif
 
 ifdef DEMO
@@ -553,128 +520,6 @@ endif
 
 
 #############################################################
-# DOS flags/settings and overrides:
-#############################################################
-ifeq ($(TARGET_OS),dos)
-
-NASMFLAGS=-f coff
-# Use x86 assembly for DOS
-USE_X86_ASM=yes
-
-USE_CODEC_TIMIDITY=no
-USE_CODEC_WILDMIDI=no
-USE_CODEC_MIKMOD=no
-USE_CODEC_XMP=no
-USE_CODEC_MODPLUG=no
-USE_CODEC_UMX=no
-# no need for Opus on DOS
-USE_CODEC_OPUS=no
-# no need for Flac on DOS
-USE_CODEC_FLAC=no
-# use Tremor as Vorbis decoder for DOS?
-VORBISLIB=tremor
-# make DOS decoders allocate on the zone
-CODECS_USE_ZONE=yes
-
-INCLUDES += -I$(OSLIBS)/dos
-
-ifeq ($(USE_SERIAL),yes)
-CPPFLAGS+= -DUSE_SERIAL
-endif
-ifeq ($(USE_WATT32),yes)
-CPPFLAGS+= -DUSE_WATT32 -DWATT32_NO_OLDIES
-INCLUDES+= -I$(OSLIBS)/dos/watt32/inc
-LDFLAGS += -L$(OSLIBS)/dos/watt32/lib -lwatt
-endif
-
-# DOS GL experiments:
-INCLUDES += -I$(OSLIBS)/dos/opengl/include
-INCLUDES += -I$(OSLIBS)/dos/glide3/include
-GL_LINK = -L$(OSLIBS)/dos/opengl/lib/$(GLDIR) -lgl
-# enable dynamic loading of gl functions
-LINK_GL_LIBS=no
-# enable 3dfx gamma hacks
-USE_3DFXGAMMA=yes
-ifeq ($(LINK_GL_LIBS),yes)
-# compile which gl driver in: mesa, sage, or fxmesa. (only one.)
-DOSGL_DRIVER=fxmesa
-ifeq ($(DOSGL_DRIVER),fxmesa)
-GL_DEFS+= -DREFGL_FXMESA
-endif
-ifeq ($(DOSGL_DRIVER),mesa)
-GL_DEFS+= -DREFGL_MESA
-endif
-ifeq ($(DOSGL_DRIVER),sage)
-GL_DEFS+= -DREFGL_SAGE
-endif
-GLDIR=$(DOSGL_DRIVER)
-else
-SYSOBJ_GL_DXE=yes
-# choose which dosgl api(s) to support. (at least one.)
-GL_DEFS+= -DREFGL_FXMESA
-GL_DEFS+= -DREFGL_MESA
-GL_DEFS+= -DREFGL_SAGE
-endif
-
-SYSLIBS += $(OSLIBS)/dos/djtime/djtime.a -lc -lgcc
-#SYSLIBS += -lm
-
-# PCI sound card support through libau
-USE_PCIAUDIO=yes
-# PCI sound card support as a DXE module
-PCIAUDIO_DXE=yes
-ifeq ($(USE_SOUND),yes)
-ifneq ($(USE_PCIAUDIO),yes)
-CPPFLAGS+= -DNO_PCI_AUDIO
-else
-INCLUDES+= -I$(OSLIBS)/dos/libau/include
-ifeq ($(PCIAUDIO_DXE),yes)
-SYSOBJ_SOFT_DXE=yes
-SYSOBJ_GL_DXE=yes
-CPPFLAGS+= -DSNDPCI_DXE
-else
-LDFLAGS += -L$(OSLIBS)/dos/libau/lib -lau
-endif
-endif
-endif
-
-ifeq ($(USE_CODEC_VORBIS),yes)
-CODEC_INC = -I$(OSLIBS)/dos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/dos/codecs/lib
-endif
-ifeq ($(USE_CODEC_MP3),yes)
-CODEC_INC = -I$(OSLIBS)/dos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/dos/codecs/lib
-endif
-ifeq ($(USE_CODEC_FLAC),yes)
-CODEC_INC = -I$(OSLIBS)/dos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/dos/codecs/lib
-endif
-ifeq ($(USE_CODEC_OPUS),yes)
-CODEC_INC = -I$(OSLIBS)/dos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/dos/codecs/lib
-endif
-ifeq ($(USE_CODEC_MIKMOD),yes)
-CODEC_INC = -I$(OSLIBS)/dos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/dos/codecs/lib
-endif
-ifeq ($(USE_CODEC_XMP),yes)
-CODEC_INC = -I$(OSLIBS)/dos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/dos/codecs/lib
-endif
-ifeq ($(USE_CODEC_MODPLUG),yes)
-CODEC_INC = -I$(OSLIBS)/dos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/dos/codecs/lib
-endif
-INCLUDES += $(CODEC_INC)
-LDFLAGS += $(CODEC_LINK)
-
-endif
-# End of DOS settings
-#############################################################
-
-
-#############################################################
 # Win32 flags/settings and overrides:
 #############################################################
 ifeq ($(TARGET_OS),win32)
@@ -840,284 +685,6 @@ endif
 
 
 #############################################################
-# MorphOS flags/settings and overrides:
-#############################################################
-ifeq ($(TARGET_OS),morphos)
-
-# MorphOS builds can use SDL or native code
-USE_SDL=no
-ifneq ($(USE_SDL),yes)
-USE_SDLCD=no
-USE_SDLAUDIO=no
-# no native cdaudio code yet
-USE_CDAUDIO=no
-endif
-# don't build the CAMD MIDI driver yet
-USE_MIDI=no
-
-CFLAGS  += -noixemul
-LDFLAGS += -noixemul
-SYSLIBS += -lm
-INCLUDES += -I$(OSLIBS)/morphos/misc/include
-
-GL_LINK=-lGL
-# dynamic loading of ogl functions doesn't work
-LINK_GL_LIBS=yes
-
-USE_CODEC_FLAC=no
-USE_CODEC_VORBIS=yes
-USE_CODEC_MP3=yes
-USE_CODEC_OPUS=no
-USE_CODEC_MIKMOD=no
-USE_CODEC_XMP=no
-USE_CODEC_MODPLUG=no
-USE_CODEC_UMX=no
-
-ifeq ($(USE_CODEC_FLAC),yes)
-CODEC_INC = -I$(OSLIBS)/morphos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/morphos/codecs/lib
-endif
-ifeq ($(USE_CODEC_VORBIS),yes)
-CODEC_INC = -I$(OSLIBS)/morphos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/morphos/codecs/lib
-endif
-ifeq ($(USE_CODEC_MP3),yes)
-CODEC_INC = -I$(OSLIBS)/morphos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/morphos/codecs/lib
-endif
-ifeq ($(USE_CODEC_OPUS),yes)
-CODEC_INC = -I$(OSLIBS)/morphos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/morphos/codecs/lib
-endif
-INCLUDES += $(CODEC_INC)
-LDFLAGS += $(CODEC_LINK)
-
-ifeq ($(USE_SOUND),yes)
-ifneq ($(USE_SDLAUDIO),yes)
-CPPFLAGS+= -DNO_SDL_AUDIO
-endif
-endif
-
-ifeq ($(USE_CDAUDIO),yes)
-ifeq ($(USE_SDLCD),yes)
-CPPFLAGS+= -DWITH_SDLCD
-endif
-endif
-
-ifeq ($(USE_SDL),yes)
-# SDLQUAKE must be defined for all SDL using platforms/targets
-CPPFLAGS+= -DSDLQUAKE
-CFLAGS  += $(SDL_CFLAGS)
-LDFLAGS += $(SDL_LIBS)
-endif
-
-endif
-# End of MorphOS settings
-#############################################################
-
-
-#############################################################
-# AROS flags/settings and overrides:
-#############################################################
-ifeq ($(TARGET_OS),aros)
-
-CFLAGS += -fno-common
-
-# AROS builds can use SDL or native code
-USE_SDL=no
-ifneq ($(USE_SDL),yes)
-USE_SDLCD=no
-USE_SDLAUDIO=no
-# no native cdaudio code yet
-USE_CDAUDIO=no
-# native ogl code need this:
-LINK_GL_LIBS=yes
-endif
-# don't build the CAMD MIDI driver yet
-USE_MIDI=no
-
-NASMFLAGS=-f elf -d_NO_PREFIX
-#USE_X86_ASM=no
-
-INCLUDES+= -I$(OSLIBS)/aros-$(MACH_TYPE)/misc/include
-
-# use the old AROSMesa api (default), or the new glA api
-USE_GLA=no
-ifeq ($(USE_GLA),yes)
-GL_DEFS += -DAROS_USE_GLA
-endif
-
-GL_LINK=-lGL
-
-USE_CODEC_FLAC=no
-USE_CODEC_OPUS=no
-USE_CODEC_MIKMOD=no
-USE_CODEC_MODPLUG=no
-USE_CODEC_UMX=no
-# both WildMidi and the local timidity work nice on AROS
-USE_CODEC_WILDMIDI=no
-USE_CODEC_TIMIDITY=yes
-
-ifeq ($(USE_CODEC_FLAC),yes)
-CODEC_INC = -I$(OSLIBS)/aros-$(MACH_TYPE)/codecs/include
-CODEC_LINK= -L$(OSLIBS)/aros-$(MACH_TYPE)/codecs/lib
-endif
-ifeq ($(USE_CODEC_MP3),yes)
-CODEC_INC = -I$(OSLIBS)/aros-$(MACH_TYPE)/codecs/include
-CODEC_LINK= -L$(OSLIBS)/aros-$(MACH_TYPE)/codecs/lib
-endif
-ifeq ($(USE_CODEC_VORBIS),yes)
-CODEC_INC = -I$(OSLIBS)/aros-$(MACH_TYPE)/codecs/include
-CODEC_LINK= -L$(OSLIBS)/aros-$(MACH_TYPE)/codecs/lib
-endif
-ifeq ($(USE_CODEC_OPUS),yes)
-CODEC_INC = -I$(OSLIBS)/aros-$(MACH_TYPE)/codecs/include
-CODEC_LINK= -L$(OSLIBS)/aros-$(MACH_TYPE)/codecs/lib
-endif
-INCLUDES += $(CODEC_INC)
-LDFLAGS += $(CODEC_LINK)
-
-ifeq ($(USE_SOUND),yes)
-ifneq ($(USE_SDLAUDIO),yes)
-CPPFLAGS+= -DNO_SDL_AUDIO
-endif
-endif
-
-ifeq ($(USE_CDAUDIO),yes)
-ifeq ($(USE_SDLCD),yes)
-CPPFLAGS+= -DWITH_SDLCD
-endif
-endif
-
-ifeq ($(USE_SDL),yes)
-# SDLQUAKE must be defined for all SDL using platforms/targets
-CPPFLAGS+= -DSDLQUAKE
-CFLAGS  += $(SDL_CFLAGS)
-LDFLAGS += $(SDL_LIBS)
-endif
-
-endif
-# End of AROS settings
-#############################################################
-
-
-#############################################################
-# AmigaOS flags/settings and overrides:
-#############################################################
-ifeq ($(TARGET_OS),amigaos)
-
-# use Bebbo's GCC6 toolchain
-BEBBO_TOOLCHAIN=yes
-
-# crt: libnix or clib2:
-USE_CLIB2=yes
-ifeq ($(BEBBO_TOOLCHAIN),yes)
-USE_CLIB2=no
-endif
-
-# Don't use SDL on AmigaOS
-USE_SDL=no
-ifneq ($(USE_SDL),yes)
-USE_SDLCD=no
-USE_SDLAUDIO=no
-endif
-
-ifndef DEBUG
-ifneq ($(BEBBO_TOOLCHAIN),yes)
-# -fomit-frame-pointer / -ffast-math causes trouble with gcc2.95
-CFLAGS  += -fno-omit-frame-pointer
-else
-# these break the game with bebbo's gcc-6.x:
-CFLAGS  += -fbbb=- -fno-tree-forwprop -fno-tree-ter -fno-tree-fre -fno-tree-sra -fno-move-loop-invariants -fno-inline-functions-called-once
-endif
-endif
-ifeq ($(USE_CLIB2),yes)
-CRT_FLAGS=-mcrt=clib2
-else
-CRT_FLAGS=-noixemul
-endif
-CFLAGS  += $(CRT_FLAGS) -m68060 -m68881
-LDFLAGS += $(CRT_FLAGS) -m68060 -m68881
-SYSLIBS += -lm
-
-# for M68K assembly:
-AS=vasm
-ASFLAGS = -Faout -m68060 -phxass -quiet
-ifeq ($(USE_M68K_ASM),yes)
-CPPFLAGS+= -DUSE_M68K_ASM
-endif
-
-# for extra missing headers
-INCLUDES += -I$(OSLIBS)/amigaos/include
-ifneq ($(BEBBO_TOOLCHAIN),yes)
-# Roadshow SDK
-NET_INC   = -I$(OSLIBS)/amigaos/netinclude
-endif
-
-# Build for which Amiga GL implementation:
-# Either amesa (StormMesa), or minigl (Hyperion's MiniGL 1.2)
-AMIGA_GLIMP=minigl
-ifeq ($(AMIGA_GLIMP),minigl)
-GL_DEFS+= -DREFGL_MINIGL
-#GL_DEFS+= -DUSE_MGLAPI=1
-GL_DEFS+= -I$(OSLIBS)/amigaos/MiniGL/include
-GL_LINK = -L$(OSLIBS)/amigaos/MiniGL/lib -lmgl
-endif
-ifeq ($(AMIGA_GLIMP),amesa)
-GL_DEFS+= -DREFGL_AMESA
-GL_DEFS+= -I$(OSLIBS)/amigaos/StormMesa/include
-GL_LINK = -L$(OSLIBS)/amigaos/StormMesa/lib -lgl
-endif
-# dynamic loading of ogl functions doesn't work
-LINK_GL_LIBS=yes
-
-USE_CODEC_TIMIDITY=no
-USE_CODEC_FLAC=no
-USE_CODEC_MP3=no
-USE_CODEC_VORBIS=no
-USE_CODEC_OPUS=no
-USE_CODEC_MIKMOD=no
-USE_CODEC_MODPLUG=no
-USE_CODEC_UMX=no
-#use integer-only Tremor as Vorbis decoder for m68k-amigaos
-VORBISLIB=tremor
-
-ifeq ($(USE_CODEC_MP3),yes)
-CODEC_INC = -I$(OSLIBS)/amigaos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/amigaos/codecs/lib
-endif
-ifeq ($(USE_CODEC_VORBIS),yes)
-CODEC_INC = -I$(OSLIBS)/amigaos/codecs/include
-CODEC_LINK= -L$(OSLIBS)/amigaos/codecs/lib
-endif
-INCLUDES += $(CODEC_INC)
-LDFLAGS += $(CODEC_LINK)
-
-ifeq ($(USE_SOUND),yes)
-ifneq ($(USE_SDLAUDIO),yes)
-CPPFLAGS+= -DNO_SDL_AUDIO
-endif
-endif
-
-ifeq ($(USE_CDAUDIO),yes)
-ifeq ($(USE_SDLCD),yes)
-CPPFLAGS+= -DWITH_SDLCD
-endif
-endif
-
-ifeq ($(USE_SDL),yes)
-# SDLQUAKE must be defined for all SDL using platforms/targets
-CPPFLAGS+= -DSDLQUAKE
-CFLAGS  += $(SDL_CFLAGS)
-LDFLAGS += $(SDL_LIBS)
-endif
-
-endif
-# End of AmigaOS settings
-#############################################################
-
-
-#############################################################
 # Streaming music settings
 #############################################################
 ifeq ($(MP3LIB),mad)
@@ -1240,14 +807,6 @@ endif
 	$(WINDRES) $(RC_DEFS) $(RC_INC) $(RCFLAGS) -o $@ $<
 %.res: $(COMMONDIR)/%.rc
 	$(WINDRES) $(RC_DEFS) $(RC_INC) $(RCFLAGS) -o $@ $<
-ifeq ($(TARGET_OS),amigaos)
-#%.o: %.s
-#	$(AS) $(ASFLAGS) -o $@ $<
-%.o: $(COMMONDIR)/%.s
-	$(AS) $(ASFLAGS) -o $@ $<
-%.o: $(UHEXEN2_SHARED)/%.s
-	$(AS) $(ASFLAGS) -o $@ $<
-endif
 
 # Objects
 
@@ -1286,34 +845,11 @@ WORLD_ASM = worlda.o
 
 else
 
-# M68K asm objects
-ifeq ($(USE_M68K_ASM),yes)
-SOFT_ASM = \
-	amiga_r_68k.o \
-	d_part68k.o \
-	d_polyse68k.o \
-	d_scan68k.o \
-	d_sky68k.o \
-	d_sprite68k.o \
-	r_aclip68k.o \
-	r_alias68k.o \
-	r_bsp68k.o \
-	r_edge68k.o \
-	r_sky68k.o \
-	r_surf68k.o
-
-COMMON_ASM = swap_68k.o
-SOUND_ASM = snd_mixamiga68k.o
-WORLD_ASM =
-
-else
-
 SOFT_ASM =
 COMMON_ASM =
 SOUND_ASM =
 WORLD_ASM =
 
-endif
 endif
 
 # Sound objects
@@ -1332,10 +868,8 @@ MUSIC_OBJS:= bgmusic.o \
 	snd_opus.o \
 	$(mp3_obj).o \
 	snd_mp3tag.o \
-	snd_mikmod.o \
 	snd_modplug.o \
 	snd_xmp.o \
-	snd_umx.o \
 	snd_timidity.o \
 	snd_wildmidi.o
 COMOBJ_SND := snd_sys.o snd_dma.o snd_mix.o $(SOUND_ASM) snd_mem.o $(MUSIC_OBJS)
@@ -1345,26 +879,14 @@ endif
 ifeq ($(TARGET_OS),win64)
 SYSOBJ_SND := snd_win.o snd_dsound.o
 endif
-ifeq ($(TARGET_OS),dos)
-SYSOBJ_SND := snd_sb.o snd_gus.o snd_pci.o
-endif
 ifeq ($(TARGET_OS),os2)
 SYSOBJ_SND := snd_sdl.o
 endif
 ifeq ($(TARGET_OS),unix)
-SYSOBJ_SND := snd_oss.o snd_alsa.o snd_sun.o snd_sdl.o
+SYSOBJ_SND := snd_alsa.o snd_sdl.o
 endif
 ifeq ($(TARGET_OS),darwin)
 SYSOBJ_SND := snd_sdl.o
-endif
-ifeq ($(TARGET_OS),aros)
-SYSOBJ_SND := snd_ahi.o snd_sdl.o
-endif
-ifeq ($(TARGET_OS),morphos)
-SYSOBJ_SND := snd_ahi.o snd_sdl.o
-endif
-ifeq ($(TARGET_OS),amigaos)
-SYSOBJ_SND := snd_ahi.o snd_paula.o snd_sdl.o
 endif
 # end of Sound objects
 endif
@@ -1380,10 +902,6 @@ endif
 ifeq ($(TARGET_OS),win64)
 SYSOBJ_MIDI:= midi_win.o mid2strm.o
 endif
-ifeq ($(TARGET_OS),dos)
-SYSOBJ_MIDI:= midi_nul.o
-CPPFLAGS += -D_NO_MIDIDRV
-endif
 ifeq ($(TARGET_OS),os2)
 SYSOBJ_MIDI:= midi_nul.o
 CPPFLAGS += -D_NO_MIDIDRV
@@ -1395,15 +913,6 @@ endif
 ifeq ($(TARGET_OS),darwin)
 # not using midi_mac.c
 SYSOBJ_MIDI:= midi_osx.o
-endif
-ifeq ($(TARGET_OS),aros)
-SYSOBJ_MIDI:= midi_camd.o
-endif
-ifeq ($(TARGET_OS),morphos)
-SYSOBJ_MIDI:= midi_camd.o
-endif
-ifeq ($(TARGET_OS),amigaos)
-SYSOBJ_MIDI:= midi_camd.o
 endif
 # end of MIDI objects
 endif
@@ -1419,9 +928,6 @@ endif
 ifeq ($(TARGET_OS),win64)
 SYSOBJ_CDA := cd_win.o
 endif
-ifeq ($(TARGET_OS),dos)
-SYSOBJ_CDA := cd_dos.o
-endif
 ifeq ($(TARGET_OS),os2)
 SYSOBJ_CDA := cd_sdl.o
 endif
@@ -1430,15 +936,6 @@ SYSOBJ_CDA := cd_sdl.o cd_bsd.o cd_linux.o
 endif
 ifeq ($(TARGET_OS),darwin)
 SYSOBJ_CDA := cd_sdl.o
-endif
-ifeq ($(TARGET_OS),aros)
-SYSOBJ_CDA := cd_sdl.o
-endif
-ifeq ($(TARGET_OS),morphos)
-SYSOBJ_CDA := cd_sdl.o
-endif
-ifeq ($(TARGET_OS),amigaos)
-SYSOBJ_CDA := cd_amiga.o
 endif
 # end of CDAudio objects
 endif
@@ -1457,36 +954,6 @@ SYSOBJ_GL_VID:= gl_vidnt.o
 SYSOBJ_SOFT_VID:= vid_win.o
 SYSOBJ_NET := net_win.o net_wins.o net_wipx.o
 SYSOBJ_SYS := sys_win.o win32res.res
-endif
-ifeq ($(TARGET_OS),dos)
-SYSOBJ_INPUT := in_dos.o
-SYSOBJ_SOFT_VID:= vid_vga.o vid_ext.o vid_dos.o vregset.o
-SYSOBJ_GL_VID:= dos_dmesa.o dos_fxmesa.o dos_sage.o gl_viddos.o
-ifeq ($(SYSOBJ_GL_DXE),yes)
-SYSOBJ_GL_VID+= dxe.o
-else
-SYSOBJ_GL_VID+= no_dxe.o
-endif
-ifeq ($(USE_3DFXGAMMA),yes)
-SYSOBJ_GL_VID+= fx_gamma.o
-endif
-ifeq ($(USE_X86_ASM),yes)
-SYSOBJ_SOFT_VID+= d_copy.o
-endif
-ifeq ($(SYSOBJ_SOFT_DXE),yes)
-SYSOBJ_SOFT_VID+= dxe.o
-else
-SYSOBJ_SOFT_VID+= no_dxe.o
-endif
-SYSOBJ_NET := dos/net_dos.o dos/net_ipx.o
-ifeq ($(USE_WATT32),yes)
-SYSOBJ_NET += net_udp.o
-endif
-ifeq ($(USE_SERIAL),yes)
-SYSOBJ_NET += dos/net_ser.o
-endif
-SYSOBJ_SYS := dos_v2.o sys_dos.o
-#	dosasm.o
 endif
 ifeq ($(TARGET_OS),os2)
 SYSOBJ_INPUT := in_sdl.o
@@ -1517,50 +984,6 @@ SYSOBJ_NET := net_bsd.o net_udp.o
 SYSOBJ_SYS := sys_unix.o
 SYSOBJ_SYS += sys_osx.o
 SYSOBJ_SYS += SDLMain.o
-endif
-ifeq ($(TARGET_OS),aros)
-ifeq ($(USE_SDL),yes)
-SYSOBJ_INPUT := in_sdl.o
-SYSOBJ_GL_VID:= gl_vidsdl.o
-SYSOBJ_SOFT_VID:= vid_sdl.o
-else
-SYSOBJ_INPUT := in_amiga.o
-SYSOBJ_GL_VID:= gl_vidamiga.o
-SYSOBJ_SOFT_VID:= vid_cgx.o
-endif
-SYSOBJ_NET := net_bsd.o net_udp.o
-SYSOBJ_SYS := sys_amiga.o
-endif
-ifeq ($(TARGET_OS),morphos)
-ifeq ($(USE_SDL),yes)
-SYSOBJ_INPUT := in_sdl.o
-SYSOBJ_GL_VID:= gl_vidsdl.o
-SYSOBJ_SOFT_VID:= vid_sdl.o
-else
-SYSOBJ_INPUT := in_amiga.o
-SYSOBJ_GL_VID:= gl_vidamiga.o
-SYSOBJ_SOFT_VID:= vid_cgx.o
-endif
-SYSOBJ_NET := net_bsd.o net_udp.o
-SYSOBJ_SYS := sys_amiga.o
-endif
-ifeq ($(TARGET_OS),amigaos)
-ifeq ($(USE_SDL),yes)
-SYSOBJ_INPUT := in_sdl.o
-SYSOBJ_GL_VID:= gl_vidsdl.o
-SYSOBJ_SOFT_VID:= vid_sdl.o
-else
-SYSOBJ_INPUT := in_amiga.o
-SYSOBJ_GL_VID:= gl_vidamiga.o
-SYSOBJ_SOFT_VID:= vid_cgx.o
-ifeq ($(USE_M68K_ASM),yes)
-CPPFLAGS+= -DUSE_C2P
-SYSOBJ_SOFT_VID+= c2p1x1_8_c5_bm.o c2p1x1_8_c5_bm_040.o
-## c2p1x1_8_c5_030.o c2p1x1_8_c5_040.o
-endif
-endif
-SYSOBJ_NET := net_bsd.o net_udp.o
-SYSOBJ_SYS := sys_amiga.o
 endif
 
 # Final list of objects
@@ -1694,18 +1117,6 @@ h2: $(SW_BINARY)
 glh2: $(GL_BINARY)
 
 $(GL_BINARY): CPPFLAGS+= $(GL_DEFS)
-
-ifeq ($(TARGET_OS),amigaos)
-# workaround stupid AmiTCP SDK mess for old aos3
-net_bsd.o: INCLUDES+= $(NET_INC)
-net_udp.o: INCLUDES+= $(NET_INC)
-net_dgrm.o: INCLUDES+= $(NET_INC)
-net_loop.o: INCLUDES+= $(NET_INC)
-net_main.o: INCLUDES+= $(NET_INC)
-endif
-
-# deps for *.c including another *.c
-dos/net_ser.o: dos/net_comx.c
 
 # extra rule for snd_timidity.c because of timidity.h and libtimidity.a
 snd_timidity.o: $(COMMONDIR)/snd_timidity.c

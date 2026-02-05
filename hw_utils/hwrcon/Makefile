@@ -125,23 +125,8 @@ LDFLAGS += -Zmt
 LDFLAGS += -lsocket
 endif
 
-ifeq ($(TARGET_OS),aros)
-CFLAGS += -fno-common
-endif
 
-ifeq ($(TARGET_OS),morphos)
-CFLAGS += -noixemul
-LDFLAGS += -noixemul
-endif
 
-ifeq ($(TARGET_OS),amigaos)
-# use Bebbo's GCC6 toolchain
-BEBBO_TOOLCHAIN=yes
-# crt: libnix or clib2:
-USE_CLIB2=yes
-ifeq ($(BEBBO_TOOLCHAIN),yes)
-USE_CLIB2=no
-endif
 ifeq ($(USE_CLIB2),yes)
 CRT_FLAGS=-mcrt=clib2
 else
@@ -185,11 +170,6 @@ $(HWRCON) : $(COMMONOBJ) $(RCON_OBJS)
 $(HWTERM) : $(COMMONOBJ) $(HUFF_OBJS) $(TERM_OBJS)
 	$(LINKER) $(COMMONOBJ) $(HUFF_OBJS) $(TERM_OBJS) $(LDFLAGS) -o $@
 
-ifeq ($(TARGET_OS),amigaos)
-# workaround stupid AmiTCP SDK mess for old aos3
-hwrcon.o: INCLUDES+= $(NET_INC)
-hwterm.o: INCLUDES+= $(NET_INC)
-endif
 
 clean:
 	rm -f *.o core

@@ -446,13 +446,7 @@ Called every time the vid structure or r_refdef changes.
 Guaranteed to be called before the first refresh
 ===============
 */
-#if defined(PLATFORM_DOS) || defined(SVGAQUAKE)
-#define NOT_VGA_MODE (vid.aspect <= 1.10f)	/* no Hor+ for weirdass VGA modes */
-#elif defined(PLATFORM_AMIGAOS3)
-#define NOT_VGA_MODE (!vid.noadapt)	/* no Hor+ for Amiga native chipset modes */
-#else
 #define NOT_VGA_MODE true
-#endif
 #define FOV_ADAPTING (scr_fov_adapt.integer && NOT_VGA_MODE)
 void R_ViewChanged (float aspect)
 {

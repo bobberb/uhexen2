@@ -25,10 +25,9 @@ option(USE_SOUND "Enable sound support" ON)
 option(USE_ALSA "Enable ALSA audio (Linux)" ON)
 option(USE_CODEC_VORBIS "Enable Ogg Vorbis codec" ON)
 option(USE_CODEC_MP3 "Enable MP3 codec (mad)" ON)
-option(USE_CODEC_FLAC "Enable FLAC codec" OFF)
+option(USE_CODEC_FLAC "Enable FLAC codec" ON)
 option(USE_CODEC_OPUS "Enable Opus codec" OFF)
 option(USE_CODEC_TIMIDITY "Enable Timidity MIDI" ON)
-option(USE_CODEC_MIKMOD "Enable MikMod codec" OFF)
 option(USE_CODEC_XMP "Enable XMP codec" OFF)
 
 #============================================================================
@@ -143,15 +142,11 @@ if(UNIX AND NOT APPLE)
     endif()
 
     if(USE_CODEC_FLAC)
-        pkg_check_modules(FLAC REQUIRED FLAC)
+        pkg_check_modules(FLAC REQUIRED flac)
     endif()
 
     if(USE_CODEC_OPUS)
         pkg_check_modules(OPUSFILE REQUIRED opusfile)
-    endif()
-
-    if(USE_CODEC_MIKMOD)
-        pkg_check_modules(MIKMOD REQUIRED libmikmod)
     endif()
 
     if(USE_CODEC_XMP)
@@ -320,11 +315,6 @@ if(USE_SOUND)
         add_definitions(-DUSE_CODEC_OPUS)
     endif()
 
-    if(USE_CODEC_MIKMOD)
-        list(APPEND SOUND_SOURCES ${COMMONDIR}/snd_mikmod.c)
-        add_definitions(-DUSE_CODEC_MIKMOD)
-    endif()
-
     if(USE_CODEC_XMP)
         list(APPEND SOUND_SOURCES ${COMMONDIR}/snd_xmp.c)
         add_definitions(-DUSE_CODEC_XMP)
@@ -346,16 +336,13 @@ if(USE_SOUND)
             ${COMMONDIR}/snd_dsound.c
         )
     elseif(UNIX AND NOT APPLE)
-        list(APPEND SOUND_SOURCES
-            ${COMMONDIR}/snd_oss.c
-            ${COMMONDIR}/snd_sdl.c
-        )
+        # Use SDL for audio on Unix/Linux
+        list(APPEND SOUND_SOURCES ${COMMONDIR}/snd_sdl.c)
         if(USE_ALSA_FOUND)
             list(APPEND SOUND_SOURCES ${COMMONDIR}/snd_alsa.c)
         else()
             add_definitions(-DNO_ALSA_AUDIO)
         endif()
-        list(APPEND SOUND_SOURCES ${COMMONDIR}/snd_sun.c)
     endif()
 else()
     set(SOUND_SOURCES ${COMMONDIR}/snd_null.c ${COMMONDIR}/bgmnull.c)

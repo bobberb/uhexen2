@@ -27,10 +27,6 @@
 #include "arch_def.h"
 #include "sys.h"
 #include "printsys.h"
-#if defined(PLATFORM_DOS)
-#undef  USE_HUNKMEM
-#define USE_HUNKMEM	1
-#endif
 #if USE_HUNKMEM
 #include "zone.h"
 #endif

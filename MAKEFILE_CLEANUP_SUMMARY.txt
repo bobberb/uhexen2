@@ -1,0 +1,113 @@
+MAKEFILE CLEANUP SUMMARY
+========================
+
+Task: Remove all references to AmigaOS, MorphOS, AROS, and DOS from Makefiles
+
+COMPLETED FILES (Fully Cleaned):
+---------------------------------
+1. engine/hexen2/Makefile - COMPLETE
+   - Removed DOS cross-compile documentation
+   - Removed M68K assembly options for Amiga
+   - Removed DOS Serial/WATT32 network options
+   - Removed entire DOS flags/settings section
+   - Removed entire MorphOS flags/settings section
+   - Removed entire AROS flags/settings section
+   - Removed entire AmigaOS flags/settings section
+   - Removed M68K assembly object lists
+   - Removed DOS/Amiga sound objects
+   - Removed DOS/Amiga MIDI objects
+   - Removed DOS/Amiga CD audio objects
+   - Removed DOS/Amiga video/input/network objects
+   - Removed AmigaOS-specific build rules and workarounds
+
+2. engine/hexen2/server/Makefile - COMPLETE
+   - Removed DOS cross-compile documentation
+   - Removed DOS Serial/WATT32 options
+   - Removed DOS/MorphOS/AROS/AmigaOS flag sections
+   - Removed platform-specific network and system objects
+   - Removed AmigaOS network workarounds
+
+3. utils/qfiles/Makefile - COMPLETE
+   - Removed DOS and all Amiga platform ifeq blocks
+
+REMAINING FILES (Need Cleanup):
+--------------------------------
+High Priority (Engine Components):
+- engine/hexenworld/client/Makefile (22 references)
+- engine/hexenworld/server/Makefile (9 references)
+
+Medium Priority (Utility Tools - Similar Pattern):
+- utils/bsp2map/Makefile (4 references)
+- utils/bspinfo/Makefile (4 references)
+- utils/dcc/Makefile (4 references)
+- utils/genmodel/Makefile (4 references)
+- utils/hcc/Makefile (4 references)
+- utils/jsh2color/Makefile (4 references)
+- utils/light/Makefile (4 references)
+- utils/pak/Makefile (4 references)
+- utils/qbsp/Makefile (4 references)
+- utils/vis/Makefile (4 references)
+- utils/texutils/bsp2wal/Makefile (4 references)
+- utils/texutils/lmp2pcx/Makefile (4 references)
+
+Low Priority (Helper Utilities):
+- hw_utils/hwmaster/Makefile (7 references)
+- hw_utils/hwmquery/Makefile (4 references)
+- hw_utils/hwrcon/Makefile (4 references)
+
+Library:
+- libs/timidity/Makefile (4 references)
+
+PATTERN FOR REMAINING CLEANUP:
+-------------------------------
+All utility Makefiles follow the same pattern. They need removal of:
+
+1. ifeq $(TARGET_OS),dos) ... endif blocks
+2. ifeq $(TARGET_OS),aros) ... endif blocks  
+3. ifeq $(TARGET_OS),morphos) ... endif blocks
+4. ifeq $(TARGET_OS),amigaos) ... endif blocks
+
+The amigaos block typically contains nested ifeq blocks for:
+- BEBBO_TOOLCHAIN
+- USE_CLIB2
+- CRT_FLAGS selection
+- DEBUG flags
+- Compiler/linker flags (m68020-60, m68881)
+- Include paths to oslibs/amigaos
+
+EXAMPLE CLEANUP (from utils/qfiles/Makefile):
+---------------------------------------------
+BEFORE:
+```
+ifeq $(TARGET_OS),dos)
+INCLUDES+= -I$(OSLIBS)/dos
+LDFLAGS += $(OSLIBS)/dos/djtime/djtime.a -lc
+endif
+ifeq $(TARGET_OS),os2)
+```
+
+AFTER:
+```
+ifeq $(TARGET_OS),os2)
+```
+
+The same pattern applies to removing aros, morphos, and amigaos blocks,
+preserving the os2, win32, win64, darwin, and unix blocks.
+
+PLATFORMS TO PRESERVE:
+----------------------
+- os2 (OS/2)
+- win32 (Windows 32-bit)
+- win64 (Windows 64-bit)
+- darwin (macOS)
+- unix (Linux, BSD, etc.)
+
+FILES MODIFIED SO FAR:
+----------------------
+engine/hexen2/Makefile
+engine/hexen2/server/Makefile
+h2patch/Makefile.amiga
+h2patch/Makefile.dj
+oslibs/dos/libau/src/Makefile.dj
+oslibs/dos/libau/src/Makefile.wat
+utils/qfiles/Makefile

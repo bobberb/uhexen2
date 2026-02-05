@@ -53,11 +53,6 @@ INCLUDES= -I. -I$(COMMONDIR) -I$(UHEXEN2_SHARED)
 
 # Other build flags
 
-ifeq ($(TARGET_OS),dos)
-INCLUDES+= -I$(OSLIBS)/dos
-LDFLAGS += $(OSLIBS)/dos/djtime/djtime.a -lc -lgcc
-#LDFLAGS += -lm
-endif
 ifeq ($(TARGET_OS),os2)
 INCLUDES+= -I$(OSLIBS)/os2/emx/include
 CFLAGS  += -Zmt
@@ -81,22 +76,6 @@ CFLAGS  += -m64
 LDFLAGS += -m64 -mconsole
 # FIXME: default 2 MB stack is not enough:
 LDFLAGS += -Wl,--stack,4194304
-endif
-ifeq ($(TARGET_OS),aros)
-CFLAGS += -fno-common
-endif
-ifeq ($(TARGET_OS),morphos)
-CFLAGS  += -noixemul
-LDFLAGS += -noixemul
-LDLIBS  += -lm
-endif
-ifeq ($(TARGET_OS),amigaos)
-# use Bebbo's GCC6 toolchain
-BEBBO_TOOLCHAIN=yes
-# crt: libnix or clib2:
-USE_CLIB2=yes
-ifeq ($(BEBBO_TOOLCHAIN),yes)
-USE_CLIB2=no
 endif
 ifeq ($(USE_CLIB2),yes)
 CRT_FLAGS=-mcrt=clib2

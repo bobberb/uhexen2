@@ -52,10 +52,6 @@ INCLUDES= -I. -I$(COMMONDIR) -I$(UHEXEN2_SHARED)
 
 # Other build flags
 
-ifeq ($(TARGET_OS),dos)
-INCLUDES+= -I$(OSLIBS)/dos
-LDFLAGS += $(OSLIBS)/dos/djtime/djtime.a -lc
-endif
 ifeq ($(TARGET_OS),os2)
 INCLUDES+= -I$(OSLIBS)/os2/emx/include
 CFLAGS  += -Zmt
@@ -75,34 +71,6 @@ CFLAGS  += -DWIN32_LEAN_AND_MEAN
 INCLUDES+= -I$(OSLIBS)/windows/misc/include
 CFLAGS  += -m64
 LDFLAGS += -m64 -mconsole
-endif
-ifeq ($(TARGET_OS),aros)
-CFLAGS += -fno-common
-endif
-ifeq ($(TARGET_OS),morphos)
-CFLAGS  += -noixemul
-LDFLAGS += -noixemul
-endif
-ifeq ($(TARGET_OS),amigaos)
-# use Bebbo's GCC6 toolchain
-BEBBO_TOOLCHAIN=yes
-# crt: libnix or clib2:
-USE_CLIB2=yes
-ifeq ($(BEBBO_TOOLCHAIN),yes)
-USE_CLIB2=no
-endif
-ifeq ($(USE_CLIB2),yes)
-CRT_FLAGS=-mcrt=clib2
-else
-CRT_FLAGS=-noixemul
-endif
-CFLAGS  += $(CRT_FLAGS) -m68020-60
-LDFLAGS += $(CRT_FLAGS) -m68020
-ifndef DEBUG
-CFLAGS  += -fno-omit-frame-pointer
-endif
-# for extra missing headers
-INCLUDES += -I$(OSLIBS)/amigaos/include
 endif
 ifeq ($(TARGET_OS),darwin)
 CPUFLAGS=

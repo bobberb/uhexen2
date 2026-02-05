@@ -66,14 +66,12 @@ static int timidity_fclose (void *ctx)
 static const char *cfgfile[] = {
 #if defined(__DJGPP__)  /* prefer '/' instead of '\\' */
 	"C:/TIMIDITY",
-#elif defined(PLATFORM_DOS) || defined(PLATFORM_WINDOWS) || defined(PLATFORM_OS2)
+#elif defined(PLATFORM_WINDOWS) || defined(PLATFORM_OS2)
 	"C:\\TIMIDITY",
 #elif defined(__MORPHOS__)
 	"LIBS:GerontoPlayer",
 #elif defined(__AROS__)
 	"Timidity:",/* disable the system requester for this (see below) */
-#elif defined(PLATFORM_AMIGA)
-	/**/
 #else /* unix, osx, riscos, ... */
 	"/etc",
 	"/etc/timidity",
@@ -98,9 +96,6 @@ static int TIMIDITY_InitHelper (const char *cfgdir)
 	path[len] = '\0';
 	q_strlcat(path, "timidity.cfg", sizeof(path));
 	Con_DPrintf("Timidity: trying %s\n", path);
-#ifdef PLATFORM_AMIGA
-	if (!Sys_PathExistsQuiet(path)) return -1;
-#endif
 	return mid_init(path);
 }
 

@@ -36,6 +36,7 @@
               libmad         # MP3 support
               libvorbis      # Vorbis support
               libogg
+              flac           # FLAC support
               alsa-lib       # ALSA audio support
             ];
 
@@ -48,6 +49,7 @@
             cmakeFlags = [
               "-DUSE_CODEC_MP3=ON"
               "-DUSE_CODEC_VORBIS=ON"
+              "-DUSE_CODEC_FLAC=ON"
               "-DUSE_ALSA=ON"
             ];
 
@@ -98,6 +100,7 @@
             libmad
             libvorbis
             libogg
+            flac
             alsa-lib
             pkg-config
             gcc
