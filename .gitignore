@@ -17,8 +17,15 @@ result-*
 .beads/last-touched
 .beads/sync_base.jsonl
 *.o
+*.a
 engine/hexen2/glhexen2
 engine/hexen2/h2ded
+
+# CMake build directories
+engine/build/
+engine/build-*/
+CMakeCache.txt
+CMakeFiles/
 
 # bv (beads viewer) local config and caches
 .bv/
