@@ -383,6 +383,9 @@ byte *IMG_LoadExternalTexture (const char *name, int *width, int *height, qboole
 
 	*has_alpha = false;
 
+	// Debug: show what name we received
+	Con_DPrintf ("IMG_LoadExternalTexture called with: '%s' (first 7 chars: '%.7s')\n", name, name);
+
 	// For model skins (names starting with "models/"), try direct path first
 	if (!strncmp(name, "models/", 7))
 	{
