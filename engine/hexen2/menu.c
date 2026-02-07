@@ -3587,7 +3587,8 @@ static void M_Quit_Draw (void)
 	M_Print      (16 + (9 * 8), y + 8,	"by Raven Software");
 	M_PrintWhite (16 + (7 * 8), y + 16,	"Hammer of Thyrion " HOT_VERSION_STR);
 	M_PrintWhite (16 +(13 * 8), y + 24,	"Source Port");
-	y += 40;
+	M_PrintWhite (16 + (5 * 8), y + 32,	"Shanjaq and Inky Additions");
+	y += 48;
 
 	if (LinePos > 55 && !SoundPlayed && LineTxt2)
 	{
