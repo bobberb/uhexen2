@@ -116,7 +116,6 @@
             ];
 
             buildInputs = with pkgsCross32; [
-              SDL
               windows.mingw_w64_pthreads
             ];
 
@@ -138,8 +137,8 @@
               mkdir -p $out/bin
               mkdir -p $out/share/uhexen2
 
-              # Install the Windows executable
-              install -Dm755 bin/glhexen2.exe $out/bin/glhexen2.exe
+              # Install the Windows executable (CMake creates glh2.exe for Windows)
+              install -Dm755 bin/glh2.exe $out/bin/glh2.exe
 
               # Install DLLs
               for dll in bin/*.dll; do
@@ -176,7 +175,6 @@
             ];
 
             buildInputs = with pkgsCross64; [
-              SDL
               windows.mingw_w64_pthreads
             ];
 
@@ -198,8 +196,8 @@
               mkdir -p $out/bin
               mkdir -p $out/share/uhexen2
 
-              # Install the Windows executable
-              install -Dm755 bin/glhexen2.exe $out/bin/glhexen2.exe
+              # Install the Windows executable (CMake creates glh2.exe for Windows)
+              install -Dm755 bin/glh2.exe $out/bin/glh2.exe
 
               # Install DLLs
               for dll in bin/*.dll; do
